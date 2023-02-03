@@ -1,16 +1,14 @@
-# This is a sample Python script.
+import c3d
+import os
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+fileDir = r'H:\vicon\test\Full Body Plug-in Gait'
+fileName = r'Gunwoo Cal 03.c3d'
+
+reader = c3d.Reader(open(os.path.join(fileDir,fileName), 'rb'))
+for i, points, analog in reader.read_frames():
+    print('frame {}: point {}, analog {}'.format(
+        i, points.shape, analog.shape))
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+reader.point_labels
 
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
