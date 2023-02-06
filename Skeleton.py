@@ -158,14 +158,39 @@ class PulginGaitSkeleton(Skeleton):
         else:
             return None
 
-    def get_pose_idx(self, input_name_list, extract_pt='O'):
-        '''extract_pt: O, P, A, L'''
+    def get_pose_idx_from_acronym(self, input_name_list, extract_pt='O'):
+        '''extract_pt: O, P, A, L, all'''
         pose_idx = {}
         input_name_list = list(input_name_list)
         for joint_wspace in input_name_list:
             joint = joint_wspace.strip()
-            if joint in self.joint_acronym.keys() and joint[-1] == extract_pt:
-                pose_idx[joint] = input_name_list.index(joint_wspace)
+            if extract_pt in ['O', 'P', 'A', 'L']:
+                if joint in self.joint_acronym.keys() and joint[-1] == extract_pt:
+                    pose_idx[joint] = self.point_labels.index(joint_wspace)
+            elif extract_pt == 'all':
+                if joint in self.joint_acronym.keys():
+                    pose_idx[joint] = self.point_labels.index(joint_wspace)
+        return pose_idx
+
+    def get_pose_idx_from_description(self, input_name_list, extract_pt='O'):
+        '''extract_pt: O, all'''
+        pose_idx = {}
+        if type(input_name_list) == str:
+            input_name_list = [input_name_list]
+        else:
+            input_name_list = list(input_name_list)
+        for joint_description in input_name_list:
+            joint_acronym = self.acronym(joint_description)
+            if extract_pt in ['O']:
+                if joint_acronym in self.joint_acronym.keys():
+                    pose_idx[joint_acronym] = self.point_labels.index(joint_acronym)
+            elif extract_pt == 'all':
+                # replace last character of joint_acronym with O, P, A, L
+                joint_base = joint_acronym[:-1]
+                for pt in ['O', 'P', 'A', 'L']:
+                    joint_acronym = joint_base + pt
+                    if joint_acronym in self.joint_acronym.keys():
+                        pose_idx[joint_acronym] = self.point_labels.index(joint_acronym)
         return pose_idx
 
     def get_poses(self, input_data, pose_idx):
@@ -174,16 +199,22 @@ class PulginGaitSkeleton(Skeleton):
             poses[joint] = input_data[:,pose_idx[joint]]
         return poses
 
+    def get_pose_from_description(self, input_name_list, extract_pt='O'):
+        pose_idx = self.get_pose_idx_from_description(input_name_list, extract_pt=extract_pt)
+        return self.get_poses(self.points, pose_idx)
+
     def read_c3d(self, c3d_file):
         reader = c3d.Reader(open(c3d_file, 'rb'))
         self.analog_labels = reader.analog_labels
+        self.analog_labels = [label.strip() for label in self.analog_labels]  # strip whitespace from analog labels
         self.point_labels = reader.point_labels
-        self.pose_idx = self.get_pose_idx(self.point_labels)
+        self.point_labels = [label.strip() for label in self.point_labels]  # strip whitespace from point labels
+        self.pose_idx = self.get_pose_idx_from_acronym(self.point_labels)
         points = []
         analog = []
         for i, this_points, this_analog in reader.read_frames():
             print('frame {}: point {}, analog {}'.format(
-                i, this_points.shape, this_analog.shape))
+                i, this_points.shape, this_analog.shape), end='\r')
             points.append(this_points)
             analog.append(this_analog)
         self.points = np.array(points)
@@ -222,4 +253,5 @@ class PulginGaitSkeleton(Skeleton):
         fig.tight_layout()
         fig.subplots_adjust(right=0.75)
         ax.legend(loc='center left', bbox_to_anchor=(1.05, 0.5), fontsize=7)
-        plt.show()
+        # plt.show()
+        return fig, ax
