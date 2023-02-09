@@ -8,28 +8,35 @@ import Skeleton
 fileDir = r'F:\delete\Full Body Plug-in Gait'
 fileName = r'Gunwoo Cal 03.c3d'
 
-# skeleton = Skeleton.PulginGaitSkeleton(os.path.join(fileDir,fileName))
-# skeleton.plot_pose_frame(100)
+skeleton = Skeleton.PulginGaitSkeleton(os.path.join(fileDir,fileName))
+
+frame = 0
+fig, ax = skeleton.plot_pose_frame(frame)
+
+
+skeleton.point_labels
+point_acronym = 'RFHD'
+skeleton.add_point_to_plot(point_acronym, ax, fig, frame=0)
+
+
+
+
+# reader = c3d.Reader(open(os.path.join(fileDir,fileName), 'rb'))
+# for i, points, analog in reader.read_frames():
+#     print('frame {}: point {}, analog {}'.format(
+#         i, points.shape, analog.shape))
+#     break
 #
-
-
-
-reader = c3d.Reader(open(os.path.join(fileDir,fileName), 'rb'))
-for i, points, analog in reader.read_frames():
-    print('frame {}: point {}, analog {}'.format(
-        i, points.shape, analog.shape))
-    break
-
-
-
-reader.analog_labels
-
-
-idx = [75,79] # head
-idx = [75,79] # head
-joint_axis_pts = points[idx[0]:idx[1]]
-plot_joint_axis(joint_axis_pts,label = reader.point_labels[idx[0]])
-
-
-# make a list from 39 to 114 with step 4
-joint_org_idx = list(range(39,114,4))
+#
+#
+# reader.analog_labels
+#
+#
+# idx = [75,79] # head
+# idx = [75,79] # head
+# joint_axis_pts = points[idx[0]:idx[1]]
+# plot_joint_axis(joint_axis_pts,label = reader.point_labels[idx[0]])
+#
+#
+# # make a list from 39 to 114 with step 4
+# joint_org_idx = list(range(39,114,4))
