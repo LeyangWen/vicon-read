@@ -33,3 +33,4 @@ def plot_joint_axis(joint_axis_pts,label=None):
         print('length of {}: {}'.format(axis_name[i - 1], np.linalg.norm(joint_axis_pts[0] - joint_axis_pts[i])))
     ax.text(joint_axis_pts[0, 0], joint_axis_pts[0, 1], joint_axis_pts[0, 2], label)
     plt.show()
+

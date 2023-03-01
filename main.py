@@ -10,15 +10,22 @@ fileName = r'Gunwoo Cal 03.c3d'
 
 skeleton = Skeleton.PulginGaitSkeleton(os.path.join(fileDir,fileName))
 
-frame = 0
+frame = 100
 fig, ax = skeleton.plot_pose_frame(frame)
 
 
-skeleton.point_labels
-point_acronym = 'RFHD'
-skeleton.add_point_to_plot(point_acronym, ax, fig, frame=0)
+# skeleton.point_labels
+# point_acronym = ['LTOO',
+#                  'LTOP',
+#                  'LTOA',
+#                  'LTOL']
+# skeleton.add_point_to_plot(point_acronym, ax, fig, frame=frame)
+# point_acronym = 'LFOP'
+# skeleton.add_point_to_plot(point_acronym, ax, fig, frame=frame)
+point_acronym = 'RTOE'
+# skeleton.add_point_to_plot(point_acronym, ax, fig, frame=frame)
 
-
+a = skeleton.output_3DSSPP_loc(frame_range=[0,10])
 
 
 # reader = c3d.Reader(open(os.path.join(fileDir,fileName), 'rb'))
