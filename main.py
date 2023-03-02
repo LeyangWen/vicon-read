@@ -5,27 +5,28 @@ import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 from utility import *
 import Skeleton
-fileDir = r'F:\delete\Full Body Plug-in Gait'
-fileName = r'Gunwoo Cal 03.c3d'
+fileName = r'F:\delete\Full Body Plug-in Gait\Gunwoo Cal 03.c3d'
+fileName = r'G:\vicon\test\Full Body Plug-in Gait\Gunwoo Cal 03.c3d'
+fileName = r'C:\Users\Public\Documents\Vicon\data\VEHS_ske\Test\Gunwoo\Test1\Gunwoo movement 02.c3d'
 
-skeleton = Skeleton.PulginGaitSkeleton(os.path.join(fileDir,fileName))
-
-frame = 100
+skeleton = Skeleton.PulginGaitSkeleton(fileName)
+skeleton.point_labels
+frame = 0
 fig, ax = skeleton.plot_pose_frame(frame)
 
 
 # skeleton.point_labels
-# point_acronym = ['LTOO',
-#                  'LTOP',
-#                  'LTOA',
-#                  'LTOL']
+point_acronym = ['LEYE',
+                 'RPIK',
+                 'LPIK',
+                 'HDTP']
+skeleton.add_point_to_plot(point_acronym, ax, fig, frame=frame)
+# point_acronym = 'NKTP'
 # skeleton.add_point_to_plot(point_acronym, ax, fig, frame=frame)
-# point_acronym = 'LFOP'
+# point_acronym = 'HDEY'
 # skeleton.add_point_to_plot(point_acronym, ax, fig, frame=frame)
-point_acronym = 'RTOE'
-# skeleton.add_point_to_plot(point_acronym, ax, fig, frame=frame)
-
-a = skeleton.output_3DSSPP_loc(frame_range=[0,10])
+plt.show()
+# a = skeleton.output_3DSSPP_loc(frame_range=[0,10])
 
 
 # reader = c3d.Reader(open(os.path.join(fileDir,fileName), 'rb'))

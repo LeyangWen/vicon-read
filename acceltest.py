@@ -51,11 +51,11 @@ for i in range(vicon.GetUnlabeledCount()):
     trajectory = trajectory/1000 # convert to meter
     drops = []
     try:
-        start_idx = np.where(trajectory[2] > 1.60)[0][-1]-50
-
+        start_idx = np.where(trajectory[2] > 1.65)[0][-1]-50
     except:
         print(i)
         continue
+
     end_idx = start_idx + 100
     start_idxs.append(start_idx)
     drop = trajectory[2][start_idx:end_idx]
@@ -63,42 +63,52 @@ for i in range(vicon.GetUnlabeledCount()):
     speed = np.diff(drop, n=1)*frame_rate
     acceleration = np.diff(speed, n=1)*frame_rate
     # smooth with moving average filter of 8 frames front and back
-    acceleration = np.convolve(acceleration, np.ones((8,))/8, mode='valid')
-    ax1.plot(drop)
+    # acceleration = np.convolve(acceleration, np.ones((8,))/8, mode='valid')
+    if trajectory[2,start_idx] < 1.45 or max(abs(speed)) > 50 or max(acceleration[:40])>5 or min(acceleration[:80])<-13:
+        continue
+    ax1.plot(drop, label='drop {}'.format(i))
     ax2.plot(speed)
     ax3.plot(acceleration)
     # set figure3 ylimit to -12,3
+    ax2.set_ylim([-8,1])
     ax3.set_ylim([-12,3])
+    # ax1.legend()
     drop_caculation['position'] = drop
     drop_caculation['speed'] = speed
     drop_caculation['acceleration'] = acceleration
+    # plot a dotted line at -9.81 m/s^2
+    ax3.plot([0, len(acceleration)], [-9.81, -9.81], 'k--', lw=1)
     drop_caculations.append(drop_caculation)
 
 #dump to pickle
 vicon_output = {'start_idxs':start_idxs, 'frame_rate':frame_rate, 'drop_caculations':drop_caculations}
-with open('vicon.pkl', 'wb') as f:
+with open(f'vicon{trial_name[-1]}.pkl', 'wb') as f:
     pickle.dump(vicon_output, f)
 
+figure1.savefig(f'vicon{trial_name[-1]}_position.png')
+figure2.savefig(f'vicon{trial_name[-1]}_speed.png')
+figure3.savefig(f'vicon{trial_name[-1]}_acceleration.png')
 
-IMU_file = r'C:\Users\wenleyan1\Downloads\W2_2023-03-01T15.37.28.692_E703F686FEDD_Accelerometer.csv'
-# read csv file
-with open(IMU_file, 'r') as f:
-    reader = csv.reader(f)
-    data = list(reader)
-    header = data[0]
-    data = data[1:]
-data = np.array(data)
-shift = 200
-length = 1000
-start_idxs = np.round(np.array(start_idxs)/8)
 
-figureIMU = plt.figure()
-axIMU = figureIMU.add_subplot(111)
-for start_idx in start_idxs:
-    start_idx = start_idx.astype(int)
-    start_idx = start_idx+shift
-    end_idx = start_idx + length
-    axIMU.plot(data[start_idx:end_idx,5].astype(float))
-    break
+# IMU_file = r'C:\Users\wenleyan1\Downloads\W2_2023-03-01T15.37.28.692_E703F686FEDD_Accelerometer.csv'
+# # read csv file
+# with open(IMU_file, 'r') as f:
+#     reader = csv.reader(f)
+#     data = list(reader)
+#     header = data[0]
+#     data = data[1:]
+# data = np.array(data)
+# shift = 200
+# length = 1000
+# start_idxs = np.round(np.array(start_idxs)/8)
+#
+# figureIMU = plt.figure()
+# axIMU = figureIMU.add_subplot(111)
+# for start_idx in start_idxs:
+#     start_idx = start_idx.astype(int)
+#     start_idx = start_idx+shift
+#     end_idx = start_idx + length
+#     axIMU.plot(data[start_idx:end_idx,5].astype(float))
+#     break
 
 plt.show()

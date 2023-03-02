@@ -34,3 +34,4 @@ def plot_joint_axis(joint_axis_pts,label=None):
     ax.text(joint_axis_pts[0, 0], joint_axis_pts[0, 1], joint_axis_pts[0, 2], label)
     plt.show()
 
+
