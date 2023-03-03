@@ -115,6 +115,7 @@ if __name__ == '__main__':
     vicon.SetModelOutput(subject_names[0], 'RHEC', RHDC.xyz, RHDC.exist)
     vicon.SetModelOutput(subject_names[0], 'LHEC', LHDC.xyz, LHDC.exist)
     vicon.SetModelOutput(subject_names[0], 'HDCC', HDCC.xyz, HDCC.exist)
+    vicon.SetModelOutput(subject_names[0], 'HTPO', HTPO.xyz, HTPO.exist)
 
     # visual for debugging
     # frame = 0
