@@ -5,7 +5,6 @@ import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 
 
-
 def plot_joint_axis(joint_axis_pts,label=None):
     if label:
         print(label)
@@ -35,3 +34,22 @@ def plot_joint_axis(joint_axis_pts,label=None):
     plt.show()
 
 
+def create_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+
+def BMI_classUS(bmi):
+    if bmi < 18.5:
+        return 'Underweight'
+    elif bmi < 25:
+        return 'Healthy weight'
+    elif bmi < 30:
+        return 'Overweight'
+    else:
+        return 'Obesity'
+
+
+def BMI_caculate(weight, height):
+    bmi = weight / (height / 100) ** 2
+    return bmi

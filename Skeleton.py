@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 import xml.etree.ElementTree as ET
 from scipy.io import savemat
 import yaml
-
+from utility import *
+from spacepy import pycdf
 
 class Skeleton:
     def __init__(self):
@@ -23,6 +24,13 @@ class PulginGaitSkeleton(Skeleton):
         self.joint_number = len(self.key_joint_name)
         self.__load_c3d(c3d_file)
         self.c3d_file = c3d_file
+        # exclude .c3d
+        base_dir = c3d_file[:-4]
+        cdf_file = os.path.join(base_dir, 'Pose3D.cdf')
+        self.output_cdf(cdf_file)
+
+
+
 
     def __load_acronym(self, filename):
         # read yaml
@@ -218,20 +226,29 @@ class PulginGaitSkeleton(Skeleton):
                        poses[point_acronym][frame, 2], label=point_acronym, s=25)
         return fig, ax
 
-    def output_cdf(self):
-        def store_cdf(file_name, data, date, kp_names, subjectID, TaskID, CamID='', jointName=''):
-            create_dir(os.path.dirname(file_name))
-            if os.path.exists(file_name):
-                os.remove(file_name)
-            cdf = pycdf.CDF(file_name, '')
-            cdf['Pose'] = data
-            cdf.attrs['SubjectID'] = subjectID
-            cdf.attrs['TaskID'] = TaskID
-            cdf.attrs['CamID'] = CamID
-            cdf.attrs['UpdateDate'] = datetime.datetime.now()
-            cdf.attrs['CaptureDate'] = os.path.basename(date)
-            cdf.attrs['KeypointNames'] = kp_names
-            cdf.close()
+    def output_cdf(self, file_name):
+        pose_3D = []
+        pose_sequence = []
+        for joint_name in self.key_joint_name:
+            joint = self.acronym(joint_name)
+            pose_3D.append(self.poses[joint])
+            pose_sequence.append(joint)
+        pose_3D = np.array(pose_3D)
+        pose_3D = np.transpose(pose_3D, (1, 0, 2))
+
+        create_dir(os.path.dirname(file_name))
+        if os.path.exists(file_name):
+            os.remove(file_name)
+        cdf = pycdf.CDF(file_name, '')
+        cdf['Pose'] = pose_3D
+        cdf.attrs['PoseSequence'] = pose_sequence
+        # cdf.attrs['SubjectID'] = subjectID
+        # cdf.attrs['TaskID'] = TaskID
+        # cdf.attrs['CamID'] = CamID
+        # cdf.attrs['UpdateDate'] = datetime.datetime.now()
+        # cdf.attrs['CaptureDate'] = os.path.basename(date)
+        # cdf.attrs['KeypointNames'] = kp_names
+        cdf.close()
     def output_3DSSPP_loc(self, frame_range=None,loc_file=None):
         # 3DSSPP format:
         #LOC File filename.loc

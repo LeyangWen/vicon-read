@@ -6,11 +6,14 @@ import csv
 import pickle
 from utility import *
 from Point import *
+import yaml
+import datetime
+
 
 # helper functions
 # vicon = ViconNexus.ViconNexus()
 # dir(ViconNexus.ViconNexus)
-# help(vicon.SetSubjectParam)
+# help(vicon.GetSubjectParam)
 
 if __name__ == '__main__':
     # specify big or small marker
@@ -23,6 +26,19 @@ if __name__ == '__main__':
     frame_count = vicon.GetFrameCount()
     frame_rate = vicon.GetFrameRate()
     subject_info = vicon.GetSubjectInfo()
+    weight = vicon.GetSubjectParam(subject_names[0], 'Bodymass')[0]
+    height = vicon.GetSubjectParam(subject_names[0], 'Height')[0]
+    BMI = BMI_caculate(weight, height/1000)
+    BMI_class = BMI_classUS(BMI)
+
+    # write to yaml file
+    trial_yaml_file = os.path.join(trial_name[0],trial_name[1]+ '.yaml')
+    trial_info = {'trial_dir': trial_name[0], 'trial_name': trial_name[1], 'subject_name': subject_names[0], 'frame_count': frame_count,
+                  'frame_rate': frame_rate,'processed_time': datetime.datetime.now(), 'weight': weight, 'height': height,
+                  'BMI': BMI, 'BMI_class': BMI_class}
+    with open(trial_yaml_file, 'w') as f:
+        f.write(yaml.dump(trial_info, default_flow_style=False, sort_keys=False))
+
 
     # if more than one subject, report not implemented error
     if len(subject_names) > 1:
@@ -43,6 +59,7 @@ if __name__ == '__main__':
     vicon.CreateModeledMarker(subject_names[0], 'RHEC')
     vicon.CreateModeledMarker(subject_names[0], 'LHEC')
     vicon.CreateModeledMarker(subject_names[0], 'HTPO')
+    vicon.CreateModeledMarker(subject_names[0], 'HDCC')
 
     # get reference value
     RFHD = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RFHD'))
@@ -116,6 +133,7 @@ if __name__ == '__main__':
     vicon.SetModelOutput(subject_names[0], 'LHEC', LHDC.xyz, LHDC.exist)
     vicon.SetModelOutput(subject_names[0], 'HDCC', HDCC.xyz, HDCC.exist)
     vicon.SetModelOutput(subject_names[0], 'HTPO', HTPO.xyz, HTPO.exist)
+
 
     # visual for debugging
     # frame = 0
