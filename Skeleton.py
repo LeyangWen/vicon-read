@@ -218,6 +218,20 @@ class PulginGaitSkeleton(Skeleton):
                        poses[point_acronym][frame, 2], label=point_acronym, s=25)
         return fig, ax
 
+    def output_cdf(self):
+        def store_cdf(file_name, data, date, kp_names, subjectID, TaskID, CamID='', jointName=''):
+            create_dir(os.path.dirname(file_name))
+            if os.path.exists(file_name):
+                os.remove(file_name)
+            cdf = pycdf.CDF(file_name, '')
+            cdf['Pose'] = data
+            cdf.attrs['SubjectID'] = subjectID
+            cdf.attrs['TaskID'] = TaskID
+            cdf.attrs['CamID'] = CamID
+            cdf.attrs['UpdateDate'] = datetime.datetime.now()
+            cdf.attrs['CaptureDate'] = os.path.basename(date)
+            cdf.attrs['KeypointNames'] = kp_names
+            cdf.close()
     def output_3DSSPP_loc(self, frame_range=None,loc_file=None):
         # 3DSSPP format:
         #LOC File filename.loc
