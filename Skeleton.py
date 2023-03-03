@@ -14,12 +14,12 @@ class Skeleton:
 
 class PulginGaitSkeleton(Skeleton):
     '''A class for plugin gait skeleton'''
-
-    def __init__(self, c3d_file):
+    def __init__(self, c3d_file, skeleton_file='config/Plugingait_info/Plugingait.xml'):
         super().__init__()
-        self.__load_key_joints('config/plugingait.yaml')
-        self.joint_number = len(self.joint_name)
-        self.__load_acronym('config/acronym.yaml')
+        self.skeleton_file = skeleton_file
+        self.__load_acronym('config/Plugingait_info/acronym.yaml')
+        self.__load_key_joints(skeleton_file)
+        self.joint_number = len(self.key_joint_name)
         self.__load_c3d(c3d_file)
         self.c3d_file = c3d_file
 
@@ -37,23 +37,31 @@ class PulginGaitSkeleton(Skeleton):
                 self.VEHS_virtualPt_acronym = data['VEHS_virtualPt_acronym']
                 self.joint_acronym = {**self.lower_bone_acronym, **self.upper_bone_acronym, **self.joint_center_acronym, **self.com_acronym, **self.plugingait_marker_acronym, **self.VEHS_marker_acronym, **self.VEHS_virtualPt_acronym}
             except yaml.YAMLError as exc:
-                print(exc)
+                print(filename, exc)
 
     def __load_key_joints(self, filename):
         # read xml
         with open (filename, 'r') as stream:
             try:
                 data = yaml.safe_load(stream)
-                self.joint_name = data['joints']['mid'] + data['joints']['botL'] + data['joints']['topL'] + data['joints']['botR'] + data['joints']['topR']
-                self.joint_parent = data['parent']['mid'] + data['parent']['botL'] + data['parent']['topL'] + data['parent']['botR'] + data['parent']['topR']
+                self.joint_name_mid = data['joints']['mid']
+                self.joint_name_botL = data['joints']['botL']
+                self.joint_name_topL = data['joints']['topL']
+                self.joint_name_botR = data['joints']['botR']
+                self.joint_name_topR = data['joints']['topR']
+                self.key_joint_name = data['joints']['mid'] + data['joints']['botL'] + data['joints']['topL'] + data['joints']['botR'] + data['joints']['topR']
+                self.key_joint_parent = data['parent']['mid'] + data['parent']['botL'] + data['parent']['topL'] + data['parent']['botR'] + data['parent']['topR']
+                self.key_joint_acronym = []
+                for joint_name in self.key_joint_name:
+                    self.key_joint_acronym.append(self.acronym(joint_name))
             except yaml.YAMLError as exc:
-                print(exc)
+                print(filename, exc)
 
     def get_parent(self, joint_name):
-        parent_idx = self.joint_name.index(joint_name)
+        parent_idx = self.key_joint_name.index(joint_name)
         # catch IndexError: list index out of range and return None
         try:
-            return self.joint_parent[parent_idx]
+            return self.key_joint_parent[parent_idx]
         except IndexError:
             return None
 
@@ -86,9 +94,7 @@ class PulginGaitSkeleton(Skeleton):
         for joint_wspace in input_name_list:
             joint = joint_wspace.strip()
             if extract_pt in ['O', 'P', 'A', 'L']:
-                if joint in self.joint_acronym.keys() and joint[-1] == extract_pt:
-                    pose_idx[joint] = self.point_labels.index(joint_wspace)
-                elif joint in self.joint_center_acronym.keys():
+                if joint in self.key_joint_acronym:
                     pose_idx[joint] = self.point_labels.index(joint_wspace)
             elif extract_pt == 'all':
                 if joint in self.point_labels:
@@ -162,9 +168,9 @@ class PulginGaitSkeleton(Skeleton):
     def plot_pose_frame(self, frame=0):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        for joint_name in self.joint_name:
+        for joint_name in self.key_joint_name:
             joint = self.acronym(joint_name)
-            if joint_name in self.bone_name_mid:
+            if joint_name in self.joint_name_mid:
                 point_type = 's'
                 point_size = 15
             else:
@@ -174,10 +180,10 @@ class PulginGaitSkeleton(Skeleton):
                        self.poses[joint][frame, 1],
                        self.poses[joint][frame, 2], label=joint_name, marker=point_type,s=point_size)
         # connect points to parent
-        for joint_name in self.joint_name:
+        for joint_name in self.key_joint_name:
             joint = self.acronym(joint_name)
             parent_name = self.get_parent(joint_name)
-            if parent_name is not None:
+            if parent_name is not None and parent_name != 'None':
                 parent = self.acronym(parent_name)
                 ax.plot([self.poses[joint][frame, 0], self.poses[parent][frame, 0]],
                         [self.poses[joint][frame, 1], self.poses[parent][frame, 1]],
@@ -194,9 +200,9 @@ class PulginGaitSkeleton(Skeleton):
         ax.set_ylabel('Y (mm)')
         ax.set_zlabel('Z (mm)')
         fig.tight_layout()
-        # fig.subplots_adjust(right=0.65)
-        # ax.legend(loc='center left', bbox_to_anchor=(1.02, 0.5), fontsize=7)
-        # plt.show()
+        fig.subplots_adjust(right=0.65)
+        ax.legend(loc='center left', bbox_to_anchor=(1.02, 0.5), fontsize=7)
+        plt.show()
         return fig, ax
 
     def add_point_to_plot(self, point_acronym, ax, fig, frame=0):

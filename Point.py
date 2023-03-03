@@ -1,6 +1,6 @@
 
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 
 class Point():
@@ -39,6 +39,25 @@ class Point():
         xyz = p.xyz + direction * vector.xyz
         exist = p.exist and vector.exist
         return virtualPoint((xyz, exist))
+
+    @staticmethod
+    def plot_points(point_list, ax=None, fig=None, frame=0):
+        '''
+        plot a list of points
+        '''
+        if ax is None or fig is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+
+        x = []
+        y = []
+        z = []
+        for p in point_list:
+            x.append(p.x[frame])
+            y.append(p.y[frame])
+            z.append(p.z[frame])
+        ax.scatter(x, y, z)
+        return ax, fig
 
 class MarkerPoint(Point):
     def __init__(self, data):

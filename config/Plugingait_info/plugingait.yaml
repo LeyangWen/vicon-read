@@ -1,0 +1,13 @@
+joints:
+  mid: ['Pelvis Origin', 'Head Origin', 'Thorax Origin']
+  botL: ['Left Hip Joint Centre', 'Left Knee Joint Centre', 'Left Ankle Joint Centre', 'Left heel', 'Left toe']
+  topL: ['Left Shoulder Joint Centre', 'Left Elbow Joint Centre', 'Left Wrist Joint Centre', 'Left Hand Origin']
+  botR: ['Right Hip Joint Centre', 'Right Knee Joint Centre', 'Right Ankle Joint Centre', 'Right heel', 'Right toe']
+  topR: ['Right Shoulder Joint Centre', 'Right Elbow Joint Centre', 'Right Wrist Joint Centre', 'Right Hand Origin']
+
+parent:
+  mid: [None, 'Thorax Origin', 'Pelvis Origin']
+  botL: ['Pelvis Origin', 'Left Hip Joint Centre', 'Left Knee Joint Centre', 'Left Ankle Joint Centre', 'Left Ankle Joint Centre']
+  topL: ['Thorax Origin', 'Left Shoulder Joint Centre', 'Left Elbow Joint Centre', 'Left Wrist Joint Centre']
+  botR: ['Pelvis Origin', 'Right Hip Joint Centre', 'Right Knee Joint Centre', 'Right Ankle Joint Centre', 'Right Ankle Joint Centre']
+  topR: ['Thorax Origin', 'Right Shoulder Joint Centre', 'Right Elbow Joint Centre', 'Right Wrist Joint Centre']

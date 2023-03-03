@@ -5,27 +5,35 @@ import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 from utility import *
 import Skeleton
-fileName = r'F:\delete\Full Body Plug-in Gait\Gunwoo Cal 03.c3d'
-fileName = r'G:\vicon\test\Full Body Plug-in Gait\Gunwoo Cal 03.c3d'
-fileName = r'C:\Users\Public\Documents\Vicon\data\VEHS_ske\Test\Gunwoo\Test1\Gunwoo movement 02.c3d'
+import yaml
 
-skeleton = Skeleton.PulginGaitSkeleton(fileName)
+
+config_file = r'/config/Gunwoo_test.yaml'
+with open(config_file, 'r') as stream:
+    try:
+        data = yaml.safe_load(stream)
+        c3d_file = data['c3d_file']
+        skeleton_file = data['skeleton_file']
+    except yaml.YAMLError as exc:
+        print(config_file, exc)
+
+skeleton = Skeleton.PulginGaitSkeleton(c3d_file, skeleton_file)
 skeleton.point_labels
 frame = 0
 fig, ax = skeleton.plot_pose_frame(frame)
 
 
 # skeleton.point_labels
-point_acronym = ['LEYE',
-                 'RPIK',
-                 'LPIK',
-                 'HDTP']
-skeleton.add_point_to_plot(point_acronym, ax, fig, frame=frame)
+# point_acronym = ['LEYE',
+#                  'RPIK',
+#                  'LPIK',
+#                  'HDTP']
+# skeleton.add_point_to_plot(point_acronym, ax, fig, frame=frame)
 # point_acronym = 'NKTP'
 # skeleton.add_point_to_plot(point_acronym, ax, fig, frame=frame)
 # point_acronym = 'HDEY'
 # skeleton.add_point_to_plot(point_acronym, ax, fig, frame=frame)
-plt.show()
+# plt.show()
 # a = skeleton.output_3DSSPP_loc(frame_range=[0,10])
 
 

@@ -64,6 +64,7 @@ EyeWidth = vicon.GetSubjectParam(subject_names[0],'EyeWidth')
 
 
 # head centers
+Point.plot_points([RFHD,LFHD])
 
 FHDC = Point.mid_point(RFHD, LFHD)  # FHDC is midpoint of RFHD and LFHD
 BHDC = Point.mid_point(RBHD, LBHD)  # BHDC is midpoint of RBHD and LBHD
