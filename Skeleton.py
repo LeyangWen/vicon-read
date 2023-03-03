@@ -7,13 +7,14 @@ import xml.etree.ElementTree as ET
 from scipy.io import savemat
 import yaml
 
+
 class Skeleton:
     def __init__(self):
         pass
 
 
 class PulginGaitSkeleton(Skeleton):
-    '''A class for plugin gait skeleton'''
+    """A class for plugin gait skeleton"""
     def __init__(self, c3d_file, skeleton_file='config/Plugingait_info/Plugingait.xml'):
         super().__init__()
         self.skeleton_file = skeleton_file
@@ -85,7 +86,7 @@ class PulginGaitSkeleton(Skeleton):
             return None
 
     def get_pose_idx_from_acronym(self, input_name_list, extract_pt='O'):
-        '''extract_pt: O, P, A, L, all'''
+        """extract_pt: O, P, A, L, all"""
         pose_idx = {}
         if type(input_name_list) == str:
             input_name_list = [input_name_list]
@@ -102,7 +103,7 @@ class PulginGaitSkeleton(Skeleton):
         return pose_idx
 
     def get_pose_idx_from_description(self, input_name_list, extract_pt='O'):
-        '''extract_pt: O, all'''
+        """extract_pt: O, all"""
         pose_idx = {}
         if type(input_name_list) == str:
             input_name_list = [input_name_list]

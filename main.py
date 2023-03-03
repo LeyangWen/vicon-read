@@ -9,6 +9,7 @@ import yaml
 
 
 config_file = r'config/Gunwoo_test.yaml'
+
 with open(config_file, 'r') as stream:
     try:
         data = yaml.safe_load(stream)

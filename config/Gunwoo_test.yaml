@@ -3,4 +3,4 @@ Name: Gunwoo test
 Description: Gunwoo test to build custom VEHS skeleton
 
 c3d_files: ['C:\Users\Public\Documents\Vicon\data\VEHS_ske\Test\Gunwoo\Test1\Gunwoo movement 02.c3d']
-skeleton_file: config/Plugingait_info/plugingait.yaml
+skeleton_file: config/Plugingait_info/plugingait_VEHS.yaml

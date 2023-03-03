@@ -1,12 +1,12 @@
 joints:
-  mid: ['Pelvis Origin', 'Thorax Origin', 'Neck bottom', 'Neck top', 'Head top']
+  mid: ['Pelvis Origin', 'Thorax Origin', 'Neck top', 'Head center', 'Head top origin']
   botL: ['Left Hip Joint Centre', 'Left Knee Joint Centre', 'Left Ankle Joint Centre', 'Left heel', 'Left toe']
-  topL: ['Left Shoulder Joint Centre', 'Left Elbow Joint Centre', 'Left Wrist Joint Centre', 'Left Hand Origin', 'Left eye', 'Left pinky origin']
+  topL: ['Left Shoulder Joint Centre', 'Left Elbow Joint Centre', 'Left Wrist Joint Centre', 'Left finger', 'Left eye', 'Left pinky origin']
   botR: ['Right Hip Joint Centre', 'Right Knee Joint Centre', 'Right Ankle Joint Centre', 'Right heel', 'Right toe']
-  topR: ['Right Shoulder Joint Centre', 'Right Elbow Joint Centre', 'Right Wrist Joint Centre', 'Right Hand Origin', 'Right eye', 'Right pinky origin']
+  topR: ['Right Shoulder Joint Centre', 'Right Elbow Joint Centre', 'Right Wrist Joint Centre', 'Right finger', 'Right eye', 'Right pinky origin']
 
 parent:
-  mid: [None, 'Pelvis Origin', 'Thorax Origin', 'Neck bottom', 'Neck top']
+  mid: [None, 'Pelvis Origin', 'Thorax Origin', 'Neck top', 'Head center']
   botL: ['Pelvis Origin', 'Left Hip Joint Centre', 'Left Knee Joint Centre', 'Left Ankle Joint Centre', 'Left Ankle Joint Centre']
   topL: ['Thorax Origin', 'Left Shoulder Joint Centre', 'Left Elbow Joint Centre', 'Left Wrist Joint Centre', 'Head top', 'Left Wrist Joint Centre']
   botR: ['Pelvis Origin', 'Right Hip Joint Centre', 'Right Knee Joint Centre', 'Right Ankle Joint Centre', 'Right Ankle Joint Centre']

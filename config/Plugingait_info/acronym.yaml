@@ -195,6 +195,8 @@ VEHS_marker_acronym:
 VEHS_virtualPt_acronym:
   LEYE: Left eye
   REYE: Right eye
+  RMFO: Right middle finger origin
+  LMFO: Left middle finger origin
   LPKO: Left pinky origin
   RPKO: Right pinky origin
   NKTP: Neck top
@@ -204,4 +206,5 @@ VEHS_virtualPt_acronym:
   RHEC: Right head center
   LHEC: Left head center
   HDCC: Head center
+  HTPO: Head top origin
 
