@@ -21,9 +21,13 @@ with open(config_file, 'r') as stream:
 for c3d_file in c3d_files:
     skeleton = Skeleton.PulginGaitSkeleton(c3d_file, skeleton_file)
     break
-skeleton.point_labels
-frame = 0
-fig, ax = skeleton.plot_pose_frame(frame)
+skeleton.output_3DSSPP_loc(frame_range=[1700,1900,2])
+# skeleton.point_labels
+# frame = 0
+# for frame in range(1700,1900,2):
+#     fig, ax = skeleton.plot_pose_frame(frame)
+#     fig.savefig('frames/{}.png'.format(frame))
+
 
 
 # skeleton.point_labels
@@ -40,22 +44,4 @@ fig, ax = skeleton.plot_pose_frame(frame)
 # a = skeleton.output_3DSSPP_loc(frame_range=[0,10])
 
 
-# reader = c3d.Reader(open(os.path.join(fileDir,fileName), 'rb'))
-# for i, points, analog in reader.read_frames():
-#     print('frame {}: point {}, analog {}'.format(
-#         i, points.shape, analog.shape))
-#     break
-#
-#
-#
-# reader.analog_labels
-#
-#
-# idx = [75,79] # head
-# idx = [75,79] # head
-# joint_axis_pts = points[idx[0]:idx[1]]
-# plot_joint_axis(joint_axis_pts,label = reader.point_labels[idx[0]])
-#
-#
-# # make a list from 39 to 114 with step 4
-# joint_org_idx = list(range(39,114,4))
+

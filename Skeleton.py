@@ -172,7 +172,7 @@ class PulginGaitSkeleton(Skeleton):
         self.points = np.array(points)
         self.analog = np.array(analog)
         self.poses = self.get_poses(self.points, self.pose_idx)
-        self.frames = self.points.shape[0]
+        self.frame_no = self.points.shape[0]
 
     def plot_pose_frame(self, frame=0):
         fig = plt.figure()
@@ -211,7 +211,7 @@ class PulginGaitSkeleton(Skeleton):
         fig.tight_layout()
         fig.subplots_adjust(right=0.65)
         ax.legend(loc='center left', bbox_to_anchor=(1.02, 0.5), fontsize=7)
-        plt.show()
+        # plt.show()
         return fig, ax
 
     def add_point_to_plot(self, point_acronym, ax, fig, frame=0):
@@ -292,77 +292,75 @@ class PulginGaitSkeleton(Skeleton):
         # 109 - 111 R. Lateral Malleolus Skin Surface
         # 112 - 114 R. Ball of Foot Virtual point
         # 115 - 117 R. Metatarsalphalangeal Skin Surface
-        if loc_file is not None:
+        if frame_range is not None:
             start_frame = frame_range[0]
             end_frame = frame_range[1]
+            step = frame_range[2]
         else:
             start_frame = 0
-            end_frame = self.frames
-
-        loc = np.empty((end_frame-start_frame,117))
-        loc[start_frame:end_frame,0:3] = np.nan  # 1 - 3 Top Head Skin Surface
-        loc[start_frame:end_frame,3:6] = np.nan  # 4 - 6 L. Head Skin Surface
-        loc[start_frame:end_frame,6:9] = np.nan  # 7 - 9 R. Head Skin Surface
-        loc[start_frame:end_frame,9:12] = self.get_pose_from_acronym('HEDO', extract_pt='all', output_type='list_last')*2-self.get_pose_from_acronym('HEDP', extract_pt='all', output_type='list_last')  # 10 - 12 Head origin Virtual point
-        loc[start_frame:end_frame,12:15] = self.get_pose_from_acronym('HEDO', extract_pt='all', output_type='list_last')  # 13 - 15 Nasion Skin Surface
-        loc[start_frame:end_frame,15:18] = self.get_pose_from_acronym('HEDA', extract_pt='all', output_type='list_last')  # 16 - 18 Sight end Virtual point
-        loc[start_frame:end_frame,18:21] = self.get_pose_from_acronym('TRXO', extract_pt='all', output_type='list_last')*2-self.get_pose_from_acronym('TRXA', extract_pt='all', output_type='list_last')  # 19 - 21 C7/T1 Joint Center # todo: replace with neck bot (C7/T1)
-        loc[start_frame:end_frame,21:24] = self.get_pose_from_acronym('TRXO', extract_pt='all', output_type='list_last')  # 22 - 24 Sternoclavicular Joint Joint Center
-        loc[start_frame:end_frame,21:24] = self.get_pose_from_acronym('HEDO', extract_pt='all', output_type='list_last')  # 25 - 27 Suprasternale Skin Surface
-        loc[start_frame:end_frame,27:30] = self.get_pose_from_acronym('PELO', extract_pt='all', output_type='list_last')  # 28 - 30 L5/S1 Joint Center
-        loc[start_frame:end_frame,30:33] = np.nan  # 31 - 33 PSIS Joint Center
-        loc[start_frame:end_frame,33:36] = self.get_pose_from_acronym('LSJC', extract_pt='all', output_type='list_last')  # 34 - 36 L. Shoulder Joint Center
-        loc[start_frame:end_frame,36:39] = np.nan  # 37 - 39 L. Acromion Skin Surface
-        loc[start_frame:end_frame,39:42] = self.get_pose_from_acronym('LEJC', extract_pt='all', output_type='list_last')  # 40 - 42 L. Elbow Joint Center
-        loc[start_frame:end_frame,42:45] = np.nan  # 43 - 45 L. Lat. Epicon. of Humer. Skin Surface
-        loc[start_frame:end_frame,45:48] = self.get_pose_from_acronym('LWJC', extract_pt='all', output_type='list_last')  # 46 - 48 L. Wrist Joint Center
-        loc[start_frame:end_frame,48:51] = self.get_pose_from_acronym('LHNO', extract_pt='all', output_type='list_last')  # 49 - 51 L. Grip Center Virtual point
-        loc[start_frame:end_frame,51:54] = self.get_pose_from_acronym('LFIN', extract_pt='all', output_type='list_last')  # 52 - 54 L. Hand Skin Surface
-        loc[start_frame:end_frame,54:57] = self.get_pose_from_acronym('RSJC', extract_pt='all', output_type='list_last')  # 55 - 57 R. Shoulder Joint Center
-        loc[start_frame:end_frame,57:60] = np.nan  # 58 - 60 R. Acromion Skin Surface
-        loc[start_frame:end_frame,60:63] = self.get_pose_from_acronym('REJC', extract_pt='all', output_type='list_last')  # 61 - 63 R. Elbow Joint Center
-        loc[start_frame:end_frame,63:66] = np.nan  # 64 - 66 R. Lat. Epicon. of Humer. Skin Surface
-        loc[start_frame:end_frame,66:69] = self.get_pose_from_acronym('RWJC', extract_pt='all', output_type='list_last')  # 67 - 69 R. Wrist Joint Center
-        loc[start_frame:end_frame,69:72] = self.get_pose_from_acronym('RHNO', extract_pt='all', output_type='list_last')  # 70 - 72 R. Grip Center Virtual point
-        loc[start_frame:end_frame,72:75] = self.get_pose_from_acronym('RFIN', extract_pt='all', output_type='list_last')  # 73 - 75 R. Hand Skin Surface
-        loc[start_frame:end_frame,75:78] = self.get_pose_from_acronym('LHJC', extract_pt='all', output_type='list_last')  # 76 - 78 L. Hip Joint Center
-        loc[start_frame:end_frame,78:81] = self.get_pose_from_acronym('LKJC', extract_pt='all', output_type='list_last')  # 79 - 81 L. Knee Joint Center
-        loc[start_frame:end_frame,81:84] = np.nan  # 82 - 84 L. Lat. Epicon. of Femur Skin Surface
-        loc[start_frame:end_frame,84:87] = self.get_pose_from_acronym('LAJC', extract_pt='all', output_type='list_last')  # 85 - 87 L. Ankle Joint Center
-        loc[start_frame:end_frame,87:90] = np.nan  # 88 - 90 L. Lateral Malleolus Skin Surface
-        loc[start_frame:end_frame,90:93] = self.get_pose_from_acronym('LFOO', extract_pt='all', output_type='list_last')  # 91 - 93 L. Ball of Foot Virtual point
-        loc[start_frame:end_frame,93:96] = np.nan  # 94 - 96 L. Metatarsalphalangeal Skin Surface
-        loc[start_frame:end_frame,96:99] = self.get_pose_from_acronym('RHJC', extract_pt='all', output_type='list_last')  # 97 - 99 R. Hip Joint Center
-        loc[start_frame:end_frame,99:102] = self.get_pose_from_acronym('RKJC', extract_pt='all', output_type='list_last')  # 100 - 102 R. Knee Joint Center
-        loc[start_frame:end_frame,102:105] = np.nan  # 103 - 105 R. Lat. Epicon. of Femur Skin Surface
-        loc[start_frame:end_frame,105:108] = self.get_pose_from_acronym('RAJC', extract_pt='all', output_type='list_last')  # 106 - 108 R. Ankle Joint Center
-        loc[start_frame:end_frame,108:111] = np.nan  # 109 - 111 R. Lateral Malleolus Skin Surface
-        loc[start_frame:end_frame,111:114] = self.get_pose_from_acronym('RFOO', extract_pt='all', output_type='list_last')  # 112 - 114 R. Ball of Foot Virtual point
-        loc[start_frame:end_frame,114:117] = np.nan  # 115 - 117 R. Metatarsalphalangeal Skin Surface
-
+            end_frame = self.frame_no
+            step = 1
+        if True:
+            fill = 0
+            loc = np.empty((self.frame_no, 117))
+            loc[:,0:3] = self.get_pose_from_acronym('HTPO', extract_pt='all', output_type='list_last')  # 1 - 3 Top Head Skin Surface
+            loc[:,3:6] = self.get_pose_from_acronym('LHEC', extract_pt='all', output_type='list_last')  # 4 - 6 L. Head Skin Surface
+            loc[:,6:9] = self.get_pose_from_acronym('RHEC', extract_pt='all', output_type='list_last')  # 7 - 9 R. Head Skin Surface
+            loc[:,9:12] = self.get_pose_from_acronym('HDCC', extract_pt='all', output_type='list_last')  # 10 - 12 Head origin Virtual point
+            loc[:,12:15] = self.get_pose_from_acronym('HDEY', extract_pt='all', output_type='list_last')  # 13 - 15 Nasion Skin Surface
+            loc[:,15:18] = fill  # 16 - 18 Sight end Virtual point
+            loc[:,18:21] = self.get_pose_from_acronym('C7', extract_pt='all', output_type='list_last')  # 19 - 21 C7/T1 Joint Center
+            loc[:,21:24] = self.get_pose_from_acronym('TRXO', extract_pt='all', output_type='list_last')  # 22 - 24 Sternoclavicular Joint Joint Center
+            loc[:,21:24] = self.get_pose_from_acronym('CLAV', extract_pt='all', output_type='list_last')  # 25 - 27 Suprasternale Skin Surface
+            loc[:,27:30] = (self.get_pose_from_acronym('RPSI', extract_pt='all', output_type='list_last')+self.get_pose_from_acronym('LPSI', extract_pt='all', output_type='list_last'))/2  # 28 - 30 L5/S1 Joint Center
+            loc[:,30:33] = fill  # 31 - 33 PSIS Joint Center
+            loc[:,33:36] = self.get_pose_from_acronym('LSJC', extract_pt='all', output_type='list_last')  # 34 - 36 L. Shoulder Joint Center
+            loc[:,36:39] = fill  # 37 - 39 L. Acromion Skin Surface
+            loc[:,39:42] = self.get_pose_from_acronym('LEJC', extract_pt='all', output_type='list_last')  # 40 - 42 L. Elbow Joint Center
+            loc[:,42:45] = fill  # 43 - 45 L. Lat. Epicon. of Humer. Skin Surface
+            loc[:,45:48] = self.get_pose_from_acronym('LWJC', extract_pt='all', output_type='list_last')  # 46 - 48 L. Wrist Joint Center
+            loc[:,48:51] = self.get_pose_from_acronym('LMFO', extract_pt='all', output_type='list_last')  # 49 - 51 L. Grip Center Virtual point
+            loc[:,51:54] = self.get_pose_from_acronym('LFIN', extract_pt='all', output_type='list_last')  # 52 - 54 L. Hand Skin Surface
+            loc[:,54:57] = self.get_pose_from_acronym('RSJC', extract_pt='all', output_type='list_last')  # 55 - 57 R. Shoulder Joint Center
+            loc[:,57:60] = fill  # 58 - 60 R. Acromion Skin Surface
+            loc[:,60:63] = self.get_pose_from_acronym('REJC', extract_pt='all', output_type='list_last')  # 61 - 63 R. Elbow Joint Center
+            loc[:,63:66] = fill  # 64 - 66 R. Lat. Epicon. of Humer. Skin Surface
+            loc[:,66:69] = self.get_pose_from_acronym('RWJC', extract_pt='all', output_type='list_last')  # 67 - 69 R. Wrist Joint Center
+            loc[:,69:72] = self.get_pose_from_acronym('RMFO', extract_pt='all', output_type='list_last')  # 70 - 72 R. Grip Center Virtual point
+            loc[:,72:75] = self.get_pose_from_acronym('RFIN', extract_pt='all', output_type='list_last')  # 73 - 75 R. Hand Skin Surface
+            loc[:,75:78] = self.get_pose_from_acronym('LHJC', extract_pt='all', output_type='list_last')  # 76 - 78 L. Hip Joint Center
+            loc[:,78:81] = self.get_pose_from_acronym('LKJC', extract_pt='all', output_type='list_last')  # 79 - 81 L. Knee Joint Center
+            loc[:,81:84] = fill  # 82 - 84 L. Lat. Epicon. of Femur Skin Surface
+            loc[:,84:87] = self.get_pose_from_acronym('LAJC', extract_pt='all', output_type='list_last')  # 85 - 87 L. Ankle Joint Center
+            loc[:,87:90] = self.get_pose_from_acronym('RANK', extract_pt='all', output_type='list_last')  # 88 - 90 L. Lateral Malleolus Skin Surface
+            loc[:,90:93] = self.get_pose_from_acronym('LFOO', extract_pt='all', output_type='list_last')  # 91 - 93 L. Ball of Foot Virtual point
+            loc[:,93:96] = fill #self.get_pose_from_acronym('LTOE', extract_pt='all', output_type='list_last')  # 94 - 96 L. Metatarsalphalangeal Skin Surface
+            loc[:,96:99] = self.get_pose_from_acronym('RHJC', extract_pt='all', output_type='list_last')  # 97 - 99 R. Hip Joint Center
+            loc[:,99:102] = self.get_pose_from_acronym('RKJC', extract_pt='all', output_type='list_last')  # 100 - 102 R. Knee Joint Center
+            loc[:,102:105] = fill  # 103 - 105 R. Lat. Epicon. of Femur Skin Surface
+            loc[:,105:108] = self.get_pose_from_acronym('RAJC', extract_pt='all', output_type='list_last')  # 106 - 108 R. Ankle Joint Center
+            loc[:,108:111] = self.get_pose_from_acronym('RANK', extract_pt='all', output_type='list_last')  # 109 - 111 R. Lateral Malleolus Skin Surface
+            loc[:,111:114] = self.get_pose_from_acronym('RFOO', extract_pt='all', output_type='list_last')  # 112 - 114 R. Ball of Foot Virtual point
+            loc[:,114:117] = fill #self.get_pose_from_acronym('RTOE', extract_pt='all', output_type='list_last')  # 115 - 117 R. Metatarsalphalangeal Skin Surface
+        loc = loc/1000  # convert to meters
+        # convert np list to space separated string
         if loc_file is None:
-            loc_file = self.c3d_file.replace('.c3d', '.loc')
+            loc_file = self.c3d_file.replace('.c3d', '.txt')
+        # write as txt file
+        with open(loc_file, 'w') as f:
+            f.write('3DSSPPBATCHFILE #\n')
+            f.write('COM #\n')
+            f.write('DES 0 "Task Name" "Analyst Name" "Comments" "Company" #\n')
+            for i,k in enumerate(np.arange(start_frame, end_frame, step)):
+                joint_locations = np.array2string(loc[k], separator=' ', max_line_width=1000000, precision=3, suppress_small=True)[1:-1].replace('0. ', '0 ')
+                # f.write('AUT 1 #\n')
+                f.write('FRM ' + str(i + 1) + ' #\n')
+                f.write(f'ANT 0 3 80 184.4 #\n')
 
-        # write as mat file
-        save_mat = {}
-        for i in range (loc.shape[0]):
-            # frame i
-            save_mat['frame_' + str(i)] = loc[i, :]
-        savemat(loc_file, save_mat)
-
-
-        # write to csv file
-        # np.savetxt(loc_file, loc, delimiter=',')
-        # data = ET.Element('loc')
-        # for i in range(loc.shape[0]):
-        #     frame = ET.SubElement(data, 'frame')
-        #     frame.set('frame', str(i))
-        #     # set as one array
-        #     frame.text = ' '.join([str(x) for x in loc[i, :]])
-        #
-        # b_xml = ET.tostring(data)
-        # with open(loc_file, "wb") as f:
-        #     f.write(b_xml)
+                f.write(f'LOC {joint_locations} #\n')
+                # f.write('HAN 15 -20 85 15 -15 80 #\n')
+                # f.write('EXP #\n')
+            # f.write('AUT 1 #\n')
 
         return loc
 

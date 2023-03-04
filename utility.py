@@ -6,6 +6,11 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 def plot_joint_axis(joint_axis_pts,label=None):
+    # example
+    # idx = [75,79] # head
+    # idx = [75,79] # head
+    # joint_axis_pts = points[idx[0]:idx[1]]
+    # plot_joint_axis(joint_axis_pts,label = reader.point_labels[idx[0]])
     if label:
         print(label)
     # sgmentNameO segment Origin
