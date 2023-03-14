@@ -306,25 +306,25 @@ class PulginGaitSkeleton(Skeleton):
             # loc[:,0:3] = self.get_pose_from_acronym('HDTP', extract_pt='all', output_type='list_last')  # 1 - 3 Top Head Skin Surface
             # loc[:,3:6] = self.get_pose_from_acronym('LHEC', extract_pt='all', output_type='list_last')  # 4 - 6 L. Head Skin Surface
             # loc[:,6:9] = self.get_pose_from_acronym('RHEC', extract_pt='all', output_type='list_last')  # 7 - 9 R. Head Skin Surface
-            loc[:,9:12] = (self.get_pose_from_acronym('HDCC', extract_pt='all', output_type='list_last')*4+self.get_pose_from_acronym('NKTP', extract_pt='all', output_type='list_last')*0)/4  # 10 - 12 Head origin Virtual point
+            loc[:,9:12] = self.get_pose_from_acronym('BHDC', extract_pt='all', output_type='list_last')  # 10 - 12 Head origin Virtual point
             loc[:,12:15] = self.get_pose_from_acronym('HDEY', extract_pt='all', output_type='list_last')  # 13 - 15 Nasion Skin Surface
-            loc[:,15:18] = fill  # 16 - 18 Sight end Virtual point
-            loc[:,18:21] = (self.get_pose_from_acronym('C7', extract_pt='all', output_type='list_last')*4+self.get_pose_from_acronym('T10', extract_pt='all', output_type='list_last')*0)/4  # 19 - 21 C7/T1 Joint Center
-            loc[:,21:24] = (self.get_pose_from_acronym('TRXO', extract_pt='all', output_type='list_last')*2 +self.get_pose_from_acronym('C7', extract_pt='all', output_type='list_last')*2)/4 # 22 - 24 Sternoclavicular Joint Joint Center
-            loc[:,24:27] = self.get_pose_from_acronym('CLAV', extract_pt='all', output_type='list_last')  # 25 - 27 Suprasternale Skin Surface
+            # loc[:,15:18] =  self.get_pose_from_acronym('HDTP', extract_pt='all', output_type='list_last')  # 16 - 18 Sight end Virtual point
+            loc[:,18:21] = (self.get_pose_from_acronym('C7', extract_pt='all', output_type='list_last')*3+self.get_pose_from_acronym('T10', extract_pt='all', output_type='list_last')*1)/4  # 19 - 21 C7/T1 Joint Center
+            loc[:,21:24] = (self.get_pose_from_acronym('TRXO', extract_pt='all', output_type='list_last')*3 +self.get_pose_from_acronym('T10', extract_pt='all', output_type='list_last')*1)/4 # 22 - 24 Sternoclavicular Joint Joint Center
+            # loc[:,24:27] = self.get_pose_from_acronym('CLAV', extract_pt='all', output_type='list_last')  # 25 - 27 Suprasternale Skin Surface
             loc[:,27:30] = (self.get_pose_from_acronym('RPSI', extract_pt='all', output_type='list_last')+self.get_pose_from_acronym('LPSI', extract_pt='all', output_type='list_last')
                              + self.get_pose_from_acronym('RASI', extract_pt='all', output_type='list_last') + self.get_pose_from_acronym('LASI', extract_pt='all', output_type='list_last')
                             )/4  # 28 - 30 L5/S1 Joint Center
             loc[:,30:33] = fill  # 31 - 33 PSIS Joint Center
-            loc[:,33:36] = self.get_pose_from_acronym('LSJC', extract_pt='all', output_type='list_last')  # 34 - 36 L. Shoulder Joint Center
-            loc[:,36:39] = self.get_pose_from_acronym('LSHO', extract_pt='all', output_type='list_last')  # 37 - 39 L. Acromion Skin Surface
+            loc[:,33:36] = self.get_pose_from_acronym('LSHO', extract_pt='all', output_type='list_last')  # 34 - 36 L. Shoulder Joint Center
+            # loc[:,36:39] = self.get_pose_from_acronym('LSHO', extract_pt='all', output_type='list_last')  # 37 - 39 L. Acromion Skin Surface
             loc[:,39:42] = self.get_pose_from_acronym('LEJC', extract_pt='all', output_type='list_last')  # 40 - 42 L. Elbow Joint Center
             loc[:,42:45] = fill  # 43 - 45 L. Lat. Epicon. of Humer. Skin Surface
             loc[:,45:48] = self.get_pose_from_acronym('LWJC', extract_pt='all', output_type='list_last')  # 46 - 48 L. Wrist Joint Center
             loc[:,48:51] = self.get_pose_from_acronym('LMFO', extract_pt='all', output_type='list_last')  # 49 - 51 L. Grip Center Virtual point
             loc[:,51:54] = self.get_pose_from_acronym('LFIN', extract_pt='all', output_type='list_last')  # 52 - 54 L. Hand Skin Surface
-            loc[:,54:57] = self.get_pose_from_acronym('RSJC', extract_pt='all', output_type='list_last')  # 55 - 57 R. Shoulder Joint Center
-            loc[:,57:60] = self.get_pose_from_acronym('RSHO', extract_pt='all', output_type='list_last')  # 58 - 60 R. Acromion Skin Surface
+            loc[:,54:57] = self.get_pose_from_acronym('RSHO', extract_pt='all', output_type='list_last')  # 55 - 57 R. Shoulder Joint Center
+            # loc[:,57:60] = self.get_pose_from_acronym('RSHO', extract_pt='all', output_type='list_last')  # 58 - 60 R. Acromion Skin Surface
             loc[:,60:63] = self.get_pose_from_acronym('REJC', extract_pt='all', output_type='list_last')  # 61 - 63 R. Elbow Joint Center
             loc[:,63:66] = fill  # 64 - 66 R. Lat. Epicon. of Humer. Skin Surface
             loc[:,66:69] = self.get_pose_from_acronym('RWJC', extract_pt='all', output_type='list_last')  # 67 - 69 R. Wrist Joint Center
