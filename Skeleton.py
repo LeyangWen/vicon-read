@@ -16,7 +16,7 @@ class Skeleton:
 
 class PulginGaitSkeleton(Skeleton):
     """A class for plugin gait skeleton"""
-    def __init__(self, c3d_file, skeleton_file='config/Plugingait_info/Plugingait.xml'):
+    def __init__(self, c3d_file, skeleton_file='config/Plugingait_info/plugingait_VEHS.yaml'):
         super().__init__()
         self.skeleton_file = skeleton_file
         self.__load_acronym('config/Plugingait_info/acronym.yaml')
@@ -29,6 +29,22 @@ class PulginGaitSkeleton(Skeleton):
         cdf_file = os.path.join(base_dir, 'Pose3D.cdf')
         self.output_cdf(cdf_file)
 
+    def set_weight_height(self, weight=0, height=0):
+        """
+        set weight in kg and height in m
+        """
+        if weight == 0 or height == 0:
+            self.exp_yaml = self.c3d_file.replace('.c3d', '.yaml')
+            with open (self.exp_yaml, 'r') as stream:
+                try:
+                    data = yaml.safe_load(stream)
+                    self.weight = data['weight']
+                    self.height = data['height']/1000
+                except yaml.YAMLError as exc:
+                    print(self.exp_yaml, exc)
+        else:
+            self.weight = weight
+            self.height = height
 
 
 
@@ -292,6 +308,14 @@ class PulginGaitSkeleton(Skeleton):
         # 109 - 111 R. Lateral Malleolus Skin Surface
         # 112 - 114 R. Ball of Foot Virtual point
         # 115 - 117 R. Metatarsalphalangeal Skin Surface
+        try:
+            weight = self.weight
+        except:
+            weight = 70
+        try:
+            height = self.height
+        except:
+            height = 180
         if frame_range is not None:
             start_frame = frame_range[0]
             end_frame = frame_range[1]
@@ -357,7 +381,7 @@ class PulginGaitSkeleton(Skeleton):
                 joint_locations = np.array2string(loc[k], separator=' ', max_line_width=1000000, precision=3, suppress_small=True)[1:-1].replace('0. ', '0 ')
                 # f.write('AUT 1 #\n')
                 f.write('FRM ' + str(i + 1) + ' #\n')
-                f.write(f'ANT 0 3 1.844 80 #\n')  # male 0, female 1, self-set 3, height  , weight
+                f.write(f'ANT 0 3 {height} {weight} #\n')  # male 0, female 1, self-set 3, height  , weight
 
                 f.write(f'LOC {joint_locations} #\n')
                 # f.write('HAN 15 -20 85 15 -15 80 #\n')

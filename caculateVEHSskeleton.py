@@ -33,8 +33,11 @@ if __name__ == '__main__':
 
     # write to yaml file
     trial_yaml_file = os.path.join(trial_name[0],trial_name[1]+ '.yaml')
-    trial_info = {'trial_dir': trial_name[0], 'trial_name': trial_name[1], 'subject_name': subject_names[0], 'frame_count': frame_count,
-                  'frame_rate': frame_rate,'processed_time': datetime.datetime.now(), 'weight': weight, 'height': height,
+    c3d_file = os.path.join(trial_name[0],trial_name[1]+ '.c3d')
+    trial_info = {'processed_time': datetime.datetime.now(), 'trial_dir': trial_name[0], 'trial_name': trial_name[1], 'description':'',
+                  'c3d_file': c3d_file,
+                  'subject_name': subject_names[0], 'frame_count': frame_count, 'marker_height': marker_height,
+                  'frame_rate': frame_rate, 'weight': weight, 'height': height,
                   'BMI': BMI, 'BMI_class': BMI_class}
     with open(trial_yaml_file, 'w') as f:
         f.write(yaml.dump(trial_info, default_flow_style=False, sort_keys=False))

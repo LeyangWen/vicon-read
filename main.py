@@ -8,20 +8,19 @@ import Skeleton
 import yaml
 
 
-config_file = r'config/Gunwoo_test.yaml'
+config_file = r'F:\wen_storage\test\VEHS_ske\Test\Gunwoo\Test1\Gunwoo movement 02.yaml'
 
 with open(config_file, 'r') as stream:
     try:
         data = yaml.safe_load(stream)
-        c3d_files = data['c3d_files']
-        skeleton_file = data['skeleton_file']
+        c3d_file = data['c3d_file']
     except yaml.YAMLError as exc:
         print(config_file, exc)
 
-for c3d_file in c3d_files:
-    skeleton = Skeleton.PulginGaitSkeleton(c3d_file, skeleton_file)
-    break
-skeleton.output_3DSSPP_loc(frame_range=[0,800,5])
+
+skeleton = Skeleton.PulginGaitSkeleton(c3d_file)
+
+
 # skeleton.point_labels
 # frame = 0
 # for frame in range(0,1000,1):
