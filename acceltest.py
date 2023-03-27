@@ -67,15 +67,23 @@ for i in range(vicon.GetUnlabeledCount()):
     trajectory = trajectory/1000 # convert to meter
     drops = []
     try:
-        start_idx = np.where(trajectory[2] > 1.65)[0][-1]-50
-    except:
+        start_idx = np.where(trajectory[2] > 1.75)[0][-1]-50
         print(i)
+    except:
         continue
-
     end_idx = start_idx + 100
-    start_idxs.append(start_idx)
     drop = trajectory[2][start_idx:end_idx]
     # drop = np.convolve(drop, np.ones((8,)) / 8, mode='valid')
+    # adjust the start index and line up at drop = 0.25
+    for drop_idx, bo in enumerate(drop<0.25):
+        if bo:
+            end_idx = start_idx + drop_idx
+            break
+    start_idx = end_idx - 100
+    end_idx = start_idx + 120
+
+    drop = trajectory[2][start_idx:end_idx]
+    start_idxs.append(start_idx)
     speed = np.diff(drop, n=1)*frame_rate
     speed_CDF = (drop[2:]-drop[:-2])/2*frame_rate
     acceleration = np.diff(speed, n=1)*frame_rate
@@ -83,21 +91,20 @@ for i in range(vicon.GetUnlabeledCount()):
     acceleration_CDF2nd = (drop[2:]-2*drop[1:-1]+drop[:-2])*frame_rate**2
     # smooth with moving average filter of 8 frames front and back
     # acceleration = np.convolve(acceleration, np.ones((8,))/8, mode='valid')
-    if trajectory[2,start_idx] < 1.45 or max(abs(speed)) > 50 or max(acceleration[:40])>5 or min(acceleration[:80])<-13:
-        continue
-    ax1.plot(drop, label='drop {}'.format(i))
-    ax2.plot(speed)
-    ax3.plot(acceleration)
-    ax2CDF.plot(speed_CDF)
-    ax3CDF.plot(acceleration_CDF)
-    ax3CDF2nd.plot(acceleration_CDF2nd)
+    # if trajectory[2,start_idx] < 1.45 or max(abs(speed)) > 50 or max(acceleration[:40])>5 or min(acceleration[:80])<-13:
+    #     continue
+    ax1.plot(drop, label='{}'.format(start_idx))
+    ax2.plot(speed, label='{}'.format(start_idx))
+    ax3.plot(acceleration, label='{}'.format(start_idx))
+    ax2CDF.plot(speed_CDF, label='{}'.format(start_idx))
+    ax3CDF.plot(acceleration_CDF, label='{}'.format(start_idx))
+    ax3CDF2nd.plot(acceleration_CDF2nd, label='{}'.format(start_idx))
     # set figure3 ylimit to -12,3
-    ax2.set_ylim([-8,1])
+    ax2.set_ylim([-6,1])
     ax3.set_ylim([-12,3])
-    ax2CDF.set_ylim([-8,1])
+    ax2CDF.set_ylim([-6,1])
     ax3CDF.set_ylim([-12,3])
     ax3CDF2nd.set_ylim([-12,3])
-    # ax1.legend()
     drop_caculation['position'] = drop
     drop_caculation['speed'] = speed
     drop_caculation['acceleration'] = acceleration
@@ -105,7 +112,18 @@ for i in range(vicon.GetUnlabeledCount()):
     ax3.plot([0, len(acceleration)], [-9.81, -9.81], 'k--', lw=1)
     ax3CDF.plot([0, len(acceleration_CDF)], [-9.81, -9.81], 'k--', lw=1)
     ax3CDF2nd.plot([0, len(acceleration_CDF2nd)], [-9.81, -9.81], 'k--', lw=1)
+    # ax1.legend()
+    # ax2.legend()
+    # ax2CDF.legend()
+    # ax3.legend()
+    # ax3CDF.legend()
+    # ax3CDF2nd.legend()
+
     drop_caculations.append(drop_caculation)
+    # break
+
+# k = 1
+# print((drop[-k] - drop[-k-1]) * frame_rate)
 
 #dump to pickle
 vicon_output = {'start_idxs':start_idxs, 'frame_rate':frame_rate, 'drop_caculations':drop_caculations}
@@ -166,4 +184,45 @@ for ii, end_idx in enumerate(end_idxs):
 axIMU.plot([0, time * 100], [-9.81, -9.81], 'k--', lw=1)
 
 figureIMU.savefig(f'IMU{trial_name[-1]}.png')
+plt.show()
+
+# Constants
+g = 9.81  # Acceleration due to gravity (m/s^2)
+m = (3.5-1.2)/g # Mass of the object (kg)
+c = 0.5  # Drag coefficient
+rho = 1.2  # Density of air (kg/m^3)
+A = 272/1000*125/1000  # Cross-sectional area of the object (m^2)
+
+# Time step and simulation time
+dt = 0.01  # Time step (s)
+tmax = 1  # Simulation time (s)
+t = np.arange(0, tmax, dt)
+
+# Arrays to store position, velocity, and acceleration
+x = np.zeros_like(t)
+v = np.zeros_like(t)
+a = np.zeros_like(t)
+
+drop_start = 40
+# Initial conditions
+x[0:40] = 2  # Initial position (m)
+v[0:40] = 0  # Initial velocity (m/s)
+a[0:40] = 0  # Initial acceleration (m/s^2)
+
+# Euler's method for numerical integration
+for i in range(40, len(t)):
+    # Compute acceleration with air resistance
+    f_air = 0.5 * c * rho * A * v[i - 1] ** 2
+    f = -m * g + f_air
+    a[i] = f/m
+    # Compute velocity and position
+    v[i] = v[i - 1] + a[i] * dt
+    x[i] = x[i - 1] + v[i - 1] * dt
+
+
+# Plot acceleration
+plt.plot(t, a)
+plt.xlabel('Time (s)')
+plt.ylabel('Acceleration (m/s^2)')
+plt.title('Acceleration of a Free Falling Object with Air Resistance')
 plt.show()

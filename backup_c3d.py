@@ -19,6 +19,6 @@ if os.path.isfile(csv_file):
 
 file_name = os.path.join(trial_name[0],trial_name[1]+'.c3d')
 time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-backup_file_name = os.path.join(backup_folder,trial_name[1]+f'__{time_stamp}_{filtered_already}.c3d')
+backup_file_name = os.path.join(backup_folder,trial_name[1]+f'_{time_stamp}_{filtered_already}.c3d')
 os.system(f'copy "{file_name}" "{backup_file_name}"')
 print(f'Backup file created: {backup_file_name}')

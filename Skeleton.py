@@ -16,10 +16,10 @@ class Skeleton:
 
 class PulginGaitSkeleton(Skeleton):
     """A class for plugin gait skeleton"""
-    def __init__(self, c3d_file, skeleton_file='config/Plugingait_info/plugingait_VEHS.yaml'):
+    def __init__(self, c3d_file, skeleton_file='config/Plugingait_info/plugingait_VEHS.yaml', acronym_file='config/Plugingait_info/acronym.yaml'):
         super().__init__()
         self.skeleton_file = skeleton_file
-        self.__load_acronym('config/Plugingait_info/acronym.yaml')
+        self.__load_acronym(acronym_file)
         self.__load_key_joints(skeleton_file)
         self.joint_number = len(self.key_joint_name)
         self.__load_c3d(c3d_file)
