@@ -67,19 +67,22 @@ for i in range(vicon.GetUnlabeledCount()):
     trajectory = trajectory/1000 # convert to meter
     drops = []
     try:
-        start_idx = np.where(trajectory[2] > 1.75)[0][-1]-50
+        start_idx = np.where(trajectory[2] > 2)[0][-1]-50
         print(i)
     except:
         continue
     end_idx = start_idx + 100
     drop = trajectory[2][start_idx:end_idx]
+    if max(drop) > 2.2 or max(drop) < 1.5:
+        continue
     # drop = np.convolve(drop, np.ones((8,)) / 8, mode='valid')
     # adjust the start index and line up at drop = 0.25
-    for drop_idx, bo in enumerate(drop<0.25):
+    for drop_idx, bo in enumerate(drop<0.75):
         if bo:
             end_idx = start_idx + drop_idx
             break
-    start_idx = end_idx - 100
+
+    start_idx = end_idx - 110
     end_idx = start_idx + 120
 
     drop = trajectory[2][start_idx:end_idx]
@@ -100,9 +103,9 @@ for i in range(vicon.GetUnlabeledCount()):
     ax3CDF.plot(acceleration_CDF, label='{}'.format(start_idx))
     ax3CDF2nd.plot(acceleration_CDF2nd, label='{}'.format(start_idx))
     # set figure3 ylimit to -12,3
-    ax2.set_ylim([-6,1])
+    ax2.set_ylim([-8,8])
     ax3.set_ylim([-12,3])
-    ax2CDF.set_ylim([-6,1])
+    ax2CDF.set_ylim([-8,8])
     ax3CDF.set_ylim([-12,3])
     ax3CDF2nd.set_ylim([-12,3])
     drop_caculation['position'] = drop
@@ -137,92 +140,96 @@ figure2CDF.savefig(f'vicon{trial_name[-1]}_speed_CDF.png')
 figure3CDF.savefig(f'vicon{trial_name[-1]}_acceleration_CDF.png')
 figure3CDF2nd.savefig(f'vicon{trial_name[-1]}_acceleration_CDF_2nd.png')
 
-
-IMU_file = r'IMU drop 02.IMU.csv'
-
-# # read csv file
-with open(os.path.join(trial_name[0],IMU_file), 'r') as f:
-    reader = csv.reader(f)
-    data = list(reader)
-    header = data[0]
-    data = data[1:]
-
-t = np.array(data)[:,2].astype(float)
-x = np.array(data)[:,3].astype(float)
-y = np.array(data)[:,4].astype(float)
-z = np.array(data)[:,5].astype(float)
-
-z_threshold = [-2,2]
-end_idxs = []
-last_i = 0
-for i in range(len(z)):
-    if z[i] > z_threshold[1] or z[i] < z_threshold[0]:
-
-        if i - last_i < 2.5:
-            continue
-        end_idxs.append(i)
-        last_i = i
-
-
-figureIMU = plt.figure()
-axIMU = figureIMU.add_subplot(111)
-axIMU.set_title('IMU Acceleration (8 fps)')
-# label
-axIMU.set_xlabel('Vicon Frame (100 fps)')
-axIMU.set_ylabel('Acceleration (m/s^2)')
-time = 12/8
-fps = 8
-for ii, end_idx in enumerate(end_idxs):
-    start_idx = int(end_idx - time*fps)
-    if z[start_idx+8]*9.81-9.81>-4 or z[start_idx+7]*9.81-9.81>-4:
-        # print(z[7]*9.81-9.81)
-        continue
-    x = np.linspace(0, time*100, end_idx-start_idx)
-    axIMU.plot(x, z[start_idx:end_idx] * 9.81 - 9.81)
-    axIMU.set_ylim([-12, 3])
-    print(f'{ii} IMU idx: {start_idx} to {end_idx}')
-axIMU.plot([0, time * 100], [-9.81, -9.81], 'k--', lw=1)
-
-figureIMU.savefig(f'IMU{trial_name[-1]}.png')
 plt.show()
 
-# Constants
-g = 9.81  # Acceleration due to gravity (m/s^2)
-m = (3.5-1.2)/g # Mass of the object (kg)
-c = 0.5  # Drag coefficient
-rho = 1.2  # Density of air (kg/m^3)
-A = 272/1000*125/1000  # Cross-sectional area of the object (m^2)
+# IMU_file = r'IMU drop 02.IMU.csv'
+#
+# # # read csv file
+# with open(os.path.join(trial_name[0],IMU_file), 'r') as f:
+#     reader = csv.reader(f)
+#     data = list(reader)
+#     header = data[0]
+#     data = data[1:]
+#
+# t = np.array(data)[:,2].astype(float)
+# x = np.array(data)[:,3].astype(float)
+# y = np.array(data)[:,4].astype(float)
+# z = np.array(data)[:,5].astype(float)
+#
+# z_threshold = [-2,2]
+# end_idxs = []
+# last_i = 0
+# for i in range(len(z)):
+#     if z[i] > z_threshold[1] or z[i] < z_threshold[0]:
+#
+#         if i - last_i < 2.5:
+#             continue
+#         end_idxs.append(i)
+#         last_i = i
+#
 
-# Time step and simulation time
-dt = 0.01  # Time step (s)
-tmax = 1  # Simulation time (s)
-t = np.arange(0, tmax, dt)
+# figureIMU = plt.figure()
+# axIMU = figureIMU.add_subplot(111)
+# axIMU.set_title('IMU Acceleration (8 fps)')
+# # label
+# axIMU.set_xlabel('Vicon Frame (100 fps)')
+# axIMU.set_ylabel('Acceleration (m/s^2)')
+# time = 12/8
+# fps = 8
+# for ii, end_idx in enumerate(end_idxs):
+#     start_idx = int(end_idx - time*fps)
+#     if z[start_idx+8]*9.81-9.81>-4 or z[start_idx+7]*9.81-9.81>-4:
+#         # print(z[7]*9.81-9.81)
+#         continue
+#     x = np.linspace(0, time*100, end_idx-start_idx)
+#     axIMU.plot(x, z[start_idx:end_idx] * 9.81 - 9.81)
+#     axIMU.set_ylim([-12, 3])
+#     print(f'{ii} IMU idx: {start_idx} to {end_idx}')
+# axIMU.plot([0, time * 100], [-9.81, -9.81], 'k--', lw=1)
+#
+# figureIMU.savefig(f'IMU{trial_name[-1]}.png')
+# plt.show()
+#
+# # Constants
+# g = 9.81  # Acceleration due to gravity (m/s^2)
+# m = (3.5-1.2)/g # Mass of the object (kg)
+# c = 0.5  # Drag coefficient
+# rho = 1.2  # Density of air (kg/m^3)
+# A = 272/1000*125/1000  # Cross-sectional area of the object (m^2)
+#
+# # Time step and simulation time
+# dt = 0.01  # Time step (s)
+# tmax = 1  # Simulation time (s)
+# t = np.arange(0, tmax, dt)
+#
+# # Arrays to store position, velocity, and acceleration
+# x = np.zeros_like(t)
+# v = np.zeros_like(t)
+# a = np.zeros_like(t)
+#
+# drop_start = 40
+# # Initial conditions
+# x[0:40] = 2  # Initial position (m)
+# v[0:40] = 0  # Initial velocity (m/s)
+# a[0:40] = 0  # Initial acceleration (m/s^2)
+#
+# # Euler's method for numerical integration
+# for i in range(40, len(t)):
+#     # Compute acceleration with air resistance
+#     f_air = 0.5 * c * rho * A * v[i - 1] ** 2
+#     f = -m * g + f_air
+#     a[i] = f/m
+#     # Compute velocity and position
+#     v[i] = v[i - 1] + a[i] * dt
+#     x[i] = x[i - 1] + v[i - 1] * dt
+#
+#
+# # Plot acceleration
+# plt.plot(t, a)
+# plt.xlabel('Time (s)')
+# plt.ylabel('Acceleration (m/s^2)')
+# plt.title('Acceleration of a Free Falling Object with Air Resistance')
+# plt.show()
 
-# Arrays to store position, velocity, and acceleration
-x = np.zeros_like(t)
-v = np.zeros_like(t)
-a = np.zeros_like(t)
 
-drop_start = 40
-# Initial conditions
-x[0:40] = 2  # Initial position (m)
-v[0:40] = 0  # Initial velocity (m/s)
-a[0:40] = 0  # Initial acceleration (m/s^2)
-
-# Euler's method for numerical integration
-for i in range(40, len(t)):
-    # Compute acceleration with air resistance
-    f_air = 0.5 * c * rho * A * v[i - 1] ** 2
-    f = -m * g + f_air
-    a[i] = f/m
-    # Compute velocity and position
-    v[i] = v[i - 1] + a[i] * dt
-    x[i] = x[i - 1] + v[i - 1] * dt
-
-
-# Plot acceleration
-plt.plot(t, a)
-plt.xlabel('Time (s)')
-plt.ylabel('Acceleration (m/s^2)')
-plt.title('Acceleration of a Free Falling Object with Air Resistance')
-plt.show()
+length = 1.287 - 0.009
