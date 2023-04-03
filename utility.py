@@ -58,3 +58,11 @@ def BMI_classUS(bmi):
 def BMI_caculate(weight, height):
     bmi = weight / (height / 100) ** 2
     return bmi
+
+
+def dist(p1, p2):
+    return np.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2 + (p1[2] - p2[2]) ** 2)
+
+
+def dist_array(p1s, p2s):
+    return np.sqrt((p1s[:, 0] - p2s[:, 0]) ** 2 + (p1s[:, 1] - p2s[:, 1]) ** 2 + (p1s[:, 2] - p2s[:, 2]) ** 2)

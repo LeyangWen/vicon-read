@@ -17,8 +17,8 @@ if __name__ == '__main__':
 
     # use argparse to specify start, end, and step
     parser = argparse.ArgumentParser()
-    parser.add_argument('-s', '--start', type=int, default=0)
-    parser.add_argument('-e', '--end', type=int, default=1000)
+    parser.add_argument('-s', '--start', type=int, default=100)
+    parser.add_argument('-e', '--end', type=int, default=1700)
     parser.add_argument('-st', '--step', type=int, default=5)
     # optional config files
     parser.add_argument('--skeleton_file', type=str, default=r'C:\Users\Public\Documents\Vicon\vicon_coding_projects\vicon-read\config/Plugingait_info/plugingait_VEHS.yaml')
