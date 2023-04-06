@@ -7,14 +7,14 @@ class ForceTorqueTransducer:
         pass
 
 class ATIMini45(ForceTorqueTransducer):
-    def __init__(self, gain_voltage, zero_frame, ft_cal_file=r'C:\Users\Public\Documents\Vicon\vicon_coding_projects\vicon-read\tools\DAQ FT Manual Calculations\FT26836.cal'):
+    def __init__(self, gain_voltage, zero_frame=(5,20), ft_cal_file=r'C:\Users\Public\Documents\Vicon\vicon_coding_projects\vicon-read\tools\DAQ FT Manual Calculations\FT26836.cal'):
         super().__init__()
         self.ft_cal = self.load_ft_cal(ft_cal_file)
         self.tool_transform = self.load_tool_transform(ft_cal_file)
         self.transformed_ft_cal = self.get_transformed_ft_cal()
         self.zero_frame = zero_frame
         self.gain_voltage = gain_voltage
-        self.bias_voltage = gain_voltage[zero_frame].reshape(1,-1)
+        self.bias_voltage = np.mean(gain_voltage[zero_frame[0]:zero_frame[1]], axis=0).reshape(1,-1)
         self.force_torque_values = self.convert_to_ft()
         self.__assign_values()
 
