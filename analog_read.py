@@ -41,8 +41,8 @@ subject_info = vicon.GetSubjectInfo()
 print(vicon.GetDeviceIDs())
 # device_ID = 2 # 08
 # device_ID = 3
-device_ID = 6 # 14
-# device_ID = 7 # 09
+# device_ID = 6 # 14 17 19*
+device_ID = 7 # 09* 18 20
 print(vicon.GetDeviceDetails(device_ID))
 trail_info = {'trial_name': trial_name, 'frame_count': frame_count, 'frame_rate': frame_rate,
               'forceplate name': vicon.GetDeviceDetails(device_ID)[0]}
