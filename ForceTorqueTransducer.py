@@ -4,19 +4,79 @@ import xml.etree.ElementTree as ET
 
 class ForceTorqueTransducer:
     def __init__(self):
+        self.force_torque_values = None
         pass
 
+    def assign_values(self):
+        self.force = self.force_torque_values[:,:3]
+        self.torque = self.force_torque_values[:,3:]
+        self.Fx = self.force[:,0]
+        self.Fy = self.force[:,1]
+        self.Fz = self.force[:,2]
+        self.Tx = self.torque[:,0]
+        self.Ty = self.torque[:,1]
+        self.Tz = self.torque[:,2]
+        self.channel_names = ['Fx', 'Fy', 'Fz', 'Tx', 'Ty', 'Tz']
+        self.units = ['N', 'N', 'N', 'Nm', 'Nm', 'Nm']
+
+    def load_nexus_device_detail(self, ViconNexusObject, device_ID):
+        self.device_name, device_type, self.fps, _, ForcePlateObject,_ = ViconNexusObject.GetDeviceDetails(device_ID)
+        if device_type == 'ForcePlate':
+            self.translation = ForcePlateObject.WorldT  # list in mm [x,y,z]
+            self.rotation = ForcePlateObject.WorldR  # list in rad length 9
+            if self.translation[0] < 0:
+                self.side = 'Right'
+            else:
+                self.side = 'Left'
+        else:
+            self.side = ''
+        return self.side
+
+class AMTIForcePlate(ForceTorqueTransducer):
+    def __init__(self):
+        super().__init__()
+        self.device_type = 'ForcePlate'
+
+    def load_nexus_channels(self, ViconNexusObject, device_ID):
+        self.Fx = np.array(ViconNexusObject.GetDeviceChannel(device_ID, 1, 1)[0])
+        self.Fy = np.array(ViconNexusObject.GetDeviceChannel(device_ID, 1, 2)[0])
+        self.Fz = np.array(ViconNexusObject.GetDeviceChannel(device_ID, 1, 3)[0])
+        self.Tx = np.array(ViconNexusObject.GetDeviceChannel(device_ID, 2, 1)[0]) / 1000 # convert Nmm to Nm
+        self.Ty = np.array(ViconNexusObject.GetDeviceChannel(device_ID, 2, 2)[0]) / 1000
+        self.Tz = np.array(ViconNexusObject.GetDeviceChannel(device_ID, 2, 3)[0]) / 1000
+        self.fps = ViconNexusObject.GetDeviceChannel(device_ID, 1, 3)[2]
+        self.force_torque_values = np.array([self.Fx, self.Fy, self.Fz, self.Tx, self.Ty, self.Tz]).T
+        self.assign_values()
+
+    def assign_values(self):
+        self.force = self.force_torque_values[:,:3]
+        self.torque = self.force_torque_values[:,3:]
+        self.channel_names = ['Fx', 'Fy', 'Fz', 'Tx', 'Ty', 'Tz']
+        self.units = ['N', 'N', 'N', 'Nm', 'Nm', 'Nm']
+
+
 class ATIMini45(ForceTorqueTransducer):
-    def __init__(self, gain_voltage, zero_frame=(5,20), ft_cal_file=r'C:\Users\Public\Documents\Vicon\vicon_coding_projects\vicon-read\tools\DAQ FT Manual Calculations\FT26836.cal'):
+    def __init__(self, zero_frame=(5,20), ft_cal_file=r'C:\Users\Public\Documents\Vicon\vicon_coding_projects\vicon-read\tools\DAQ FT Manual Calculations\FT26836.cal'):
         super().__init__()
         self.ft_cal = self.load_ft_cal(ft_cal_file)
-        self.tool_transform = self.load_tool_transform(ft_cal_file)
-        self.transformed_ft_cal = self.get_transformed_ft_cal()
         self.zero_frame = zero_frame
+        self.device_type = 'ForceTransducer'
+
+    def load_nexus_channels(self, ViconNexusObject, device_ID):
+        gain_voltage = []
+        for i in range(1, 8):
+            gain_voltage.append(ViconNexusObject.GetDeviceChannel(device_ID, 1, i)[0])
+        self.gain_voltage = np.array(gain_voltage).T
+        self.fps = ViconNexusObject.GetDeviceChannel(device_ID, 1, 1)[2]
+        self.load_voltage(self.gain_voltage)
+
+    def load_voltage(self, gain_voltage):
+        self.tool_transform = self.assign_tool_transform()
+        self.transformed_ft_cal = self.get_transformed_ft_cal()
         self.gain_voltage = gain_voltage
-        self.bias_voltage = np.mean(gain_voltage[zero_frame[0]:zero_frame[1]], axis=0).reshape(1,-1)
+        self.bias_voltage = np.mean(gain_voltage[self.zero_frame[0]:self.zero_frame[1]], axis=0).reshape(1,-1)
         self.force_torque_values = self.convert_to_ft()
-        self.__assign_values()
+        self.assign_values()
 
     @staticmethod
     def load_ft_cal(ft_cal_file):
@@ -34,19 +94,9 @@ class ATIMini45(ForceTorqueTransducer):
         return ft_cal
 
     @staticmethod
-    def load_tool_transform(ft_cal_file):
-        # Parse the XML file
-        tree = ET.parse(ft_cal_file)
-        root = tree.getroot()
-        # Extract the user axis values
-        user_axes = root.findall(".//BasicTransform")
-        axis_values = []
-        for axis in user_axes:
-            tool_transform = [axis.get('Dx'), axis.get('Dy'), axis.get('Dz'), axis.get('Rx'), axis.get('Ry'), axis.get('Rz')]
-            tool_transform = list(map(float, tool_transform))
-            tool_transform = np.array(tool_transform)
-            return tool_transform
-        raise ValueError(f'No tool transform found in calibration file {ft_cal_file}')
+    def assign_tool_transform(custom_transform=np.array([0, 0, 0, 0, 0, 0])):
+        # this is how user want to rotate/translate the axis, not the basic transform in the calibration file
+        return custom_transform
 
     def convert_to_ft(self):
         adjusted_voltages = self.gain_voltage - self.bias_voltage # Subtract the reference values from the voltage readings
@@ -92,16 +142,6 @@ class ATIMini45(ForceTorqueTransducer):
         # print(translation_matrix)
         # print(transformed_ft_cal)
         return transformed_ft_cal
-
-    def __assign_values(self):
-        self.force = self.force_torque_values[:,:3]
-        self.torque = self.force_torque_values[:,3:]
-        self.Fx = self.force[:,0]
-        self.Fy = self.force[:,1]
-        self.Fz = self.force[:,2]
-        self.Tx = self.torque[:,0]
-        self.Ty = self.torque[:,1]
-        self.Tz = self.torque[:,2]
 
     def temp_compensation(self):
         raise NotImplementedError('Temperature compensation not implemented because temperature slops are not in the calibration file')

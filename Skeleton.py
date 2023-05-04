@@ -271,6 +271,7 @@ class PulginGaitSkeleton(Skeleton):
         # cdf.attrs['CaptureDate'] = os.path.basename(date)
         # cdf.attrs['KeypointNames'] = kp_names
         cdf.close()
+
     def output_3DSSPP_loc(self, frame_range=None,loc_file=None):
         # 3DSSPP format:
         #LOC File filename.loc

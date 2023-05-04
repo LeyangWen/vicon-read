@@ -58,7 +58,8 @@ gain_voltage = []
 for i in range(1,8):
     gain_voltage.append(vicon.GetDeviceChannel(4, 1, i)[0])
 gain_voltage = np.array(gain_voltage).T
-transducer = ATIMini45(gain_voltage)
+transducer = ATIMini45()
+transducer.load_voltage(gain_voltage)
 # transducer.conversion_math_test()
 
 if forceplate_Fz.shape[0] == 0:
