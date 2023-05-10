@@ -155,9 +155,10 @@ class FLIR_Camera(Camera):
 if __name__ == '__main__':
     base_dir_name = 'Z:\project 2d\skeleton template'
     activity_no = 1
-    frame_no = 600
+    frame_no = 100
     activity_name = f'Activity {activity_no:02d}'
     basename = os.path.join(base_dir_name, activity_name)
+    output_dir = 'output'
     c3d_filename = basename + '.c3d'
     xcp_filename = basename + '.xcp'
     csv_filename = basename + '.trajectory.csv'
@@ -177,5 +178,7 @@ if __name__ == '__main__':
         points_2d = camera.distort(points_2d)
         # points_2d = camera.undistort(points_2d)
         frame = camera.draw_2d(frame, points_2d, color=(0, 255, 0))
-        cv2.imshow('frame', frame)
-        cv2.waitKey(0)
+        # cv2.imshow('frame', frame)
+        # cv2.waitKey(0)
+        output_file = os.path.join(output_dir, f'{activity_name}.{camera.DEVICEID}.{time}.frame{frame_no:06d}.jpg')
+        cv2.imwrite(output_file, frame)
