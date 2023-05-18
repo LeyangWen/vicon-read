@@ -70,7 +70,6 @@ class Camera():
         return P
 
     def draw_2d(self, image, points_2d, color=(0, 0, 255)):
-        print(points_2d)
         for point_2d in points_2d:
             cv2.circle(image, (int(point_2d[0]), int(point_2d[1])), 3, color, -1)
         return image
@@ -152,33 +151,42 @@ class FLIR_Camera(Camera):
         points_2d = points_2d.T
         return points_2d
 
+
 if __name__ == '__main__':
-    base_dir_name = 'Z:\project 2d\skeleton template'
+    base_dir_name = r'C:\Users\Public\Documents\Vicon\data\VEHS_ske\Round3\Leyang Wen\Subject 3-1'
     activity_no = 1
-    frame_no = 100
+    frames = np.linspace(0, 6000, int(6000/5+1), dtype=int)
+    time = '20230427162751'
     activity_name = f'Activity {activity_no:02d}'
     basename = os.path.join(base_dir_name, activity_name)
-    output_dir = 'output'
+    output_dir = 'output/frames'
     c3d_filename = basename + '.c3d'
     xcp_filename = basename + '.xcp'
     csv_filename = basename + '.trajectory.csv'
     df = load_csv(csv_filename)
-    points_3d = df.iloc[frame_no, 2:].values.reshape(-1, 3) / 1000
-    time = '20230407161015'
+
     cameras = batch_load_from_xcp(xcp_filename)
     camera = cameras[1]
-    for camera in cameras:
+    for cam_idx, camera in enumerate(cameras):
+        if cam_idx == 2:
+            continue
         video_filename = f'{basename}.{camera.DEVICEID}.{time}.avi'
         # get first frame of video
-        cap = cv2.VideoCapture(video_filename)
-        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no-1)
-        ret, frame = cap.read()
-        points_2d = camera.project(points_3d)
-        # frame = camera.draw_2d(frame, points_2d)
-        points_2d = camera.distort(points_2d)
-        # points_2d = camera.undistort(points_2d)
-        frame = camera.draw_2d(frame, points_2d, color=(0, 255, 0))
-        # cv2.imshow('frame', frame)
-        # cv2.waitKey(0)
-        output_file = os.path.join(output_dir, f'{activity_name}.{camera.DEVICEID}.{time}.frame{frame_no:06d}.jpg')
-        cv2.imwrite(output_file, frame)
+        for frame_no in frames:
+            print(f'Processing frame {frame_no}/{frames[-1]} of {activity_name}.{camera.DEVICEID}.{time}.avi', end='\r')
+            points_3d = df.iloc[frame_no, 2:].values.reshape(-1, 3) / 1000
+            cap = cv2.VideoCapture(video_filename)
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_no-1)
+            ret, frame = cap.read()
+            points_2d = camera.project(points_3d)
+            # frame = camera.draw_2d(frame, points_2d)
+            points_2d = camera.distort(points_2d)
+            # points_2d = camera.undistort(points_2d)
+            frame = camera.draw_2d(frame, points_2d, color=(0, 255, 0))
+            # cv2.imshow('frame', frame)
+            # cv2.waitKey(0)
+            dir_name = os.path.join(output_dir, camera.DEVICEID)
+            if not os.path.exists(dir_name):
+                os.makedirs(dir_name)
+            output_file = os.path.join(dir_name, f'{activity_name}.{camera.DEVICEID}.{time}.frame{frame_no:06d}.jpg')
+            cv2.imwrite(output_file, frame)
