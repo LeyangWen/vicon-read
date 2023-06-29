@@ -122,6 +122,7 @@ class PulginGaitSkeleton(Skeleton):
                 if joint in self.key_joint_acronym:
                     pose_idx[joint] = self.point_labels.index(joint_wspace)
             elif extract_pt == 'all':
+                print(joint)
                 if joint in self.point_labels:
                     pose_idx[joint] = self.point_labels.index(joint_wspace)
         return pose_idx
@@ -157,10 +158,12 @@ class PulginGaitSkeleton(Skeleton):
             for joint in pose_idx:
                 poses.append(input_data[:, pose_idx[joint]])
         elif output_type == 'list_last':
+            print(pose_idx)
             for joint in pose_idx:
                 poses = input_data[:, pose_idx[joint],:3]
         else:
             raise ValueError('output_type must be dict, list or list_last')
+            poses = None
         return poses
 
     def get_pose_from_description(self, input_name_list, extract_pt='all'):
@@ -173,8 +176,11 @@ class PulginGaitSkeleton(Skeleton):
 
     def __load_c3d(self, c3d_file):
         reader = c3d.Reader(open(c3d_file, 'rb'))
-        self.analog_labels = reader.analog_labels
-        self.analog_labels = [label.strip() for label in self.analog_labels]  # strip whitespace from analog labels
+        try:
+            self.analog_labels = reader.analog_labels
+            self.analog_labels = [label.strip() for label in self.analog_labels]  # strip whitespace from analog labels
+        except AttributeError:
+            self.analog_labels = None
         self.point_labels = reader.point_labels
         self.point_labels = [label.strip() for label in self.point_labels]  # strip whitespace from point labels
         self.pose_idx = self.get_pose_idx_from_acronym(self.point_labels)
@@ -265,6 +271,7 @@ class PulginGaitSkeleton(Skeleton):
         # cdf.attrs['CaptureDate'] = os.path.basename(date)
         # cdf.attrs['KeypointNames'] = kp_names
         cdf.close()
+
     def output_3DSSPP_loc(self, frame_range=None,loc_file=None):
         # 3DSSPP format:
         #LOC File filename.loc
@@ -330,7 +337,7 @@ class PulginGaitSkeleton(Skeleton):
             # loc[:,0:3] = self.get_pose_from_acronym('HDTP', extract_pt='all', output_type='list_last')  # 1 - 3 Top Head Skin Surface
             # loc[:,3:6] = self.get_pose_from_acronym('LHEC', extract_pt='all', output_type='list_last')  # 4 - 6 L. Head Skin Surface
             # loc[:,6:9] = self.get_pose_from_acronym('RHEC', extract_pt='all', output_type='list_last')  # 7 - 9 R. Head Skin Surface
-            loc[:,9:12] = self.get_pose_from_acronym('BHDC', extract_pt='all', output_type='list_last')  # 10 - 12 Head origin Virtual point
+            loc[:,9:12] = self.get_pose_from_acronym('BHEC', extract_pt='all', output_type='list_last')  # 10 - 12 Head origin Virtual point
             loc[:,12:15] = self.get_pose_from_acronym('HDEY', extract_pt='all', output_type='list_last')  # 13 - 15 Nasion Skin Surface
             # loc[:,15:18] =  self.get_pose_from_acronym('HDTP', extract_pt='all', output_type='list_last')  # 16 - 18 Sight end Virtual point
             loc[:,18:21] = (self.get_pose_from_acronym('C7', extract_pt='all', output_type='list_last')*3+self.get_pose_from_acronym('T10', extract_pt='all', output_type='list_last')*1)/4  # 19 - 21 C7/T1 Joint Center

@@ -1,0 +1,100 @@
+Head_acronym:
+  LEAR: Left Ear
+  REAR: Right Ear
+  MDFH: Middle Forehead
+  HDTP: Head top
+
+Thorax_acronym:
+  C7: Back of neck
+  T8: Upper back
+  XP: Xiphoid process
+  SS: Suprasternal notch
+
+Pelvis_acronym:
+  LASIS: Left Anterior Superior Iliac Spine
+  RASIS: Right Anterior Superior Iliac Spine
+  LPSIS: Left Posterior Superior Iliac Spine
+  RPSIS: Right Posterior Superior Iliac Spine
+
+Arm_acronym:
+  LAP: Left Acromion Process
+  RAP: Right Acromion Process
+  LME: Left Medial Humeral Epicondyle
+  RME: Right Medial Humeral Epicondyle
+  LLE: Left Lateral Humeral Epicondyle
+  RLE: Right Lateral Humeral Epicondyle
+  LRS: Left Radial Styloid Process
+  RRS: Right Radial Styloid Process
+  LUS: Left Ulnar Styloid Process
+  RUS: Right Ulnar Styloid Process
+  LMCP2: Left 2nd Metacarpal Phalangeal Joint
+  RMCP2: Right 2nd Metacarpal Phalangeal Joint
+  LMCP5: Left 5th Metacarpal Phalangeal Joint
+  RMCP5: Right 5th Metacarpal Phalangeal Joint
+
+Leg_acronym:
+  LGT: Left Greater Trochanter
+  RGT: Right Greater Trochanter
+  LIC: Left Iliac Crest Peak
+  RIC: Right Iliac Crest Peak
+  LMFC: Left Medial Femoral Condyle
+  RMFC: Right Medial Femoral Condyle
+  LLFC: Left Lateral Femoral Condyle
+  RLFC: Right Lateral Femoral Condyle
+  LMTC: Left Medial Tibial Condyle
+  RMTC: Right Medial Tibial Condyle
+  LLTC: Left Lateral Tibial Condyle
+  RLTC: Right Lateral Tibial Condyle
+  LMM: Left Malleolus Medial
+  RMM: Right Malleolus Medial
+  LLM: Left Malleolus Lateral
+  RLM: Right Malleolus Lateral
+
+Optional_acronym:
+  NKTL: Neck Top Left
+  NKTR: Neck Top Right
+  NKBL: Neck Bottom Left
+  NKBR: Neck Bottom Right
+  CSTL: Chest Top Left
+  CSTR: Chest Top Right
+  CSBL: Chest Bottom Left
+  CSBR: Chest Bottom Right
+  BKTL: Back Top Left
+  BKTR: Back Top Right
+  BKBL: Back Bottom Left
+  BKBR: Back Bottom Right
+  LHTL: Left Humerus Top Left
+  LHTR: Left Humerus Top Right
+  LHBL: Left Humerus Bottom Left
+  LHBR: Left Humerus Bottom Right
+  RHTL: Right Humerus Top Left
+  RHTR: Right Humerus Top Right
+  RHBL: Right Humerus Bottom Left
+  RHBR: Right Humerus Bottom Right
+  LFTL: Left Forearm Top Left
+  LFTR: Left Forearm Top Right
+  LFBL: Left Forearm Bottom Left
+  LFBR: Left Forearm Bottom Right
+  RFTL: Right Forearm Top Left
+  RFTR: Right Forearm Top Right
+  RFBL: Right Forearm Bottom Left
+  RFBR: Right Forearm Bottom Right
+  LTTL: Left Thigh Top Left
+  LTTR: Left Thigh Top Right
+  LTBL: Left Thigh Bottom Left
+  LTBR: Left Thigh Bottom Right
+  RTTL: Right Thigh Top Left
+  RTTR: Right Thigh Top Right
+  RTBL: Right Thigh Bottom Left
+  RTBR: Right Thigh Bottom Right
+  LSTL: Left Shank Top Left
+  LSTR: Left Shank Top Right
+  LSBL: Left Shank Bottom Left
+  LSBR: Left Shank Bottom Right
+  RSTL: Right Shank Top Left
+  RSTR: Right Shank Top Right
+  RSBL: Right Shank Bottom Left
+  RSBR: Right Shank Bottom Right
+
+
+#LEAR,REAR,MDFH,HDTP,C7,T8,XP,STRN,SS,LASIS,RASIS,LPSIS,RPSIS,LAP,RAP,LME,RME,LLE,RLE,LRS,RRS,LUS,RUS,LMCP2,RMCP2,LMCP5,RMCP5,LGT,RGT,LIC,RIC,LMFC,RMFC,LLFC,RLFC,LMTC,RMTC,LLTC,RLTC,LMM,RMM,LLM,RLM

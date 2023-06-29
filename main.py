@@ -46,5 +46,12 @@ skeleton = Skeleton.PulginGaitSkeleton(c3d_file)
 # plt.show()
 # a = skeleton.output_3DSSPP_loc(frame_range=[0,10])
 
+bone = 'S'
+for LR in ['L','R']:
+    for pos in ['TL','TR','BL','BR']:
+        point_acronym = LR + bone + pos
+        print(point_acronym, end=', ')
+    print()
+
 
 

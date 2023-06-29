@@ -93,19 +93,24 @@ if __name__ == '__main__':
 
     # CALCULATIONS
     # head centers
-    FHDC = Point.mid_point(RFHD, LFHD)  # FHDC is midpoint of RFHD and LFHD
-    BHDC = Point.mid_point(RBHD, LBHD)  # BHDC is midpoint of RBHD and LBHD
+    FHEC = Point.mid_point(RFHD, LFHD)  # FHDC is midpoint of RFHD and LFHD
+    BHEC = Point.mid_point(RBHD, LBHD)  # BHDC is midpoint of RBHD and LBHD
     RHDC = Point.mid_point(RFHD, RBHD)  # RHDC is midpoint of RFHD and RBHD
     LHDC = Point.mid_point(LFHD, LBHD)  # LHDC is midpoint of LFHD and LBHD
-    HDCC = Point.mid_point(FHDC, BHDC)  # HDCC is midpoint of all four head markers
+    HDCC = Point.mid_point(FHEC, BHEC)  # HDCC is midpoint of all four head markers
 
     HDCC_HDTP = Point.vector(HDCC, HDTP, normalize=marker_height)
     HTPO = Point.translate_point(HDTP, HDCC_HDTP, -1)  # HTPC is HDTP moving downwards of marker height
 
     # eyes
     LFHD_RFHD = Point.vector(LFHD, RFHD, normalize=EyeWidth/2)
-    LEYE = Point.translate_point(HDEY, LFHD_RFHD, -1)  # left eye is HEEY moving left of eye width/2 in the direction of RFHD-->LFHD
-    REYE = Point.translate_point(HDEY, LFHD_RFHD, 1)  # right eye is HEEY moving right of eye width/2 in the direction of RFHD-->LFHD
+    try:
+        LEYE = Point.translate_point(HDEY, LFHD_RFHD, -1)  # left eye is HEEY moving left of eye width/2 in the direction of RFHD-->LFHD
+        REYE = Point.translate_point(HDEY, LFHD_RFHD, 1)  # right eye is HEEY moving right of eye width/2 in the direction of RFHD-->LFHD
+    except:
+        LEYE = LFHD
+        REYE = RFHD
+        HDEY = Point.mid_point(LEYE, REYE)
 
     # neck
     NKTP = Point.mid_point(LNKT, RNKT) # neck top is midpoint of LNKT and RNKT
@@ -130,8 +135,8 @@ if __name__ == '__main__':
     vicon.SetModelOutput(subject_names[0], 'RMFO', RMFO.xyz, RMFO.exist)
     vicon.SetModelOutput(subject_names[0], 'NKTP', NKTP.xyz, NKTP.exist)
     # vicon.SetModelOutput(subject_names[0], 'NKBT', NKBT.xyz, NKBT.exist)
-    vicon.SetModelOutput(subject_names[0], 'FHEC', FHDC.xyz, FHDC.exist)
-    vicon.SetModelOutput(subject_names[0], 'BHEC', BHDC.xyz, BHDC.exist)
+    vicon.SetModelOutput(subject_names[0], 'FHEC', FHEC.xyz, FHEC.exist)
+    vicon.SetModelOutput(subject_names[0], 'BHEC', BHEC.xyz, BHEC.exist)
     vicon.SetModelOutput(subject_names[0], 'RHEC', RHDC.xyz, RHDC.exist)
     vicon.SetModelOutput(subject_names[0], 'LHEC', LHDC.xyz, LHDC.exist)
     vicon.SetModelOutput(subject_names[0], 'HDCC', HDCC.xyz, HDCC.exist)
