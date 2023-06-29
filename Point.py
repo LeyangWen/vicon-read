@@ -82,6 +82,7 @@ class Point():
         plt.show()
         return ax, fig
 
+
 class MarkerPoint(Point):
     def __init__(self, data):
         super().__init__()
@@ -109,3 +110,19 @@ class virtualPoint(Point):
 
     def output_format(self):
         return (self.xyz, self.exist)
+
+
+class Plane():
+    def __init__(self):
+        self.id = str(np.random.randint(0, 100000000))
+        self.is_empty = True
+
+    def set_by_pts(self, pt1, pt2, pt3):
+        self.pt1 = pt1
+        self.pt2 = pt2
+        self.pt3 = pt3
+        self.is_empty = False
+
+    def find_orthogonal_vector(self, direction=1):
+        self.vector = Point.orthogonal_vector(self.pt1, self.pt2, self.pt3, normalize=1)
+        return self.vector
