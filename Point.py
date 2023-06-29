@@ -126,3 +126,5 @@ class Plane():
     def find_orthogonal_vector(self, direction=1):
         self.vector = Point.orthogonal_vector(self.pt1, self.pt2, self.pt3, normalize=1)
         return self.vector
+
+    #modify
