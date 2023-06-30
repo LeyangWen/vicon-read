@@ -16,6 +16,8 @@ import datetime
 # help(vicon.GetSubjectParam)
 
 if __name__ == '__main__':
+
+    ######################################## START UP ########################################
     # specify big or small marker
     marker_height = 14/2+2  # 14mm marker
     # marker_height = 9.5/2+2  # 9.5mm marker
@@ -48,103 +50,50 @@ if __name__ == '__main__':
         print(subject_names)
         raise NotImplementedError(f"More than one subject not implemented --> {subject_names}")
 
-    # create markers
-    # vicon.CreateModeledMarker(subject_names[0], 'LEYE')
-    #
-    # get reference value
+    ######################################## Read marker data ########################################
     # upper body
-    LMCP2 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LMCP2'))
-    LMCP5 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LMCP5'))
-    RMCP2 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RMCP2'))
-    RMCP5 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RMCP5'))
-    LRS = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LRS'))
-    LUS = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LUS'))
-    RRS = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RRS'))
-    RUS = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RUS'))
-    LME = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LME'))
-    LLE = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LLE'))
+    C7_d = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'C7_d'))
+    SS = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'SS'))
+    RSHO_f = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RSHO_f'))
+    LSHO_f = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LSHO_f'))
+    RSHO_b = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RSHO_b'))
+    LSHO_b = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LSHO_b'))
     RME = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RME'))
     RLE = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RLE'))
+    # LME = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LME'))
+    # LLE = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LLE'))
 
-    # lower body
-    LMTP1 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LMTP1'))
-    LMTP5 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LMTP5'))
-    RMTP1 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RMTP1'))
-    RMTP5 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RMTP5'))
-    LMM = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LMM'))
-    LLM = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LLM'))
-    RMM = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RMM'))
-    RLM = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RLM'))
-    LLTC = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LLTC'))
-    LLFC = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LLFC'))
-    LMTC = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LMTC'))
-    LMFC = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LMFC'))
-    RLTC = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RLTC'))
-    RLFC = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RLFC'))
-    RMTC = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RMTC'))
-    RMFC = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RMFC'))
+
+    ######################################## Create virtual markers ########################################
+    RSHOULDER = Point.mid_point(RSHO_f, RSHO_b)
+    LSHOULDER = Point.mid_point(LSHO_f, LSHO_b)
+    C7_m = Point.mid_point(C7_d, SS)
+    # LELBOW = Point.mid_point(LME, LLE)
+    RELBOW = Point.mid_point(RME, RLE)
 
 
 
+    ######################################## Calculate angles ########################################
+    zero_frame = 100
+    # RShoulder angles
+    RSHOULDER_plane = Plane(RSHOULDER, RSHO_f, RSHO_b)
+    RSHOULDER_coord = CoordinateSystem3D()
+    RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, C7_m, sequence='zyx', axis_positive=False)
+    RSHOULDER_angles = JointAngles()
+    RSHOULDER_angles.set_zero_frame(zero_frame)
+    RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, RELBOW, plane_seq=['xy', 'yz'])
+    RSHOULDER_angles.get_rot(RSHO_b, RSHO_f, RME, RLE)
+    print(f'RSHOULDER_angles:\n Flexion: {RSHOULDER_angles.flexion}, \n Abduction: {RSHOULDER_angles.abduction},\n Rotation: {RSHOULDER_angles.rotation}')
 
+    # RHip angles
 
-    # LeftPinkyWidth = vicon.GetSubjectParam(subject_names[0],'LeftPinkyWidth')[0]
-    # RightPinkyWidth = vicon.GetSubjectParam(subject_names[0],'RightPinkyWidth')[0]
-    # EyeWidth = vicon.GetSubjectParam(subject_names[0],'EyeWidth')[0]
-    # RightHandThickness = vicon.GetSubjectParam(subject_names[0],'RightHandThickness')[0]
-    # LeftHandThickness = vicon.GetSubjectParam(subject_names[0],'LeftHandThickness')[0]
+    # Back angles
 
-    # CALCULATIONS
-    # upper body
-    LHAND = Point.mid_point(LMCP2, LMCP5)  # LHAND is midpoint of LMCP2 and LMCP5
-    RHAND = Point.mid_point(RMCP2, RMCP5)  # RHAND is midpoint of RMCP2 and RMCP5
-    LWRIST = Point.mid_point(LRS, LUS)  # LWRIST is midpoint of LRS and LUS
-    RWRIST = Point.mid_point(RRS, RUS)  # RWRIST is midpoint of RRS and RUS
-    LELBOW = Point.mid_point(LME, LLE)  # LELBOW is midpoint of LME and LLE
-    RELBOW = Point.mid_point(RME, RLE)  # RELBOW is midpoint of RME and RLE
-
-    # lower body
-    LFOOT = Point.mid_point(LMTP1, LMTP5)  # LFOOT is midpoint of LMTP1 and LMTP5
-    RFOOT = Point.mid_point(RMTP1, RMTP5)  # RFOOT is midpoint of RMTP1 and RMTP5
-    LANKLE = Point.mid_point(LMM, LLM)  # LANKLE is midpoint of LMM and LLM
-    RANKLE = Point.mid_point(RMM, RLM)  # RANKLE is midpoint of RMM and RLM
+    # Head angles
 
 
 
-    #
-    # HDCC_HDTP = Point.vector(HDCC, HDTP, normalize=marker_height)
-    # HTPO = Point.translate_point(HDTP, HDCC_HDTP, -1)  # HTPC is HDTP moving downwards of marker height
-    #
-    # # eyes
-    # LFHD_RFHD = Point.vector(LFHD, RFHD, normalize=EyeWidth/2)
-    # try:
-    #     LEYE = Point.translate_point(HDEY, LFHD_RFHD, -1)  # left eye is HEEY moving left of eye width/2 in the direction of RFHD-->LFHD
-    #     REYE = Point.translate_point(HDEY, LFHD_RFHD, 1)  # right eye is HEEY moving right of eye width/2 in the direction of RFHD-->LFHD
-    # except:
-    #     LEYE = LFHD
-    #     REYE = RFHD
-    #     HDEY = Point.mid_point(LEYE, REYE)
-    #
-    # # neck
-    # NKTP = Point.mid_point(LNKT, RNKT) # neck top is midpoint of LNKT and RNKT
-    #
-    # # fingers
-    # RPIK_RPKO = Point.orthogonal_vector(RPIK, RWRB, RWRA, normalize=RightPinkyWidth/2+marker_height)
-    # LPIK_LPKO = Point.orthogonal_vector(LPIK, LWRA, LWRB, normalize=LeftPinkyWidth/2+marker_height)
-    # RPKO = Point.translate_point(RPIK, RPIK_RPKO)  # right pinky is RPIK moved inward with marker height and pinky width
-    # LPKO = Point.translate_point(LPIK, LPIK_LPKO)  # left pinky is LPIK moved inward with marker height and pinky width
-    #
-    # RFIN_RMFO = Point.orthogonal_vector(RFIN, RWRB, RWRA, normalize=RightHandThickness/2+marker_height)
-    # LFIN_LMFO = Point.orthogonal_vector(LFIN, LWRA, LWRB, normalize=LeftHandThickness/2+marker_height)
-    # RMFO = Point.translate_point(RFIN, RFIN_RMFO)  # right mid finger is RPIK moved inward with marker height and hand width
-    # LMFO = Point.translate_point(LFIN, LFIN_LMFO)  # left mid finger is LPIK moved inward with marker height and hand width
-    #
-    # # output to vicon nexus
-    # vicon.SetModelOutput(subject_names[0], 'HTPO', HTPO.xyz, HTPO.exist)
-    #
-    #
-    # # visual for debugging
-    # # frame = 0
-    # # Point.plot_points([LWRB,LWRA,LPIK,LFIN,LPKO,LMFO],frame=frame)
-    # # Point.plot_points([RWRB,RWRA,RPIK,RFIN,RPKO,RMFO],frame=frame)
+    ######################################## Visual for debugging ########################################
+    frame = 0
+    Point.plot_points([RSHOULDER, RELBOW, LSHOULDER],frame=frame)
 

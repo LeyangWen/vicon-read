@@ -10,11 +10,14 @@ class Point():
 
     @staticmethod
     def mid_point(p1, p2):
-        xyz = (p1.xyz + p2.xyz) / 2
-        exist = p1.exist and p2.exist
-        p_out = VirtualPoint((xyz, exist))
-        return p_out
-
+        try:
+            xyz = (p1.xyz + p2.xyz) / 2
+            exist = p1.exist and p2.exist
+            p_out = VirtualPoint((xyz, exist))
+            return p_out
+        except:
+            print('Point not defined')
+            return None
     @staticmethod
     def distance(p1, p2 = None):
         if p2 is None:
@@ -123,7 +126,7 @@ class VirtualPoint(Point):
 
 
 
-class Plane():
+class Plane:
     def __init__(self, pt1=None, pt2=None, pt3=None):
         self.random_id = np.random.randint(0, 100000000)
         self.is_empty = True
@@ -131,6 +134,7 @@ class Plane():
             self.set_by_pts(pt1, pt2, pt3)
     def set_by_pts(self, pt1, pt2, pt3):
         # rhr for vec: pt1->pt2, pt1->pt3
+        # try to make orthogonal vector positive for one axis
         self.pt1 = pt1
         self.pt2 = pt2
         self.pt3 = pt3
@@ -147,25 +151,63 @@ class Plane():
         projection = vector - np.dot(vector, plane_normal) * plane_normal
         return projection
 
-class Coordinate_System_3D():
+
+class CoordinateSystem3D:
     def __init__(self):
         self.random_id = np.random.randint(0, 100000000)
         self.is_empty = True
 
-    def set_by_plane(self, plane, origin_pt, x_axis_pt):
+    def set_by_plane(self, plane, origin_pt, axis_pt, sequence='xyz', axis_positive=True):
+        '''
+        first axis is the in-plane axis
+        second axis is the orthogonal axis
+        third axis is orthogonal to the first two
+        '''
         self.plane = plane
         self.is_empty = False
         self.origin = origin_pt
-        self.x_axis_end = Point.vector(origin_pt, x_axis_pt)
-        self.y_axis_end = Point.translate_point(origin_pt, plane.orthogonal_vector)
-        self.z_axis_end = Point.translate_point(Point.orthogonal_vector(self.origin, self.x_axis, self.y_axis, normalize=1), self.origin)
+        if x_direction:
+            inplane_end = axis_pt
+        else:
+            inplace_end = Point.translate_point(origin_pt, Point.vector(origin_pt, axis_pt), direction=-1)
+        orthogonal_end = Point.translate_point(origin_pt, plane.orthogonal_vector)
+        if sequence[0] == 'x':
+            self.x_axis_end = inplane_end
+        elif sequence[0] == 'y':
+            self.y_axis_end = inplane_end
+        elif sequence[0] == 'z':
+            self.z_axis_end = inplane_end
+        else:
+            raise ValueError(f'sequence must be xyz, xzy, yxz, yzx, zxy, zyx, but {sequence} is given')
+        if sequence[1] == 'x':
+            self.x_axis_end = orthogonal_end
+        elif sequence[1] == 'y':
+            self.y_axis_end = orthogonal_end
+        elif sequence[1] == 'z':
+            self.z_axis_end = orthogonal_end
+        else:
+            raise ValueError(f'sequence must be xyz, xzy, yxz, yzx, zxy, zyx, but {sequence} is given')
+        self.set_third_axis(sequence)
+        self.set_plane_from_axis_end()
 
+
+    def set_third_axis(self, sequence='xyz'):
+        if sequence[-1] == 'x':
+            self.x_axis_end = Point.translate_point(Point.orthogonal_vector(self.origin, self.y_axis_end, self.z_axis_end, normalize=1), self.origin)
+        elif sequence[-1] == 'y':
+            self.y_axis_end = Point.translate_point(Point.orthogonal_vector(self.origin, self.z_axis_end, self.x_axis_end, normalize=1), self.origin)
+        elif sequence[-1] == 'z':
+            self.z_axis_end = Point.translate_point(Point.orthogonal_vector(self.origin, self.x_axis_end, self.y_axis_end, normalize=1), self.origin)
+        else:
+            raise ValueError(f'sequence must be xyz, xzy, yxz, yzx, zxy, zyx, but got {sequence}')
+
+    def set_plane_from_axis_end(self):
         self.xy_plane = Plane(self.origin, self.x_axis_end, self.y_axis_end)
         self.xz_plane = Plane(self.origin, self.x_axis_end, self.z_axis_end)
         self.yz_plane = Plane(self.origin, self.y_axis_end, self.z_axis_end)
 
     def projection_angles(self, pt):
-        vector = pt.xyz
+        vector = Point.vector(self.origin, pt).xyz
         # xy plane
         xy_projection = self.xy_plane.project_vector(vector)
         xy_angle = np.arctan2(xy_projection[1], xy_projection[0])
@@ -177,7 +219,8 @@ class Coordinate_System_3D():
         yz_angle = np.arctan2(yz_projection[2], yz_projection[1])
         return xy_angle, xz_angle, yz_angle
 
-class Joint_Angles():
+
+class JointAngles:
     def __init__(self):
         self.random_id = np.random.randint(0, 100000000)
         self.is_empty = True
@@ -218,21 +261,43 @@ class Joint_Angles():
         self.flexion_info = {'plane': plane_seq[0], 'zero_angle': zero_angles[0], 'zero_frame': self.zero_frame}
         self.abduction = output_angles[1]
         self.abduction_info = {'plane': plane_seq[1], 'zero_angle': zero_angles[1], 'zero_frame': self.zero_frame}
+        self.is_empty = False
         return output_angles
 
-    def get_rot(self, pt_vec1, pt_vec2):
+    def get_rot(self, pt1a, pt1b, pt2a, pt2b):
         '''
         get rotation angle between two vectors
         Example:
-        rot_angle = Joint_Angles.get_rot(Point.vector(pt1, pt2), Point.vector(pt3, pt4))
+
         '''
-        rotation_angle = Point.angle(pt_vec1, pt_vec2)
+        pt1mid = Point.midpoint(pt1a, pt1b)
+        pt2mid = Point.midpoint(pt2a, pt2b)
+        plane1 = Plane(pt1a, pt1b, pt2mid)
+        plane2 = Plane(pt2a, pt2b, pt1mid)
+        rotation_angle = Point.angle(plane1.normal_vector, plane2.normal_vector)
         rotation_zero = rotation_angle[self.zero_frame]
         rotation_angle = rotation_angle - rotation_zero
         self.rotation = rotation_angle
         self.rotation_info = {'plane': None, 'zero_angle': rotation_zero, 'zero_frame': self.zero_frame}
+        self.is_empty = False
         return self.rotation
 
-
-
+    def plot_angles(self, joint_name='', alpha=1, linewidth=1, linestyle='-', label=None):
+        if self.is_empty:
+            raise ValueError('JointAngles is empty, please set angles first')
+        # a verticaly stacked plot of flexion, abduction, and rotation in one figure if they are not None
+        fig, ax = plt.subplots(3, 1, sharex=True)
+        if self.flexion is not None:
+            ax[0].plot(self.flexion, color='r', alpha=alpha, linewidth=linewidth, linestyle=linestyle, label=label)
+            ax[0].set_ylabel(f'{joint_name} Flexion')
+            ax[0].legend()
+        if self.abduction is not None:
+            ax[1].plot(self.abduction, color='g', alpha=alpha, linewidth=linewidth, linestyle=linestyle, label=label)
+            ax[1].set_ylabel(f'{joint_name} Abduction')
+            ax[1].legend()
+        if self.rotation is not None:
+            ax[2].plot(self.rotation, color='b', alpha=alpha, linewidth=linewidth, linestyle=linestyle, label=label)
+            ax[2].set_ylabel(f'{joint_name} Rotation')
+            ax[2].legend()
+        return fig, ax
 
