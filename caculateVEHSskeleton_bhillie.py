@@ -8,7 +8,9 @@ from utility import *
 from Point import *
 import yaml
 import datetime
-
+import warnings
+warnings.filterwarnings("ignore", message="invalid value encountered in divide")
+warnings.filterwarnings("ignore", message="invalid value encountered in arccos")
 
 # helper functions
 # vicon = ViconNexus.ViconNexus()
@@ -74,7 +76,7 @@ if __name__ == '__main__':
 
 
     ######################################## Calculate angles ########################################
-    zero_frame = 100
+    zero_frame = 941
     # RShoulder angles
     RSHOULDER_plane = Plane(RSHOULDER, RSHO_f, RSHO_b)
     RSHOULDER_coord = CoordinateSystem3D()
@@ -94,6 +96,8 @@ if __name__ == '__main__':
 
 
     ######################################## Visual for debugging ########################################
-    frame = 0
-    Point.plot_points([RSHOULDER, RELBOW, LSHOULDER],frame=frame)
+    frame = 1000
+    # Point.plot_points([RSHOULDER, RELBOW, LSHOULDER],frame=frame)
+    RSHOULDER_angles.plot_angles(joint_name='Right Shoulder')
+    plt.show()
 

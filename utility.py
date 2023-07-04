@@ -51,12 +51,17 @@ def BMI_classUS(bmi):
         return 'Healthy weight'
     elif bmi < 30:
         return 'Overweight'
+    elif bmi == 0:
+        return 'Not available'
     else:
         return 'Obesity'
 
 
 def BMI_caculate(weight, height):
-    bmi = weight / (height / 100) ** 2
+    try:
+        bmi = weight / (height / 100) ** 2
+    except ZeroDivisionError:
+        bmi = 0
     return bmi
 
 

@@ -65,8 +65,10 @@ class Point():
     def angle(p1, p2):
         """
         return the angle between p1 and p2
+        p1, p2: Point with xyz and exist
+        p1.xyz is a 3xn array
         """
-        return np.arccos(np.dot(p1.xyz, p2.xyz) / (np.linalg.norm(p1.xyz) * np.linalg.norm(p2.xyz)))
+        return np.arccos(np.sum(p1.xyz * p2.xyz, axis=0) / (np.linalg.norm(p1.xyz, axis=0) * np.linalg.norm(p2.xyz, axis=0)))
 
     @staticmethod
     def plot_points(point_list, ax=None, fig=None, frame=0):
@@ -121,8 +123,8 @@ class VirtualPoint(Point):
     def output_format(self):
         return (self.xyz, self.exist)
 
-    def find_frame(self, frame):
-        if self.exist[frame]:
+    # def find_frame(self, frame):
+    #     if self.exist[frame]:
 
 
 
@@ -132,6 +134,7 @@ class Plane:
         self.is_empty = True
         if pt1 is not None and pt2 is not None and pt3 is not None:
             self.set_by_pts(pt1, pt2, pt3)
+
     def set_by_pts(self, pt1, pt2, pt3):
         # rhr for vec: pt1->pt2, pt1->pt3
         # try to make orthogonal vector positive for one axis
@@ -139,16 +142,16 @@ class Plane:
         self.pt2 = pt2
         self.pt3 = pt3
         self.is_empty = False
-        self.orthogonal_vector = Point.orthogonal_vector(pt1, pt2, pt3, normalize=1)
+        self.normal_vector = Point.orthogonal_vector(pt1, pt2, pt3, normalize=1)
 
     def project_vector(self, vector):
         """
         project a vector onto the plane
         vector as xyz
         """
-        plane_normal = self.orthogonal_vector.xyz
-        plane_normal = plane_normal / np.linalg.norm(plane_normal)
-        projection = vector - np.dot(vector, plane_normal) * plane_normal
+        plane_normal = self.normal_vector.xyz
+        plane_normal = plane_normal / np.linalg.norm(plane_normal, axis=0)
+        projection = vector - np.diagonal(np.dot(vector.T, plane_normal)) * plane_normal
         return projection
 
 
@@ -166,11 +169,11 @@ class CoordinateSystem3D:
         self.plane = plane
         self.is_empty = False
         self.origin = origin_pt
-        if x_direction:
+        if axis_positive:
             inplane_end = axis_pt
         else:
-            inplace_end = Point.translate_point(origin_pt, Point.vector(origin_pt, axis_pt), direction=-1)
-        orthogonal_end = Point.translate_point(origin_pt, plane.orthogonal_vector)
+            inplane_end = Point.translate_point(origin_pt, Point.vector(origin_pt, axis_pt), direction=-1)
+        orthogonal_end = Point.translate_point(origin_pt, plane.normal_vector)
         if sequence[0] == 'x':
             self.x_axis_end = inplane_end
         elif sequence[0] == 'y':
@@ -208,8 +211,11 @@ class CoordinateSystem3D:
 
     def projection_angles(self, pt):
         vector = Point.vector(self.origin, pt).xyz
+        x_vector = Point.vector(self.origin, self.x_axis_end).xyz
+        y_vector = Point.vector(self.origin, self.y_axis_end).xyz
         # xy plane
         xy_projection = self.xy_plane.project_vector(vector)
+        # todo: need coordinate transformation
         xy_angle = np.arctan2(xy_projection[1], xy_projection[0])
         # xz plane
         xz_projection = self.xz_plane.project_vector(vector)
@@ -270,8 +276,8 @@ class JointAngles:
         Example:
 
         '''
-        pt1mid = Point.midpoint(pt1a, pt1b)
-        pt2mid = Point.midpoint(pt2a, pt2b)
+        pt1mid = Point.mid_point(pt1a, pt1b)
+        pt2mid = Point.mid_point(pt2a, pt2b)
         plane1 = Plane(pt1a, pt1b, pt2mid)
         plane2 = Plane(pt2a, pt2b, pt1mid)
         rotation_angle = Point.angle(plane1.normal_vector, plane2.normal_vector)
@@ -282,22 +288,36 @@ class JointAngles:
         self.is_empty = False
         return self.rotation
 
-    def plot_angles(self, joint_name='', alpha=1, linewidth=1, linestyle='-', label=None):
+    def plot_angles(self, joint_name='', alpha=1, linewidth=1, linestyle='-', label=None, frame_range=None):
         if self.is_empty:
             raise ValueError('JointAngles is empty, please set angles first')
-        # a verticaly stacked plot of flexion, abduction, and rotation in one figure if they are not None
+        if frame_range is None:
+            if self.flexion is not None:
+                frame_range = [0, len(self.flexion)]
+            elif self.abduction is not None:
+                frame_range = [0, len(self.abduction)]
+            elif self.rotation is not None:
+                frame_range = [0, len(self.rotation)]
+            else:
+                raise ValueError('all three angles are None, cannot plot')
         fig, ax = plt.subplots(3, 1, sharex=True)
-        if self.flexion is not None:
-            ax[0].plot(self.flexion, color='r', alpha=alpha, linewidth=linewidth, linestyle=linestyle, label=label)
-            ax[0].set_ylabel(f'{joint_name} Flexion')
-            ax[0].legend()
-        if self.abduction is not None:
-            ax[1].plot(self.abduction, color='g', alpha=alpha, linewidth=linewidth, linestyle=linestyle, label=label)
-            ax[1].set_ylabel(f'{joint_name} Abduction')
-            ax[1].legend()
-        if self.rotation is not None:
-            ax[2].plot(self.rotation, color='b', alpha=alpha, linewidth=linewidth, linestyle=linestyle, label=label)
-            ax[2].set_ylabel(f'{joint_name} Rotation')
-            ax[2].legend()
+        angle_names = ['Flexion', 'Abduction', 'Rotation']
+        colors = ['r', 'g', 'b']
+        for angle_id, angle in enumerate([self.flexion, self.abduction, self.rotation]):
+            # horizontal line at zero, pi, and -pi
+            ax[angle_id].axhline(0, color='k', linestyle='--', alpha=0.5, linewidth=0.25)
+            ax[angle_id].axhline(180, color='k', linestyle='--', alpha=0.5, linewidth=0.25)
+            ax[angle_id].axhline(-180, color='k', linestyle='--', alpha=0.5, linewidth=0.25)
+            ax[angle_id].yaxis.set_ticks(np.arange(-180, 181, 90))
+            ax[angle_id].set_ylabel(f'{angle_names[angle_id]}')
+            ax[angle_id].margins(x=0)
+            if angle is not None:
+                ax[angle_id].plot(angle[frame_range[0]:frame_range[1]]/np.pi*180, color=colors[angle_id], alpha=alpha, linewidth=linewidth, linestyle=linestyle, label=label)
+            else:
+                # plot diagonal line crossing through the chart
+                ax[angle_id].plot([frame_range[0], frame_range[1]], [-180, 180], color='black', linewidth=4)
+
+        ax[0].set_title(f'{joint_name} (deg)')
+        # plt.show()
         return fig, ax
 
