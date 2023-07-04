@@ -62,13 +62,24 @@ class Point():
         return VirtualPoint((xyz, exist))
 
     @staticmethod
-    def angle(p1, p2):
+    def angle(v1, v2):
         """
-        return the angle between p1 and p2
-        p1, p2: Point with xyz and exist
-        p1.xyz is a 3xn array
+        return the angle between v1 and v2
+        v1 and v2 are vectors with shape (3, n)
         """
-        return np.arccos(np.sum(p1.xyz * p2.xyz, axis=0) / (np.linalg.norm(p1.xyz, axis=0) * np.linalg.norm(p2.xyz, axis=0)))
+        return np.arccos(np.sum(v1 * v2, axis=0) / (np.linalg.norm(v1, axis=0) * np.linalg.norm(v2, axis=0)))
+
+
+    @staticmethod
+    def angle_w_direction(target_vector, main_axis_vector, secondary_axis_vector):
+        """
+        return the angle between main_axis_pt and target_pt using right hand rule
+        secondary_axis_pt is used to determine the direction of the angle
+        """
+        angle_abs = Point.angle(target_vector, main_axis_vector)
+        angle_sign = Point.angle(target_vector, secondary_axis_vector)
+        angle = np.where(angle_sign > np.pi / 2, -angle_abs, angle_abs)
+        return angle
 
     @staticmethod
     def plot_points(point_list, ax=None, fig=None, frame=0):
@@ -150,6 +161,7 @@ class Plane:
         vector as xyz
         """
         plane_normal = self.normal_vector.xyz
+        #todo: check if plane_normal direction affects the result
         plane_normal = plane_normal / np.linalg.norm(plane_normal, axis=0)
         projection = vector - np.diagonal(np.dot(vector.T, plane_normal)) * plane_normal
         return projection
@@ -213,16 +225,17 @@ class CoordinateSystem3D:
         vector = Point.vector(self.origin, pt).xyz
         x_vector = Point.vector(self.origin, self.x_axis_end).xyz
         y_vector = Point.vector(self.origin, self.y_axis_end).xyz
+        z_vector = Point.vector(self.origin, self.z_axis_end).xyz
         # xy plane
         xy_projection = self.xy_plane.project_vector(vector)
-        # todo: need coordinate transformation
-        xy_angle = np.arctan2(xy_projection[1], xy_projection[0])
+        # todo: fix bug here
+        xy_angle = Point.angle_w_direction(xy_projection, x_vector, y_vector)
         # xz plane
         xz_projection = self.xz_plane.project_vector(vector)
-        xz_angle = np.arctan2(xz_projection[2], xz_projection[0])
+        xz_angle = Point.angle_w_direction(xz_projection, x_vector, z_vector)
         # yz plane
         yz_projection = self.yz_plane.project_vector(vector)
-        yz_angle = np.arctan2(yz_projection[2], yz_projection[1])
+        yz_angle = Point.angle_w_direction(yz_projection, y_vector, z_vector)
         return xy_angle, xz_angle, yz_angle
 
 
@@ -280,7 +293,7 @@ class JointAngles:
         pt2mid = Point.mid_point(pt2a, pt2b)
         plane1 = Plane(pt1a, pt1b, pt2mid)
         plane2 = Plane(pt2a, pt2b, pt1mid)
-        rotation_angle = Point.angle(plane1.normal_vector, plane2.normal_vector)
+        rotation_angle = Point.angle(plane1.normal_vector.xyz, plane2.normal_vector.xyz)
         rotation_zero = rotation_angle[self.zero_frame]
         rotation_angle = rotation_angle - rotation_zero
         self.rotation = rotation_angle
