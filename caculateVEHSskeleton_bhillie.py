@@ -76,28 +76,35 @@ if __name__ == '__main__':
 
 
     ######################################## Calculate angles ########################################
-    zero_frame = 941
     # RShoulder angles
-    RSHOULDER_plane = Plane(RSHOULDER, RSHO_f, RSHO_b)
-    RSHOULDER_coord = CoordinateSystem3D()
-    RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, C7_m, sequence='zyx', axis_positive=False)
-    RSHOULDER_angles = JointAngles()
-    RSHOULDER_angles.set_zero_frame(zero_frame)
-    RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, RELBOW, plane_seq=['xy', 'yz'])
-    RSHOULDER_angles.get_rot(RSHO_b, RSHO_f, RME, RLE)
-    print(f'RSHOULDER_angles:\n Flexion: {RSHOULDER_angles.flexion}, \n Abduction: {RSHOULDER_angles.abduction},\n Rotation: {RSHOULDER_angles.rotation}')
+    try:
+        zero_frame = 941
+        # RSHOULDER_plane = Plane(RSHO_b, RSHO_f, C7_m)
+        RSHOULDER_plane = Plane(RSHOULDER, SS, C7_m)
+        RSHOULDER_coord = CoordinateSystem3D()
+        RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, C7_m, sequence='zyx', axis_positive=False)
+        RSHOULDER_angles = JointAngles()
+        RSHOULDER_angles.set_zero_frame(zero_frame)
+        RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, RELBOW, plane_seq=['xy', 'yz'])
+        RSHOULDER_angles.get_rot(RSHO_b, RSHO_f, RME, RLE)
+
+        ##### Visual for debugging #####
+        frame = 1000
+        print(f'RSHOULDER_angles:\n Flexion: {RSHOULDER_angles.flexion[frame]}, \n Abduction: {RSHOULDER_angles.abduction[frame]},\n Rotation: {RSHOULDER_angles.rotation[frame]}')
+        # Point.plot_points([RSHOULDER_coord.origin, RSHOULDER_coord.x_axis_end, RSHOULDER_coord.y_axis_end, RSHOULDER_coord.z_axis_end], frame=frame)
+        # RSHOULDER_angles.plot_angles(joint_name='Right Shoulder', frame_range=[1000, 1021])
+        render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RSHOULDER')
+        RSHOULDER_angles.plot_angles_by_frame(render_dir, joint_name='Right Shoulder', frame_range=[941, 5756])
+    except:
+        print('RSHOULDER_angles failed')
 
     # RHip angles
+    try:
+        zero_frame = 941
+
+
 
     # Back angles
 
     # Head angles
-
-
-
-    ######################################## Visual for debugging ########################################
-    frame = 1000
-    # Point.plot_points([RSHOULDER, RELBOW, LSHOULDER],frame=frame)
-    RSHOULDER_angles.plot_angles(joint_name='Right Shoulder')
-    plt.show()
 
