@@ -54,6 +54,7 @@ if __name__ == '__main__':
 
     ######################################## Read marker data ########################################
     ##### upper body #####
+    C7 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'C7'))
     C7_d = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'C7_d'))
     SS = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'SS'))
     RSHO_f = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RSHO_f'))
@@ -96,21 +97,25 @@ if __name__ == '__main__':
     ######################################## Calculate angles ########################################
     # RShoulder angles
     try:
+        PELVIS_b = Point.translate_point(C7, Point.create_const_vector(0,0,-1000,examplePt=C7))  # todo: this is temp for this shoulder trial, change to real marker in the future
+
         zero_frame = 941
         # RSHOULDER_plane = Plane(RSHO_b, RSHO_f, C7_m)
-        RSHOULDER_plane = Plane(RSHOULDER, SS, C7_m)
+        RSHOULDER_plane = Plane(RSHOULDER, PELVIS_b, C7_m)
         RSHOULDER_coord = CoordinateSystem3D()
-        RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, C7_m, sequence='zyx', axis_positive=False)
+        RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, C7_m, sequence='zxy', axis_positive=False)
         RSHOULDER_angles = JointAngles()
         RSHOULDER_angles.set_zero_frame(zero_frame)
-        RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, RELBOW, plane_seq=['xy', 'yz'])
-        RSHOULDER_angles.get_rot(RSHO_b, RSHO_f, RME, RLE)
+        RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, RELBOW, plane_seq=['xy', 'xz'])
+        # RSHOULDER_angles.get_rot(RSHO_b, RSHO_f, RME, RLE)
+        RSHOULDER_angles.flexion = Point.angle(Point.vector(RSHOULDER, RELBOW).xyz, Point.vector(C7, PELVIS_b).xyz)
+        RSHOULDER_angles.rotation = None
 
         ##### Visual for debugging #####
-        frame = 1000
-        print(f'RSHOULDER_angles:\n Flexion: {RSHOULDER_angles.flexion[frame]}, \n Abduction: {RSHOULDER_angles.abduction[frame]},\n Rotation: {RSHOULDER_angles.rotation[frame]}')
+        # frame = 1000
+        # print(f'RSHOULDER_angles:\n Flexion: {RSHOULDER_angles.flexion[frame]}, \n Abduction: {RSHOULDER_angles.abduction[frame]},\n Rotation: {RSHOULDER_angles.rotation[frame]}')
         # Point.plot_points([RSHOULDER_coord.origin, RSHOULDER_coord.x_axis_end, RSHOULDER_coord.y_axis_end, RSHOULDER_coord.z_axis_end], frame=frame)
-        # RSHOULDER_angles.plot_angles(joint_name='Right Shoulder', frame_range=[1000, 1021])
+        # RSHOULDER_angles.plot_angles(joint_name='Right Shoulder', frame_range=[941, 5756])
         render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RSHOULDER')
         RSHOULDER_angles.plot_angles_by_frame(render_dir, joint_name='Right Shoulder', frame_range=[941, 5756])
     except:
@@ -121,19 +126,11 @@ if __name__ == '__main__':
         zero_frame = 941
         HIP_plane = Plane(RASIS, LASIS, PELVIS_b)
         HIP_coord = CoordinateSystem3D()
-        HIP_coord.set_by_plane(HIP_plane, PELVIS_f, RASIS, sequence='zyx', axis_positive=True)
+        HIP_coord.set_by_plane(HIP_plane, PELVIS_f, RASIS, sequence='zyx', axis_positive=True)  # todo: check sequence
         RHIP_angles = JointAngles()
         RHIP_angles.set_zero_frame(zero_frame)
         RKNEE_equivalentPt = Point.translate_point(PELVIS_f, Point.vector(RHIP, RKNEE), 100)
-        RHIP_angles.get_flex_abd(HIP_coord, RKNEE_equivalentPt, plane_seq=['xy', 'yz'])
-
-        ##### Visual for debugging #####
-        frame = 1000
-        print(f'RSHOULDER_angles:\n Flexion: {RSHOULDER_angles.flexion[frame]}, \n Abduction: {RSHOULDER_angles.abduction[frame]},\n Rotation: {RSHOULDER_angles.rotation[frame]}')
-        # Point.plot_points([RSHOULDER_coord.origin, RSHOULDER_coord.x_axis_end, RSHOULDER_coord.y_axis_end, RSHOULDER_coord.z_axis_end], frame=frame)
-        # RSHOULDER_angles.plot_angles(joint_name='Right Shoulder', frame_range=[1000, 1021])
-        render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RSHOULDER')
-        RSHOULDER_angles.plot_angles_by_frame(render_dir, joint_name='Right Shoulder', frame_range=[941, 5756])
+        RHIP_angles.get_flex_abd(HIP_coord, RKNEE_equivalentPt, plane_seq=['xy', 'yz'])  # todo: check plane_seq
 
     except:
         print('RHip_angles failed')

@@ -20,6 +20,7 @@ class Point():
         except:
             print('Point not defined')
             return None
+
     @staticmethod
     def distance(p1, p2 = None):
         if p2 is None:
@@ -65,13 +66,24 @@ class Point():
         return VirtualPoint((xyz, exist))
 
     @staticmethod
+    def create_const_vector(x, y, z, frame=100, examplePt=None):
+        '''
+        x, y, z are float
+        frame is ignored if examplePt is not None
+        '''
+        if examplePt:
+            frame = examplePt.frame_no
+        xyz = np.vstack((np.ones(frame) * x, np.ones(frame) * y, np.ones(frame) * z))
+        exist = np.ones(frame, dtype=bool).tolist()
+        return VirtualPoint((xyz, exist))
+
+    @staticmethod
     def angle(v1, v2):
         """
         return the angle between v1 and v2
         v1 and v2 are vectors with shape (3, n)
         """
         return np.arccos(np.sum(v1 * v2, axis=0) / (np.linalg.norm(v1, axis=0) * np.linalg.norm(v2, axis=0)))
-
 
     @staticmethod
     def angle_w_direction(target_vector, main_axis_vector, secondary_axis_vector):
@@ -191,7 +203,7 @@ class CoordinateSystem3D:
 
     def set_by_plane(self, plane, origin_pt, axis_pt, sequence='xyz', axis_positive=True):
         '''
-        first axis is the in-plane axis
+        first axis is the in-plane axis, if axis_positive is True, the direction is from origin_pt to axis_pt
         second axis is the orthogonal axis
         third axis is orthogonal to the first two (also should be in the plane)
         '''
@@ -240,7 +252,7 @@ class CoordinateSystem3D:
         self.zx_plane = Plane(self.origin, self.z_axis_end, self.x_axis_end)
         self.yz_plane = Plane(self.origin, self.y_axis_end, self.z_axis_end)
 
-    def projection_angles(self, pt):
+    def projection_angles(self, pt, threshold=1):
         vector = Point.vector(self.origin, pt).xyz
         x_vector = Point.vector(self.origin, self.x_axis_end).xyz
         y_vector = Point.vector(self.origin, self.y_axis_end).xyz
@@ -351,7 +363,7 @@ class JointAngles:
             else:
                 raise ValueError('all three angles are None, cannot plot')
         fig, ax = plt.subplots(3, 1, sharex=True)
-        angle_names = ['Flexion', 'Abduction', 'Rotation']
+        angle_names = ['Flexion', 'H-Abduction', 'Rotation']
         colors = ['r', 'g', 'b']
         for angle_id, angle in enumerate([self.flexion, self.abduction, self.rotation]):
             # horizontal line at zero, pi, and -pi
@@ -383,10 +395,10 @@ class JointAngles:
                 frame_range = [0, len(self.rotation)]
             else:
                 raise ValueError('all three angles are None, cannot plot')
-
+        print(f'Saving {joint_name} angle frames to {render_dir}')
         for frame_id in range(frame_range[0], frame_range[1]):
             fig, ax = plt.subplots(3, 1, sharex=True)
-            angle_names = ['Flexion', 'Abduction', 'Rotation']
+            angle_names = ['Flexion', 'H-Abduction', 'Rotation']
             colors = ['r', 'g', 'b']
             for angle_id, angle in enumerate([self.flexion, self.abduction, self.rotation]):
                 print(f'frame {frame_id}/{frame_range[1]}', end='\r')
@@ -405,7 +417,7 @@ class JointAngles:
                     ax[angle_id].plot(frame_id, angle[frame_id]/np.pi*180, color=colors[angle_id], marker='o', markersize=5)  # a dot with value at current frame
                     ax[angle_id].text(frame_id, angle[frame_id]/np.pi*180, f'{angle[frame_id]/np.pi*180:.1f}', fontsize=12, horizontalalignment='left', verticalalignment='bottom')  # add text of current angle value
                 else:
-                    ax[angle_id].plot([frame_id, frame_id], [-180, 180], color='black', linewidth=4)  # plot diagonal line crossing through the chart
+                    ax[angle_id].plot([frame_range[0], frame_range[1]], [-180, 180], color='gray', linewidth=1)  # plot diagonal line crossing through the chart
 
             ax[0].set_title(f'{joint_name} (deg)')
 
