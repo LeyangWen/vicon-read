@@ -61,6 +61,8 @@ class Point():
         """
         move p in the direction of vector with length of distance
         """
+        if type(vector) is np.ndarray:
+            vector = Point.point_from_nparray(vector)
         xyz = p.xyz + direction * vector.xyz
         exist = p.exist and vector.exist
         return VirtualPoint((xyz, exist))
@@ -123,6 +125,11 @@ class Point():
         plt.show()
         return ax, fig
 
+    @staticmethod
+    def point_from_nparray(xyz):
+        exist = np.ones(xyz.shape[1], dtype=bool).tolist()
+        return VirtualPoint((xyz, exist))
+
 
 class MarkerPoint(Point):
     def __init__(self, data):
@@ -152,9 +159,6 @@ class VirtualPoint(Point):
     def output_format(self):
         return (self.xyz, self.exist)
 
-    # def find_frame(self, frame):
-    #     if self.exist[frame]:
-
 
 
 class Plane:
@@ -165,14 +169,29 @@ class Plane:
             self.set_by_pts(pt1, pt2, pt3)
 
     def set_by_pts(self, pt1, pt2, pt3):
-        # rhr for vec: pt1->pt2, pt1->pt3
-        # try to make orthogonal vector positive for one axis
+        """
+        rhr for vec: pt1->pt2, pt1->pt3
+        try to make orthogonal vector positive for one axis
+        """
         self.pt1 = pt1
         self.pt2 = pt2
         self.pt3 = pt3
         self.is_empty = False
         self.normal_vector = Point.orthogonal_vector(pt1, pt2, pt3, normalize=1)
         self.normal_vector_end = Point.translate_point(pt1, self.normal_vector, direction=1)
+
+    def set_by_vector(self, pt1, vector, direction=1):
+        """
+        vector as virtual point
+        """
+        self.pt1 = pt1
+        self.pt2 = None
+        self.pt3 = None
+        self.is_empty = False
+        vector_xyz = vector.xyz
+        normal_vector_xyz = vector_xyz / np.linalg.norm(vector_xyz, axis=0) * direction  # normalize vector
+        self.normal_vector = Point.point_from_nparray(normal_vector_xyz)
+        self.normal_vector_end = Point.translate_point(pt1, vector, direction=direction)
 
     def project_vector(self, vector):
         """
@@ -183,6 +202,23 @@ class Plane:
         plane_normal = plane_normal / np.linalg.norm(plane_normal, axis=0)
         projection = vector - np.diagonal(np.dot(vector.T, plane_normal)) * plane_normal
         return projection
+
+    def project_point(self, point):
+        """
+        project a point onto the plane
+        """
+        vector = point.xyz - self.pt1.xyz
+        projection = self.project_vector(vector)  # todo: find a less entangled way in the future
+        return Point.translate_point(self.pt1, projection)
+
+    def above_or_below(self, point):
+        """
+        return 1 if point is above the plane, -1 if below
+        """
+        vector = point.xyz - self.pt1.xyz
+        normal_vector = self.normal_vector.xyz
+        return np.sign(np.sum(vector * normal_vector, axis=0))
+
 
     @staticmethod
     def angle_w_direction(plane1, plane2):
@@ -206,6 +242,34 @@ class CoordinateSystem3D:
         first axis is the in-plane axis, if axis_positive is True, the direction is from origin_pt to axis_pt
         second axis is the orthogonal axis
         third axis is orthogonal to the first two (also should be in the plane)
+        '''
+        '''
+        Usage:
+        # RShoulder angles
+        try:
+            PELVIS_b = Point.translate_point(C7_m, Point.create_const_vector(0,0,-1000,examplePt=C7))  # todo: this is temp for this shoulder trial, change to real marker in the future
+    
+            zero_frame = [941, 941, None]
+            # RSHOULDER_plane = Plane(RSHO_b, RSHO_f, C7_m)
+            RSHOULDER_plane = Plane(RSHOULDER, PELVIS_b, C7_m)
+            RSHOULDER_coord = CoordinateSystem3D()
+            RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, C7_m, sequence='zxy', axis_positive=False)
+            RSHOULDER_angles = JointAngles()
+            RSHOULDER_angles.set_zero_frame(zero_frame)
+            RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, RELBOW, plane_seq=['xy', 'xz'])
+            # RSHOULDER_angles.get_rot(RSHO_b, RSHO_f, RME, RLE)
+            RSHOULDER_angles.flexion = Point.angle(Point.vector(RSHOULDER, RELBOW).xyz, Point.vector(C7, PELVIS_b).xyz)
+            RSHOULDER_angles.rotation = None
+    
+            ##### Visual for debugging #####
+            # frame = 1000
+            # print(f'RSHOULDER_angles:\n Flexion: {RSHOULDER_angles.flexion[frame]}, \n Abduction: {RSHOULDER_angles.abduction[frame]},\n Rotation: {RSHOULDER_angles.rotation[frame]}')
+            # Point.plot_points([RSHOULDER_coord.origin, RSHOULDER_coord.x_axis_end, RSHOULDER_coord.y_axis_end, RSHOULDER_coord.z_axis_end], frame=frame)
+            # RSHOULDER_angles.plot_angles(joint_name='Right Shoulder', frame_range=[941, 5756])
+            render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RSHOULDER')
+            RSHOULDER_angles.plot_angles_by_frame(render_dir, joint_name='Right Shoulder', frame_range=[941, 5756])
+        except:
+            print('RSHOULDER_angles failed')
         '''
         self.plane = plane
         self.is_empty = False
@@ -235,7 +299,6 @@ class CoordinateSystem3D:
         self.set_third_axis(sequence)
         self.set_plane_from_axis_end()
         # Point.plot_points([self.origin, self.x_axis_end, self.y_axis_end, self.z_axis_end], frame=1000)
-
 
     def set_third_axis(self, sequence='xyz'):
         if sequence[-1] == 'x':
@@ -302,17 +365,20 @@ class JointAngles:
             if plane_name is not None:
                 if plane_name == 'xy':
                     output_angle = xy_angle
-                elif plane_name == 'xz':
+                elif plane_name == 'xz' or plane_name == 'zx':
                     output_angle = xz_angle
                 elif plane_name == 'yz':
                     output_angle = yz_angle
                 else:
-                    raise ValueError('plane_name must be one of "xy", "xz", "yz", or None')
+                    raise ValueError('plane_name must be one of "xy", "xz", "zx", "yz", or None')
                 # output_angle = np.abs(output_angle)
                 if self.zero_frame[plane_id] is not None:
                     zero_frame_id = self.zero_frame[plane_id]
                     zero_angles.append(output_angle[zero_frame_id])
                     output_angle = output_angle - zero_angles[-1]
+                    # deal with output -pi pi range issue
+                    output_angle = np.where(output_angle > np.pi, output_angle - 2 * np.pi, output_angle)
+                    output_angle = np.where(output_angle < -np.pi, output_angle + 2 * np.pi, output_angle)
                 else:
                     zero_angles.append(None)
                 output_angles.append(output_angle)
@@ -328,9 +394,10 @@ class JointAngles:
         self.is_empty = False
         return output_angles
 
-    def get_rot(self, pt1a, pt1b, pt2a, pt2b):
+    def get_rot(self, pt1a, pt1b, pt2a, pt2b, flip_sign=1):
         '''
         get rotation angle between two vectors
+        flip_sign: 1 or -1, if the rotation is in the opposite direction
         Example:
 
         '''
@@ -339,16 +406,36 @@ class JointAngles:
         plane1 = Plane(pt1a, pt1b, pt2mid)
         plane2 = Plane(pt2a, pt2b, pt1mid)
         rotation_angle = Point.angle(plane1.normal_vector.xyz, plane2.normal_vector.xyz)
-        # todo: rot angle should be in range of -pi to pi
+
         if self.zero_frame[2] is not None:
             rotation_zero = rotation_angle[self.zero_frame[2]]
             rotation_angle = rotation_angle - rotation_zero
         else:
             rotation_zero = None
+        # todo: rot angle should be in range of -pi to pi
+        rotation_sign = plane2.above_or_below(pt1a)
+        rotation_angle = rotation_angle * rotation_sign * flip_sign
         self.rotation = rotation_angle
         self.rotation_info = {'plane': None, 'zero_angle': rotation_zero, 'zero_frame': self.zero_frame[2]}
         self.is_empty = False
         return self.rotation
+
+    def zero_by_idx(self, idx):
+        """
+        idx is 0, 1, 2, corresponding to flexion, abduction, rotation
+        usage:
+        RKNEE_angles.flexion = RKNEE_angles.zero_by_idx(0)
+        """
+        angle = self.flexion if idx == 0 else self.abduction if idx == 1 else self.rotation
+        this_zero_frame = self.zero_frame[idx]
+        if this_zero_frame is not None:
+                zero_angle = angle[this_zero_frame]
+                output_angle = angle - zero_angle
+                output_angle = np.where(output_angle > np.pi, output_angle - 2 * np.pi, output_angle)
+                output_angle = np.where(output_angle < -np.pi, output_angle + 2 * np.pi, output_angle)
+        else:
+            output_angle = angle
+        return output_angle
 
     def plot_angles(self, joint_name='', alpha=1, linewidth=1, linestyle='-', label=None, frame_range=None):
         if self.is_empty:
@@ -368,13 +455,16 @@ class JointAngles:
         for angle_id, angle in enumerate([self.flexion, self.abduction, self.rotation]):
             # horizontal line at zero, pi, and -pi
             ax[angle_id].axhline(0, color='k', linestyle='--', alpha=0.5, linewidth=0.25)
+            ax[angle_id].axhline(90, color='k', linestyle='dotted', alpha=0.5, linewidth=0.25)
             ax[angle_id].axhline(180, color='k', linestyle='--', alpha=0.5, linewidth=0.25)
+            ax[angle_id].axhline(-90, color='k', linestyle='dotted', alpha=0.5, linewidth=0.25)
             ax[angle_id].axhline(-180, color='k', linestyle='--', alpha=0.5, linewidth=0.25)
             ax[angle_id].yaxis.set_ticks(np.arange(-180, 181, 90))
             ax[angle_id].set_ylabel(f'{angle_names[angle_id]}')
+            ax[angle_id].set_xlim(frame_range[0], frame_range[1])  # set xlim
             ax[angle_id].margins(x=0)
             if angle is not None:
-                ax[angle_id].plot(angle[frame_range[0]:frame_range[1]]/np.pi*180, color=colors[angle_id], alpha=alpha, linewidth=linewidth, linestyle=linestyle, label=label)
+                ax[angle_id].plot(angle[0:frame_range[1]]/np.pi*180, color=colors[angle_id], alpha=alpha, linewidth=linewidth, linestyle=linestyle, label=label)
             else:
                 # plot diagonal line crossing through the chart
                 ax[angle_id].plot([frame_range[0], frame_range[1]], [-180, 180], color='black', linewidth=4)
@@ -404,7 +494,9 @@ class JointAngles:
                 print(f'frame {frame_id}/{frame_range[1]}', end='\r')
                 # horizontal line at zero, pi, and -pi
                 ax[angle_id].axhline(0, color='k', linestyle='--', alpha=0.5, linewidth=0.25)
+                ax[angle_id].axhline(90, color='k', linestyle='dotted', alpha=0.5, linewidth=0.25)
                 ax[angle_id].axhline(180, color='k', linestyle='--', alpha=0.5, linewidth=0.25)
+                ax[angle_id].axhline(-90, color='k', linestyle='dotted', alpha=0.5, linewidth=0.25)
                 ax[angle_id].axhline(-180, color='k', linestyle='--', alpha=0.5, linewidth=0.25)
                 ax[angle_id].yaxis.set_ticks(np.arange(-180, 181, 90))
                 ax[angle_id].set_xlim(frame_range[0], frame_range[1])  # set xlim
