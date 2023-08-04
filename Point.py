@@ -92,7 +92,6 @@ class Point():
         """
         return the angle between main_axis_pt and target_pt using right hand rule
         secondary_axis_pt is used to determine the direction of the angle
-        use arctan2 to get a range of [-pi, pi]
         """
         angle_abs = Point.angle(target_vector, main_axis_vector)
         angle_sign = Point.angle(target_vector, secondary_axis_vector)
@@ -200,6 +199,10 @@ class Plane:
         """
         plane_normal = self.normal_vector.xyz
         plane_normal = plane_normal / np.linalg.norm(plane_normal, axis=0)
+
+        # vector = np.array([[1,1,1],[1,1,2]]).T
+        # plane_normal = np.array([[0,1,0],[0,1,0]]).T
+        angle = Point.angle(vector, plane_normal)
         projection = vector - np.diagonal(np.dot(vector.T, plane_normal)) * plane_normal
         return projection
 
@@ -315,8 +318,8 @@ class CoordinateSystem3D:
         self.zx_plane = Plane(self.origin, self.z_axis_end, self.x_axis_end)
         self.yz_plane = Plane(self.origin, self.y_axis_end, self.z_axis_end)
 
-    def projection_angles(self, pt, threshold=1):
-        vector = Point.vector(self.origin, pt).xyz
+    def projection_angles(self, target_vector, threshold=1):
+        vector = target_vector.xyz
         x_vector = Point.vector(self.origin, self.x_axis_end).xyz
         y_vector = Point.vector(self.origin, self.y_axis_end).xyz
         z_vector = Point.vector(self.origin, self.z_axis_end).xyz
@@ -351,14 +354,14 @@ class JointAngles:
         elif type(frame) == int:
             self.zero_frame = [frame, frame, frame]
 
-    def get_flex_abd(self, coordinate_system, target_pt, plane_seq=['xy', 'xz']):
+    def get_flex_abd(self, coordinate_system, target_vector, plane_seq=['xy', 'xz']):
         """
-        get flexion and abduction angles of a point in a coordinate system
+        get flexion and abduction angles of a vector in a coordinate system
         plane_seq: ['xy', None]
         """
         if len(plane_seq) != 2:
             raise ValueError('plane_seq must be a list of length 2, with flexion plane first and abduction plane second, fill None if not needed')
-        xy_angle, xz_angle, yz_angle = coordinate_system.projection_angles(target_pt)
+        xy_angle, xz_angle, yz_angle = coordinate_system.projection_angles(target_vector)
         output_angles = []
         zero_angles = []
         for plane_id, plane_name in enumerate(plane_seq):
@@ -473,7 +476,7 @@ class JointAngles:
         plt.show()
         return fig, ax
 
-    def plot_angles_by_frame(self, render_dir, joint_name='', alpha=1, linewidth=1, linestyle='-', label=None, frame_range=None):
+    def plot_angles_by_frame(self, render_dir, joint_name='', alpha=1, linewidth=1, linestyle='-', label=None, frame_range=None, angle_names = ['Flexion', 'H-Abduction', 'Rotation']):
         if self.is_empty:
             raise ValueError('JointAngles is empty, please set angles first')
         if frame_range is None:
@@ -488,7 +491,7 @@ class JointAngles:
         print(f'Saving {joint_name} angle frames to {render_dir}')
         for frame_id in range(frame_range[0], frame_range[1]):
             fig, ax = plt.subplots(3, 1, sharex=True)
-            angle_names = ['Flexion', 'H-Abduction', 'Rotation']
+
             colors = ['r', 'g', 'b']
             for angle_id, angle in enumerate([self.flexion, self.abduction, self.rotation]):
                 print(f'frame {frame_id}/{frame_range[1]}', end='\r')

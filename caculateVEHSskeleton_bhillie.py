@@ -4,6 +4,8 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import csv
 import pickle
+
+import Point
 from utility import *
 from Point import *
 import yaml
@@ -88,6 +90,14 @@ if __name__ == '__main__':
     RLM = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RLM'))
     # LMM = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LMM'))
     # LLM = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LLM'))
+    RUS = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RUS'))
+    LUS = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LUS'))
+    RRS = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RRS'))
+    LRS = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LRS'))
+    RMCP2 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RMCP2'))
+    LMCP2 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LMCP2'))
+    RMCP5 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RMCP5'))
+    LMCP5 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LMCP5'))
 
     ######################################## Create virtual markers ########################################
     ##### upper body #####
@@ -97,6 +107,10 @@ if __name__ == '__main__':
     C7_m = Point.mid_point(C7_d, SS)
     # LELBOW = Point.mid_point(LME, LLE)
     RELBOW = Point.mid_point(RME, RLE)
+    RWRIST = Point.mid_point(RRS, RUS)
+    # LWRIST = Point.mid_point(LRS, LUS)
+    RHAND = Point.mid_point(RMCP2, RMCP5)
+    # LHAND = Point.mid_point(LMCP2, LMCP5)
 
     ##### lower body #####
     PELVIS_f = Point.mid_point(RASIS, LASIS)
@@ -125,7 +139,7 @@ if __name__ == '__main__':
         RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, RSHOULDER_C7_m_project, sequence='zyx', axis_positive=False)
         RSHOULDER_angles = JointAngles()
         RSHOULDER_angles.set_zero_frame(zero_frame)
-        RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, RELBOW, plane_seq=['xy', 'xz'])
+        RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, Point.vector(RSHOULDER, RELBOW), plane_seq=['xy', 'xz'])
         # RSHOULDER_angles.get_rot(RSHO_b, RSHO_f, RME, RLE)
         RSHOULDER_angles.flexion = Point.angle(Point.vector(RSHOULDER, RELBOW).xyz, Point.vector(C7, PELVIS_b).xyz)
         RSHOULDER_angles.flexion = RSHOULDER_angles.zero_by_idx(0)  # zero by zero frame after setting flexion without function
@@ -145,8 +159,8 @@ if __name__ == '__main__':
         print('RSHOULDER_angles failed')
 
     # Head angles
-    # try:
-    if True:
+    try:
+    # if True:
         zero_frame = [1093, 1093, 1093]
         frame_range = [1093, 4007]
         HEAD_plane = Plane()
@@ -155,20 +169,19 @@ if __name__ == '__main__':
         HEAD_coord.set_by_plane(HEAD_plane, EAR, HDTP, sequence='yxz', axis_positive=True)
         HEAD_angles = JointAngles()
         HEAD_angles.set_zero_frame(zero_frame)
-        HEAD_angles.get_flex_abd(HEAD_coord, C7, plane_seq=['xy', 'yz'])
+        HEAD_angles.get_flex_abd(HEAD_coord, Point.vector(C7, Point.mid_point(RPSIS, LPSIS)), plane_seq=['xy', 'yz'])
         HEAD_angles.get_rot(LEAR, REAR, LAP, RAP)
 
-        frame = 1100
+        frame = 1286
         # Point.plot_points([
         #                    HEAD_coord.origin, HEAD_coord.x_axis_end, HEAD_coord.y_axis_end, HEAD_coord.z_axis_end,
-        #                    EAR, C7_m, HDTP, LAP, RAP
+        #                    C7, HDTP, LAP, RAP, MDFH, LEAR, REAR,
         #                    ], frame=frame)
         HEAD_angles.plot_angles(joint_name='Right Head', frame_range=frame_range)
-        # render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'HEAD')
-        # HEAD_angles.plot_angles_by_frame(render_dir, joint_name='Right Head', frame_range=frame_range)
-
-    # except:
-    #     print('RHEAD_angles failed')
+        render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'HEAD')
+        HEAD_angles.plot_angles_by_frame(render_dir, joint_name='Right Head', frame_range=frame_range)
+    except:
+        print('RHEAD_angles failed')
 
     # Back angles
 
@@ -190,7 +203,45 @@ if __name__ == '__main__':
     except:
         print('RKnee_angles failed')
 
+    # RElbow angles
+    try:
+    # if True:
+        zero_frame = [889, None, None]
+        frame_range = [889, 1837]
+        RELBOW_angles = JointAngles()
+        RELBOW_angles.set_zero_frame(zero_frame)
+        RELBOW_angles.flexion = Point.angle(Point.vector(RELBOW, RSHOULDER).xyz, Point.vector(RELBOW, RWRIST).xyz)
+        RELBOW_angles.flexion = RELBOW_angles.zero_by_idx(0)  # zero by zero frame
+        RELBOW_angles.is_empty = False
+        RELBOW_angles.abduction = None
+        RELBOW_angles.rotation = None
+        # RELBOW_angles.plot_angles(joint_name='Right Elbow', frame_range=frame_range)
+        render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RELBOW')
+        RELBOW_angles.plot_angles_by_frame(render_dir, joint_name='Right Elbow', frame_range=frame_range)
+    except:
+        print('RElbow_angles failed')
 
+    # RWrist angles
+    # try:
+    if True:
+        zero_frame = [1369, 1369, None]
+        frame_range = [1369, 3115]
+        RWRIST_plane = Plane()
+        RWRIST_plane.set_by_pts(RELBOW, RRS, RUS)
+        RWRIST_coord = CoordinateSystem3D()
+        RWRIST_coord.set_by_plane(RWRIST_plane, RWRIST, RELBOW, sequence='yxz', axis_positive=True)
+        RWRIST_angles = JointAngles()
+        RWRIST_angles.set_zero_frame(zero_frame)
+        RWRIST_angles.get_flex_abd(RWRIST_coord, Point.vector(RWRIST, RHAND), plane_seq=['xy', 'yz'])
+        RWRIST_angles.rotation = None
+        frame = 3000
+        # Point.plot_points([
+        #                     RWRIST_coord.origin, RWRIST_coord.x_axis_end, RWRIST_coord.y_axis_end, RWRIST_coord.z_axis_end,
+        #                     RWRIST, RELBOW, RRS, RUS, RHAND
+        #                     ], frame=frame)
+        # RWRIST_angles.plot_angles(joint_name='Right Wrist', frame_range=frame_range)
+        render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RWRIST')
+        RWRIST_angles.plot_angles_by_frame(render_dir, joint_name='Right Wrist', frame_range=frame_range, angle_names=['Flexion', 'Deviation', 'Rotation'])
 
-    # Head angles
-
+    # except:
+    #     print('RWRIST_angles failed')
