@@ -354,7 +354,7 @@ class JointAngles:
         elif type(frame) == int:
             self.zero_frame = [frame, frame, frame]
 
-    def get_flex_abd(self, coordinate_system, target_vector, plane_seq=['xy', 'xz']):
+    def get_flex_abd(self, coordinate_system, target_vector, plane_seq=['xy', 'xz'], flip_sign=[1, 1]):
         """
         get flexion and abduction angles of a vector in a coordinate system
         plane_seq: ['xy', None]
@@ -389,11 +389,10 @@ class JointAngles:
             else:
                 output_angles.append(None)
 
-
-        self.flexion = output_angles[0]
-        self.flexion_info = {'plane': plane_seq[0], 'zero_angle': zero_angles[0], 'zero_frame': self.zero_frame[0]}
-        self.abduction = output_angles[1]
-        self.abduction_info = {'plane': plane_seq[1], 'zero_angle': zero_angles[1], 'zero_frame': self.zero_frame[1]}
+        self.flexion = output_angles[0] * flip_sign[0]
+        self.flexion_info = {'plane': plane_seq[0], 'zero_angle': zero_angles[0], 'zero_frame': self.zero_frame[0], 'flip_sign': flip_sign[0]}
+        self.abduction = output_angles[1] * flip_sign[1]
+        self.abduction_info = {'plane': plane_seq[1], 'zero_angle': zero_angles[1], 'zero_frame': self.zero_frame[1], 'flip_sign': flip_sign[1]}
         self.is_empty = False
         return output_angles
 
