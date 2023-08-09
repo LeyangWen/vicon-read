@@ -38,7 +38,7 @@ if __name__ == '__main__':
     weight = vicon.GetSubjectParam(subject_names[0], 'Bodymass')[0]
     height = vicon.GetSubjectParam(subject_names[0], 'Height')[0]
 
-    c3d_file = os.path.join(trial_name[0],trial_name[1]+ '.c3d')
+    c3d_file = os.path.join(trial_name[0], trial_name[1] + '.c3d')
     skeleton = Skeleton.PulginGaitSkeleton(c3d_file, skeleton_file=skeleton_file, acronym_file=acronym_file)
     skeleton.set_weight_height(weight=weight, height=height/1000)
     # skeleton.set_weight_height(80, 1.844)
