@@ -133,10 +133,12 @@ if __name__ == '__main__':
         zero_frame = [941, 1320, None]
         frame_range = [941, 5756]
         RSHOULDER_plane = Plane()
-        RSHOULDER_plane.set_by_vector(RSHOULDER, Point.vector(C7, PELVIS_b), direction=-1)
+        RSHOULDER_plane.set_by_vector(RSHOULDER, Point.vector(C7_d, PELVIS_b), direction=-1)
         RSHOULDER_C7_m_project = RSHOULDER_plane.project_point(C7_m)
+        RSHOULDER_SS_project = RSHOULDER_plane.project_point(SS)
         RSHOULDER_coord = CoordinateSystem3D()
-        RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, RSHOULDER_C7_m_project, sequence='zyx', axis_positive=False)
+        RSHOULDER_coord.set_by_plane(RSHOULDER_plane, C7_d, RSHOULDER_SS_project, sequence='xyz', axis_positive=True)  # new: use back to chest vector
+        # RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, RSHOULDER_C7_m_project, sequence='zyx', axis_positive=False)  # old: use shoulder to chest vector
         RSHOULDER_angles = JointAngles()
         RSHOULDER_angles.set_zero_frame(zero_frame)
         RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, Point.vector(RSHOULDER, RELBOW), plane_seq=['xy', 'xz'])
@@ -145,9 +147,10 @@ if __name__ == '__main__':
         RSHOULDER_angles.flexion = RSHOULDER_angles.zero_by_idx(0)  # zero by zero frame after setting flexion without function
         RSHOULDER_angles.rotation = None
 
-        shoulder_threshold = 10/180*np.pi  # the H-abduction is not well defined when the flexion is small or near 180 degrees
-        shoulder_filter = np.logical_and(np.abs(RSHOULDER_angles.flexion) > shoulder_threshold, np.abs(RSHOULDER_angles.flexion) < (np.pi - shoulder_threshold))
-        RSHOULDER_angles.abduction = np.array([np.where(shoulder_filter[i], RSHOULDER_angles.abduction[i], np.nan) for i in range(len(shoulder_filter))])  # set abduction to nan if shoulder filter is false
+        # todo: add this filter as a function; set undefined angles to zero
+        # shoulder_threshold = 10/180*np.pi  # the H-abduction is not well defined when the flexion is small or near 180 degrees
+        # shoulder_filter = np.logical_and(np.abs(RSHOULDER_angles.flexion) > shoulder_threshold, np.abs(RSHOULDER_angles.flexion) < (np.pi - shoulder_threshold))
+        # RSHOULDER_angles.abduction = np.array([np.where(shoulder_filter[i], RSHOULDER_angles.abduction[i], np.nan) for i in range(len(shoulder_filter))])  # set abduction to nan if shoulder filter is false
 
 
 
@@ -158,9 +161,9 @@ if __name__ == '__main__':
         #                    RSHOULDER_coord.origin, RSHOULDER_coord.x_axis_end, RSHOULDER_coord.y_axis_end, RSHOULDER_coord.z_axis_end,
         #                    RSHOULDER, C7_m, RSHOULDER_C7_m_project, RELBOW, RSHO_f, RSHO_b,
         #                    ], frame=frame)
-        RSHOULDER_angles.plot_angles(joint_name='Right Shoulder', frame_range=frame_range)
-        # render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RSHOULDER')
-        # RSHOULDER_angles.plot_angles_by_frame(render_dir, joint_name='Right Shoulder', frame_range=frame_range)
+        # RSHOULDER_angles.plot_angles(joint_name='Right Shoulder', frame_range=frame_range)
+        render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RSHOULDER')
+        RSHOULDER_angles.plot_angles_by_frame(render_dir, joint_name='Right Shoulder', frame_range=frame_range)
         print('**** RSHOULDER_angles done ****')
     # except:
     #     print('RSHOULDER_angles failed')
