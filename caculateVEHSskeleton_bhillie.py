@@ -109,7 +109,7 @@ if __name__ == '__main__':
     RELBOW = Point.mid_point(RME, RLE)
     RWRIST = Point.mid_point(RRS, RUS)
     # LWRIST = Point.mid_point(LRS, LUS)
-    RHAND = RMCP2
+    RHAND = Point.mid_point(RMCP2, RMCP5)
     # LHAND =
 
     ##### lower body #####
@@ -126,8 +126,8 @@ if __name__ == '__main__':
 
     ######################################## Calculate angles ########################################
 
-    # try:  # RShoulder angles
-    if True:
+    try:  # RShoulder angles
+    # if True:
         PELVIS_b = Point.translate_point(C7, Point.create_const_vector(0,0,-1000,examplePt=C7))  # todo: this is temp for this shoulder trial, change to real marker in the future
         # RSHOULDER = Point.translate_point(RAP, Point.create_const_vector(0,0,-50,examplePt=RAP))
         zero_frame = [941, 1320, None]
@@ -143,9 +143,10 @@ if __name__ == '__main__':
         RSHOULDER_angles.set_zero_frame(zero_frame)
         RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, Point.vector(RSHOULDER, RELBOW), plane_seq=['xy', 'xz'])
         # RSHOULDER_angles.get_rot(RSHO_b, RSHO_f, RME, RLE)
+        RSHOULDER_angles.rotation = RSHOULDER_angles.flexion
         RSHOULDER_angles.flexion = Point.angle(Point.vector(RSHOULDER, RELBOW).xyz, Point.vector(C7, PELVIS_b).xyz)
         RSHOULDER_angles.flexion = RSHOULDER_angles.zero_by_idx(0)  # zero by zero frame after setting flexion without function
-        RSHOULDER_angles.rotation = None
+        # RSHOULDER_angles.rotation = None
 
         # todo: add this filter as a function; set undefined angles to zero
         # shoulder_threshold = 10/180*np.pi  # the H-abduction is not well defined when the flexion is small or near 180 degrees
@@ -163,10 +164,10 @@ if __name__ == '__main__':
         #                    ], frame=frame)
         # RSHOULDER_angles.plot_angles(joint_name='Right Shoulder', frame_range=frame_range)
         render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RSHOULDER')
-        RSHOULDER_angles.plot_angles_by_frame(render_dir, joint_name='Right Shoulder', frame_range=frame_range)
+        RSHOULDER_angles.plot_angles_by_frame(render_dir, joint_name='Right Shoulder', frame_range=frame_range, angle_names=['Flexion', 'H-Abduction', 'Rick-Flexion'])
         print('**** RSHOULDER_angles done ****')
-    # except:
-    #     print('RSHOULDER_angles failed')
+    except:
+        print('RSHOULDER_angles failed')
 
     # try:  # Head angles
     # # if True:
@@ -235,15 +236,29 @@ if __name__ == '__main__':
     #     frame_range = [1369, 3115]
     #     zero_frame = [1165, 1165, None]  #02
     #     frame_range = [1165, 2747]
+    #     zero_frame = [1318, 1318, None]  #03
+    #     frame_range = [1318, 2653]
+    #
+    #     # # set by elbow
+    #     # RWRIST_plane = Plane()
+    #     # RWRIST_plane.set_by_pts(RELBOW, RRS, RUS)
+    #     # RWRIST_coord = CoordinateSystem3D()
+    #     # RWRIST_coord.set_by_plane(RWRIST_plane, RWRIST, RELBOW, sequence='yxz', axis_positive=True)
+    #     # RWRIST_angles = JointAngles()
+    #     # RWRIST_angles.set_zero_frame(zero_frame)
+    #     # RWRIST_angles.get_flex_abd(RWRIST_coord, Point.vector(RWRIST, RHAND), plane_seq=['xy', 'yz'])
+    #
+    #     # set by hand
     #     RWRIST_plane = Plane()
-    #     RWRIST_plane.set_by_pts(RELBOW, RRS, RUS)
+    #     RWRIST_plane.set_by_pts(RMCP2, RWRIST, RMCP5)
     #     RWRIST_coord = CoordinateSystem3D()
-    #     RWRIST_coord.set_by_plane(RWRIST_plane, RWRIST, RELBOW, sequence='yxz', axis_positive=True)
+    #     RWRIST_coord.set_by_plane(RWRIST_plane, RWRIST, RHAND, sequence='yxz', axis_positive=True)
     #     RWRIST_angles = JointAngles()
     #     RWRIST_angles.set_zero_frame(zero_frame)
-    #     RWRIST_angles.get_flex_abd(RWRIST_coord, Point.vector(RWRIST, RHAND), plane_seq=['xy', 'yz'])
+    #     RWRIST_angles.get_flex_abd(RWRIST_coord, Point.vector(RWRIST, RELBOW), plane_seq=['xy', 'yz'])
+    #
     #     RWRIST_angles.rotation = None
-    #     frame = 3000
+    #     # frame = 3000
     #     # Point.plot_points([
     #     #                     RWRIST_coord.origin, RWRIST_coord.x_axis_end, RWRIST_coord.y_axis_end, RWRIST_coord.z_axis_end,
     #     #                     RWRIST, RELBOW, RRS, RUS, RHAND
