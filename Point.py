@@ -129,6 +129,11 @@ class Point():
         exist = np.ones(xyz.shape[1], dtype=bool).tolist()
         return VirtualPoint((xyz, exist))
 
+    @staticmethod
+    def batch_export_to_nparray(point_list):
+        xyz = np.array([p.xyz for p in point_list])
+        return xyz
+
 
 class MarkerPoint(Point):
     def __init__(self, data):

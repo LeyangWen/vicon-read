@@ -128,10 +128,15 @@ if __name__ == '__main__':
 
     try:  # RShoulder angles
     # if True:
-        PELVIS_b = Point.translate_point(C7, Point.create_const_vector(0,0,-1000,examplePt=C7))  # todo: this is temp for this shoulder trial, change to real marker in the future
-        # RSHOULDER = Point.translate_point(RAP, Point.create_const_vector(0,0,-50,examplePt=RAP))
-        zero_frame = [941, 1320, None]
-        frame_range = [941, 5756]
+    #     #  Upper_lim_angles01
+    #     PELVIS_b = Point.translate_point(C7, Point.create_const_vector(0,0,-1000,examplePt=C7))  # todo: this is temp for this shoulder trial, change to real marker in the future
+    #     # RSHOULDER = Point.translate_point(RAP, Point.create_const_vector(0,0,-50,examplePt=RAP))
+    #     zero_frame = [941, 1320, 941]
+    #     frame_range = [941, 5756]
+        # shoulder02
+        zero_frame = [803, 1019, 803]
+        frame_range = [803, 3231]
+
         RSHOULDER_plane = Plane()
         RSHOULDER_plane.set_by_vector(RSHOULDER, Point.vector(C7_d, PELVIS_b), direction=-1)
         RSHOULDER_C7_m_project = RSHOULDER_plane.project_point(C7_m)
@@ -142,18 +147,14 @@ if __name__ == '__main__':
         RSHOULDER_angles = JointAngles()
         RSHOULDER_angles.set_zero_frame(zero_frame)
         RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, Point.vector(RSHOULDER, RELBOW), plane_seq=['xy', 'xz'])
-        # RSHOULDER_angles.get_rot(RSHO_b, RSHO_f, RME, RLE)
-        RSHOULDER_angles.rotation = RSHOULDER_angles.flexion
+        RSHOULDER_angles.get_rot(RSHO_b, RSHO_f, RME, RLE)
         RSHOULDER_angles.flexion = Point.angle(Point.vector(RSHOULDER, RELBOW).xyz, Point.vector(C7, PELVIS_b).xyz)
         RSHOULDER_angles.flexion = RSHOULDER_angles.zero_by_idx(0)  # zero by zero frame after setting flexion without function
-        # RSHOULDER_angles.rotation = None
 
         # todo: add this filter as a function; set undefined angles to zero
-        # shoulder_threshold = 10/180*np.pi  # the H-abduction is not well defined when the flexion is small or near 180 degrees
-        # shoulder_filter = np.logical_and(np.abs(RSHOULDER_angles.flexion) > shoulder_threshold, np.abs(RSHOULDER_angles.flexion) < (np.pi - shoulder_threshold))
-        # RSHOULDER_angles.abduction = np.array([np.where(shoulder_filter[i], RSHOULDER_angles.abduction[i], np.nan) for i in range(len(shoulder_filter))])  # set abduction to nan if shoulder filter is false
-
-
+        shoulder_threshold = 10/180*np.pi  # the H-abduction is not well defined when the flexion is small or near 180 degrees
+        shoulder_filter = np.logical_and(np.abs(RSHOULDER_angles.flexion) > shoulder_threshold, np.abs(RSHOULDER_angles.flexion) < (np.pi - shoulder_threshold))
+        RSHOULDER_angles.abduction = np.array([np.where(shoulder_filter[i], RSHOULDER_angles.abduction[i], 0) for i in range(len(shoulder_filter))])  # set abduction to nan if shoulder filter is false
 
         ##### Visual for debugging #####
         frame = 1000
@@ -163,8 +164,8 @@ if __name__ == '__main__':
         #                    RSHOULDER, C7_m, RSHOULDER_C7_m_project, RELBOW, RSHO_f, RSHO_b,
         #                    ], frame=frame)
         # RSHOULDER_angles.plot_angles(joint_name='Right Shoulder', frame_range=frame_range)
-        render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RSHOULDER')
-        RSHOULDER_angles.plot_angles_by_frame(render_dir, joint_name='Right Shoulder', frame_range=frame_range, angle_names=['Flexion', 'H-Abduction', 'Rick-Flexion'])
+        render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RSHOULDER_1_all_filtered')
+        RSHOULDER_angles.plot_angles_by_frame(render_dir, joint_name='Right Shoulder', frame_range=frame_range, angle_names=['Flexion', 'H-Abduction', 'Rotation'])
         print('**** RSHOULDER_angles done ****')
     except:
         print('RSHOULDER_angles failed')
@@ -230,45 +231,46 @@ if __name__ == '__main__':
     # except:
     #     print('RElbow_angles failed')
     #
-    # try:  # RWrist angles
-    # # if True:
-    #     zero_frame = [1369, 1369, None]  #01
-    #     frame_range = [1369, 3115]
-    #     zero_frame = [1165, 1165, None]  #02
-    #     frame_range = [1165, 2747]
-    #     zero_frame = [1318, 1318, None]  #03
-    #     frame_range = [1318, 2653]
-    #
-    #     # # set by elbow
-    #     # RWRIST_plane = Plane()
-    #     # RWRIST_plane.set_by_pts(RELBOW, RRS, RUS)
-    #     # RWRIST_coord = CoordinateSystem3D()
-    #     # RWRIST_coord.set_by_plane(RWRIST_plane, RWRIST, RELBOW, sequence='yxz', axis_positive=True)
-    #     # RWRIST_angles = JointAngles()
-    #     # RWRIST_angles.set_zero_frame(zero_frame)
-    #     # RWRIST_angles.get_flex_abd(RWRIST_coord, Point.vector(RWRIST, RHAND), plane_seq=['xy', 'yz'])
-    #
-    #     # set by hand
-    #     RWRIST_plane = Plane()
-    #     RWRIST_plane.set_by_pts(RMCP2, RWRIST, RMCP5)
-    #     RWRIST_coord = CoordinateSystem3D()
-    #     RWRIST_coord.set_by_plane(RWRIST_plane, RWRIST, RHAND, sequence='yxz', axis_positive=True)
-    #     RWRIST_angles = JointAngles()
-    #     RWRIST_angles.set_zero_frame(zero_frame)
-    #     RWRIST_angles.get_flex_abd(RWRIST_coord, Point.vector(RWRIST, RELBOW), plane_seq=['xy', 'yz'])
-    #
-    #     RWRIST_angles.rotation = None
-    #     # frame = 3000
-    #     # Point.plot_points([
-    #     #                     RWRIST_coord.origin, RWRIST_coord.x_axis_end, RWRIST_coord.y_axis_end, RWRIST_coord.z_axis_end,
-    #     #                     RWRIST, RELBOW, RRS, RUS, RHAND
-    #     #                     ], frame=frame)
-    #     RWRIST_angles.plot_angles(joint_name='Right Wrist', frame_range=frame_range)
-    #     # render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RWRIST')
-    #     # RWRIST_angles.plot_angles_by_frame(render_dir, joint_name='Right Wrist', frame_range=frame_range, angle_names=['Flexion', 'Deviation', 'Rotation'])
-    #     print('**** RWrist_angles done ****')
-    # except:
-    #     print('RWRIST_angles failed')
+    try:  # RWrist angles
+    # if True:
+        zero_frame = [1369, 1369, None]  #01
+        frame_range = [1369, 3115]
+        zero_frame = [1165, 1165, None]  #02
+        frame_range = [1165, 2747]
+        zero_frame = [1318, 1318, 2882]  #03
+        frame_range = [1318, 3386]
+
+        # # set by elbow
+        # RWRIST_plane = Plane()
+        # RWRIST_plane.set_by_pts(RELBOW, RRS, RUS)
+        # RWRIST_coord = CoordinateSystem3D()
+        # RWRIST_coord.set_by_plane(RWRIST_plane, RWRIST, RELBOW, sequence='yxz', axis_positive=True)
+        # RWRIST_angles = JointAngles()
+        # RWRIST_angles.set_zero_frame(zero_frame)
+        # RWRIST_angles.get_flex_abd(RWRIST_coord, Point.vector(RWRIST, RHAND), plane_seq=['xy', 'yz'])
+
+        # set by hand
+        RWRIST_plane = Plane()
+        RWRIST_plane.set_by_pts(RMCP2, RWRIST, RMCP5)
+        RWRIST_coord = CoordinateSystem3D()
+        RWRIST_coord.set_by_plane(RWRIST_plane, RWRIST, RHAND, sequence='yxz', axis_positive=True)
+        RWRIST_angles = JointAngles()
+        RWRIST_angles.set_zero_frame(zero_frame)
+        RWRIST_angles.get_flex_abd(RWRIST_coord, Point.vector(RWRIST, RELBOW), plane_seq=['xy', 'yz'])
+        RWRIST_angles.get_rot(RRS, RUS, RLE, RME)
+
+        # RWRIST_angles.rotation = None
+        # frame = 3000
+        # Point.plot_points([
+        #                     RWRIST_coord.origin, RWRIST_coord.x_axis_end, RWRIST_coord.y_axis_end, RWRIST_coord.z_axis_end,
+        #                     RWRIST, RELBOW, RRS, RUS, RHAND
+        #                     ], frame=frame)
+        RWRIST_angles.plot_angles(joint_name='Right Wrist', frame_range=frame_range)
+        # render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RWRIST')
+        # RWRIST_angles.plot_angles_by_frame(render_dir, joint_name='Right Wrist', frame_range=frame_range, angle_names=['Flexion', 'Deviation', 'Rotation'])
+        print('**** RWrist_angles done ****')
+    except:
+        print('RWRIST_angles failed')
     #
     # try:  # Back angles: Back02
     # # if True:

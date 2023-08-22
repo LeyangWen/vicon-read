@@ -72,7 +72,7 @@ class Camera():
         rot3x4 = np.hstack([rot3x3, -rot3x3.dot(position.reshape(-1, 1))])
         return rot3x4
 
-    def camera_intrinsic_matrix(self):
+    def get_camera_intrinsic_matrix(self):
         K = np.array([[self.FOCAL_LENGTH, self.SKEW, self.PRINCIPAL_POINT[0]],
                       [0, self.FOCAL_LENGTH / self.PIXEL_ASPECT_RATIO, self.PRINCIPAL_POINT[1]],
                       [0, 0, 1]])
@@ -154,17 +154,34 @@ class FLIR_Camera(Camera):
     def get_projection_matrix(self):
         self.rot3x3 = self.rot3x3_from_quaternion(self.ORIENTATION)
         self.rot3x4 = self.rot3x4_from_rot3x3_and_position(self.rot3x3, self.POSITION)
-        self.intrinsic_matrix = self.camera_intrinsic_matrix()
+        self.intrinsic_matrix = self.get_camera_intrinsic_matrix()
         self.projection_matrix = self.projection_matrix_from_intrinsic_matrix_and_rot3x4(self.intrinsic_matrix, self.rot3x4)
         return self.projection_matrix
 
     def project(self, points_3d):
+        '''
+        :param points_3d: 3d points in world coordinate
+        :return: 2d points in camera coordinate, in pixel
+        '''
         self.get_projection_matrix()
         points_3d = np.array(points_3d)
         points_2d = self.projection_matrix.dot(np.vstack([points_3d.T, np.ones([1, points_3d.shape[0]])]))
         points_2d = points_2d[0:2, :] / points_2d[2, :]
         points_2d = points_2d.T
         return points_2d
+
+    def project_w_depth(self, points_3d):  # todo: test
+        '''
+        :param points_3d: 3d points in world coordinate
+        :return: 3d points in camera coordinate, with depth, in mm/m
+        '''
+        self.get_projection_matrix()
+        points_3d = np.array(points_3d)
+        points_3d_cam = self.rot3x4.dot(np.vstack([points_3d.T, np.ones([1, points_3d.shape[0]])]))
+        # translation_vector = self.POSITION.reshape([3, 1])
+        # rotM = self.rot3x3
+        # points_3d_cam = (rotM.dot(points_3d.T) + translation_vector).T
+        return points_3d_cam
 
     @staticmethod
     def plugingait_to_H36M_converter(points_2d, frame_no, joint_names):
