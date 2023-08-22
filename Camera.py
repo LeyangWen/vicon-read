@@ -275,7 +275,7 @@ if __name__ == '__main__':
         start_frame = 0
         end_frame = 7497
         fps_ratio = 100/fps
-        frames = np.linspace(start_frame/fps_ratio, end_frame/fps_ratio, int((end_frame-start_frame)/fps_ratio+1), dtype=int)
+        frames = np.linspace(start_frame/fps_ratio, end_frame/fps_ratio, int((end_frame-start_frame)/fps_ratio), dtype=int)
         cameras = batch_load_from_xcp(xcp_filename)
         camera = cameras[1]
         for cam_idx, camera in enumerate(cameras):

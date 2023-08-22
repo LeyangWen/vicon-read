@@ -37,6 +37,8 @@ if __name__ == '__main__':
     subject_info = vicon.GetSubjectInfo()
     weight = vicon.GetSubjectParam(subject_names[0], 'Bodymass')[0]
     height = vicon.GetSubjectParam(subject_names[0], 'Height')[0]
+    gender_idx = vicon.GetSubjectParam(subject_names[0], 'Gender')[0]
+    gender = ['No input', 'Male', 'Female', 'Others'][int(gender_idx)]
     BMI = BMI_caculate(weight, height/1000)
     BMI_class = BMI_classUS(BMI)
 
@@ -47,7 +49,8 @@ if __name__ == '__main__':
                   'c3d_file': c3d_file,
                   'subject_name': subject_names[0], 'frame_count': frame_count, 'marker_height': marker_height,
                   'frame_rate': frame_rate, 'weight': weight, 'height': height,
-                  'BMI': BMI, 'BMI_class': BMI_class}
+                  'BMI': BMI, 'BMI_class': BMI_class, 'gender': gender
+                  }
     with open(trial_yaml_file, 'w') as f:
         f.write(yaml.dump(trial_info, default_flow_style=False, sort_keys=False))
 
@@ -142,17 +145,73 @@ if __name__ == '__main__':
     LFOOT = Point.mid_point(LMTP1, LMTP5)
 
     ######################################## Project and export cdf ########################################
+    kpts_of_interest = [HDTP, REAR, LEAR, C7, C7_d, SS, RAP_b, RAP_f, LAP_b, LAP_f, RLE, RME, LLE, LME, RMCP2, RMCP5, LMCP2, LMCP5, PELVIS, RWRIST, LWRIST, RHIP, LHIP, RKNEE,
+                                             LKNEE, RANKLE, LANKLE, RFOOT, LFOOT, RHAND, LHAND, RELBOW, LELBOW, RSHOULDER, LSHOULDER, HEAD, THORAX]
+    kpt_names = ['HDTP', 'REAR', 'LEAR', 'C7', 'C7_d', 'SS', 'RAP_b', 'RAP_f', 'LAP_b', 'LAP_f', 'RLE', 'RME', 'LLE', 'LME', 'RMCP2', 'RMCP5', 'LMCP2', 'LMCP5', 'PELVIS', 'RWRIST', 'LWRIST', 'RHIP', 'LHIP', 'RKNEE',
+                                                'LKNEE', 'RANKLE', 'LANKLE', 'RFOOT', 'LFOOT', 'RHAND', 'LHAND', 'RELBOW', 'LELBOW', 'RSHOULDER', 'LSHOULDER', 'HEAD', 'THORAX']
+    world3D = Point.batch_export_to_nparray(kpts_of_interest)
 
-    world3D = Point.batch_export_to_nparray([HDTP, REAR, LEAR, C7, C7_d, SS, RAP_b, RAP_f, LAP_b, LAP_f, RLE, RME, LLE, LME, RMCP2, RMCP5, LMCP2, LMCP5, PELVIS, RWRIST, LWRIST, RHIP, LHIP, RKNEE,
-                                             LKNEE, RANKLE, LANKLE, RFOOT, LFOOT, RHAND, LHAND, RELBOW, LELBOW, RSHOULDER, LSHOULDER, HEAD, THORAX])
-    base_dir_name = trial_name
-    basename = os.path.join(base_dir_name, activity_name)
+    base_dir_name = trial_name[0]
+    activity_name = trial_name[1]
+    output_dir = os.path.join(trial_name[0], 'cdf_output')
+    basename = os.path.join(trial_name[0], trial_name[1])
     xcp_filename = basename + '.xcp'
     cameras = batch_load_from_xcp(xcp_filename)
+    start_frame = 0
+    end_frame = frame_count
+    rgb_frame_rate = 100
+    fps_ratio = 100 / rgb_frame_rate
+    rep = 1
+    frames = np.linspace(start_frame / fps_ratio, end_frame / fps_ratio, int((end_frame - start_frame) / fps_ratio), dtype=int)
+    world3D_filename = os.path.join(output_dir, '3D_Pose_World', activity_name, f'{activity_name}_{rep}.world.cdf')
+    store_cdf(world3D_filename, world3D, TaskID=activity_name, kp_names=kpt_names)
+    for cam_idx, camera in enumerate(cameras):
+        print(f'Processing camera {cam_idx}: {camera.DEVICEID}')
+
+        points_2d_list = []
+        points_3d_camera_list = []
+        for frame_idx, frame_no in enumerate(frames):
+            frame_idx = int(frame_idx * fps_ratio)
+            print(f'Processing frame {frame_no}/{frames[-1]} of {activity_name}.{camera.DEVICEID}.timestamp.avi',
+                  end='\r')
+            points_3d = world3D[frame_idx, :, :].reshape(-1, 3) / 1000
+            points_3d_camera = camera.project_w_depth(points_3d)
+            points_2d = camera.project(points_3d)
+            points_2d = camera.distort(points_2d)
+            points_2d_list.append(points_2d)
+            points_3d_camera_list.append(points_3d_camera)
+        points_2d_list = np.array(points_2d_list)
+        points_3d_camera_list = np.swapaxes(np.array(points_3d_camera_list), 1, 2)
+        points_2d_filename = os.path.join(output_dir, '2D_Pose', activity_name, f'Cam_{camera.DEVICEID}', f'{activity_name}_{rep}.{camera.DEVICEID}.cdf')
+        points_3d_camera_filename = os.path.join(output_dir, '3D_Pose', activity_name, f'Cam_{camera.DEVICEID}', f'{activity_name}_{rep}.{camera.DEVICEID}.cdf')
+        store_cdf(points_2d_filename, points_2d_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names)
+        store_cdf(points_3d_camera_filename, points_3d_camera_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names)
+
+    # # visualize for debugging
+    # frame = 0
+    # # plot 3d
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # # ax.scatter(world3D[frame, :, 0], world3D[frame, :, 1], world3D[frame, :, 2], c='r', marker='o')
+    # ax.scatter(points_3d_camera_list[frame, :, 0], points_3d_camera_list[frame, :, 1], points_3d_camera_list[frame, :, 2], marker='o')
+    # ax.set_xlabel('X Label')
+    # ax.set_ylabel('Y Label')
+    # ax.set_zlabel('Z Label')
+    # plt.show()
+    #
+    # # plot 2d
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # ax.scatter(points_2d_list[frame, :, 0], points_2d_list[frame, :, 1], marker='o')
+    # ax.set_xlabel('X Label')
+    # ax.set_ylabel('Y Label')
+    # plt.show()
 
 
 
-    render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RKNEE')
+
+
+
     # world 3d
     # projected 2d
     # camera 3d

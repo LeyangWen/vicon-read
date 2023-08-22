@@ -131,7 +131,12 @@ class Point():
 
     @staticmethod
     def batch_export_to_nparray(point_list):
-        xyz = np.array([p.xyz for p in point_list])
+        '''
+        point_list is a list of Point objects
+        return a np array with shape (frame, keypoints, 3)
+        '''
+        xyz = np.array([p.xyz.T for p in point_list])
+        xyz = np.swapaxes(xyz, 0, 1)
         return xyz
 
 

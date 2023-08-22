@@ -41,9 +41,14 @@ def plot_joint_axis(joint_axis_pts,label=None):
     plt.show()
 
 
-def create_dir(directory):
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+def create_dir(directory, is_base_dir=True):
+    if is_base_dir:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    else:
+        base_dir = os.path.dirname(directory)
+        if not os.path.exists(base_dir):
+            os.makedirs(base_dir)
 
 
 def BMI_classUS(bmi):
@@ -75,7 +80,7 @@ def dist_array(p1s, p2s):
     return np.sqrt((p1s[:, 0] - p2s[:, 0]) ** 2 + (p1s[:, 1] - p2s[:, 1]) ** 2 + (p1s[:, 2] - p2s[:, 2]) ** 2)
 
 
-def store_cdf(file_name, data, date, kp_names, subjectID, TaskID, CamID = '', jointName = ''):
+def store_cdf(file_name, data, date='', kp_names='', subjectID='', TaskID='', CamID = '', jointName=''):
     create_dir(os.path.dirname(file_name))
     if os.path.exists(file_name):
         os.remove(file_name)
