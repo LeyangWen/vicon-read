@@ -1,14 +1,15 @@
-todo: modify the following to match the new skeleton
 joints:
-  mid: ['Pelvis Origin', 'Thorax Origin', 'Neck top', 'Head center', 'Head top origin']
-  botL: ['Left Hip Joint Centre', 'Left Knee Joint Centre', 'Left Ankle Joint Centre', 'Left heel', 'Left toe']
-  topL: ['Left Shoulder Joint Centre', 'Left Elbow Joint Centre', 'Left Wrist Joint Centre', 'Left middle finger origin', 'Left eye', 'Left pinky origin']
-  botR: ['Right Hip Joint Centre', 'Right Knee Joint Centre', 'Right Ankle Joint Centre', 'Right heel', 'Right toe']
-  topR: ['Right Shoulder Joint Centre', 'Right Elbow Joint Centre', 'Right Wrist Joint Centre', 'Right middle finger origin', 'Right eye', 'Right pinky origin']
+  mid: ['HDTP', 'REAR', 'LEAR', 'HEAD', 'C7', 'C7_d', 'SS', 'THORAX', 'PELVIS']
+  topR: ['RAP_b', 'RAP_f', 'RSHOULDER', 'RLE', 'RME', 'RELBOW', 'RWRIST', 'RMCP2', 'RMCP5', 'RHAND']
+  topL: ['LAP_b', 'LAP_f', 'LSHOULDER', 'LLE', 'LME', 'LELBOW', 'LWRIST', 'LMCP2', 'LMCP5', 'LHAND']
+  botR: ['RHIP', 'RKNEE', 'RANKLE', 'RFOOT']
+  botL: ['LHIP', 'LKNEE', 'LANKLE', 'LFOOT']
+
+
 
 parent:
-  mid: ['None', 'Pelvis Origin', 'Thorax Origin', 'Neck top', 'Head center']
-  botL: ['Pelvis Origin', 'Left Hip Joint Centre', 'Left Knee Joint Centre', 'Left Ankle Joint Centre', 'Left Ankle Joint Centre']
-  topL: ['Thorax Origin', 'Left Shoulder Joint Centre', 'Left Elbow Joint Centre', 'Left Wrist Joint Centre', 'Head center', 'Left Wrist Joint Centre']
-  botR: ['Pelvis Origin', 'Right Hip Joint Centre', 'Right Knee Joint Centre', 'Right Ankle Joint Centre', 'Right Ankle Joint Centre']
-  topR: ['Thorax Origin', 'Right Shoulder Joint Centre', 'Right Elbow Joint Centre', 'Right Wrist Joint Centre', 'Head center', 'Right Wrist Joint Centre']
+  mid: ['HEAD', 'HEAD', 'HEAD', 'HEAD', 'THORAX', 'THORAX', 'THORAX', 'PELVIS', None]
+  topR: ['RSHOULDER', 'RSHOULDER', 'THORAX', 'RELBOW', 'RELBOW', 'RSHOULDER', 'RELBOW', 'RHAND', 'RHAND', 'RWRIST']
+  topL: ['LSHOULDER', 'LSHOULDER', 'THORAX', 'LELBOW', 'LELBOW', 'LSHOULDER', 'LELBOW', 'LHAND', 'LHAND', 'LWRIST']
+  botR: ['THORAX', 'RHIP', 'RKNEE', 'RANKLE']
+  botL: ['THORAX', 'LHIP', 'LKNEE', 'LANKLE']
