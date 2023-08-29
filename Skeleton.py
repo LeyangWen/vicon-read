@@ -8,10 +8,160 @@ from scipy.io import savemat
 import yaml
 from utility import *
 from spacepy import pycdf
+import cv2
 
 class Skeleton:
-    def __init__(self):
-        pass
+    def __init__(self, skeleton_file):
+        self.__load_key_joints(skeleton_file)
+
+    def load_name_list(self, name_list):
+        self.point_labels = name_list
+        self.point_number = len(name_list)
+
+    def load_np_points(self, pt_np):
+        try:
+            self.point_labels
+        except(AttributeError):
+            print('point_labels is empty, need to load point names first')
+            raise AttributeError
+        self.points = pt_np
+        self.poses = {}
+        self.frame_number = np.shape(pt_np)[0]
+        self.points_dimension = np.shape(pt_np)[-1]
+        for i in range(self.point_number):
+            self.poses[self.point_labels[i]] = pt_np[:, i, :]
+
+    def load_name_list_and_np_points(self, name_list, pt_np):
+        self.load_name_list(name_list)
+        self.load_np_points(pt_np)
+
+    def __load_key_joints(self, filename):  # read xml
+        with open(filename, 'r') as stream:
+            try:
+                data = yaml.safe_load(stream)
+                self.joint_name_mid = data['joints']['mid']
+                self.joint_name_botL = data['joints']['botL']
+                self.joint_name_topL = data['joints']['topL']
+                self.joint_name_botR = data['joints']['botR']
+                self.joint_name_topR = data['joints']['topR']
+                self.key_joint_name = data['joints']['mid'] + data['joints']['botL'] + data['joints']['topL'] + data['joints']['botR'] + data['joints']['topR']
+                self.key_joint_parent = data['parent']['mid'] + data['parent']['botL'] + data['parent']['topL'] + data['parent']['botR'] + data['parent']['topR']
+            except yaml.YAMLError as exc:
+                print(filename, exc)
+
+    def get_parent(self, joint_name):
+        parent_idx = self.key_joint_name.index(joint_name)
+        # catch IndexError: list index out of range and return None
+        try:
+            return self.key_joint_parent[parent_idx]
+        except IndexError:
+            return None
+
+    def get_polt_property(self, joint_name):
+        '''
+        return point_type and point_size for plot
+        '''
+        if joint_name in self.joint_name_mid:
+            point_type = 's'
+            point_size = 10
+        elif joint_name in self.joint_name_botL or joint_name in self.joint_name_topL:
+            point_type = '<'
+            point_size = 4
+        elif joint_name in self.joint_name_botR or joint_name in self.joint_name_topR:
+            point_type = '>'
+            point_size = 4
+        else:
+            point_type = 'o'
+            point_size = 4
+        return point_type, point_size
+
+    def plot_3d_pose_frame(self, frame=0, filename=False):
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        for joint_name in self.key_joint_name:
+            point_type, point_size = self.get_polt_property(joint_name)
+            ax.scatter(self.poses[joint_name][frame, 0],
+                       self.poses[joint_name][frame, 1],
+                       self.poses[joint_name][frame, 2], label=joint_name, marker=point_type, s=point_size)
+        # connect points to parent
+        for joint_name in self.key_joint_name:
+            parent_name = self.get_parent(joint_name)
+            if parent_name is not None and parent_name != 'None':
+                ax.plot([self.poses[joint_name][frame, 0], self.poses[parent_name][frame, 0]],
+                        [self.poses[joint_name][frame, 1], self.poses[parent_name][frame, 1]],
+                        [self.poses[joint_name][frame, 2], self.poses[parent_name][frame, 2]], 'k-')
+
+        # ax.legend(bbox_to_anchor=(0.95, 1), loc=2, borderaxespad=0.)
+        # uniform scale based on pelvis location and 1800mm
+        range = 1800
+        pelvis_loc = self.poses['PELVIS'][frame, :]
+        ax.set_xlim(pelvis_loc[0] - range / 2, pelvis_loc[0] + range / 2)
+        ax.set_ylim(pelvis_loc[1] - range / 2, pelvis_loc[1] + range / 2)
+        ax.set_zlim(pelvis_loc[2] - range / 2, pelvis_loc[2] + range / 2)
+        ax.set_xlabel('X (mm)')
+        ax.set_ylabel('Y (mm)')
+        ax.set_zlabel('Z (mm)')
+        fig.tight_layout()
+        fig.subplots_adjust(right=0.65)
+        ax.legend(loc='center left', bbox_to_anchor=(1.08, 0.5), fontsize=7, ncol=2)
+        if filename:
+            plt.savefig(filename, dpi=250)
+            plt.close(fig)
+            return None
+        else:
+            plt.show()
+            return fig, ax
+
+    def plot_3d_pose(self, foldername=False):
+        if foldername:
+            create_dir(foldername)
+        for i in range(self.frame_number):
+            filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
+            self.plot_3d_pose_frame(frame=i, filename=filename)
+
+    def plot_2d_pose_frame(self, frame=0, baseimage=False, filename=False):
+        if baseimage:
+            raise NotImplementedError
+        else:  # return a transparent image
+            img_width = 1920
+            img_height = 1200
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            for joint_name in self.key_joint_name:
+                point_type, point_size = self.get_polt_property(joint_name)
+                ax.scatter(self.poses[joint_name][frame, 0],
+                           self.poses[joint_name][frame, 1], label=joint_name, marker=point_type, s=point_size, zorder=2)
+            # connect points to parent
+            for joint_name in self.key_joint_name:
+                parent_name = self.get_parent(joint_name)
+                if parent_name is not None and parent_name != 'None':
+                    ax.plot([self.poses[joint_name][frame, 0], self.poses[parent_name][frame, 0]],
+                            [self.poses[joint_name][frame, 1], self.poses[parent_name][frame, 1]], 'k-', zorder=1)
+            ax.set_xlim(0, img_width)
+            ax.set_ylim(0, img_height)
+            ax.invert_yaxis()  # flip y axis
+            fig.tight_layout()
+            ax.set_axis_off()
+            if filename:
+                plt.savefig(filename, dpi=300, transparent=True, bbox_inches='tight')
+                plt.close(fig)
+                return None
+            else:
+                plt.show()
+                return fig, ax
+
+
+    def plot_2d_pose(self, foldername=False):
+        if foldername:
+            create_dir(foldername)
+        for i in range(self.frame_number):
+            filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
+            self.plot_2d_pose_frame(frame=i, filename=filename)
+
+
+class VEHSErgoSkeleton(Skeleton):
+    def __int__(self, skeleton_file):
+        super().__init__(skeleton_file)
 
 
 class PulginGaitSkeleton(Skeleton):
@@ -45,8 +195,6 @@ class PulginGaitSkeleton(Skeleton):
         else:
             self.weight = weight
             self.height = height
-
-
 
     def __load_acronym(self, filename):
         # read yaml
@@ -196,7 +344,7 @@ class PulginGaitSkeleton(Skeleton):
         self.poses = self.get_poses(self.points, self.pose_idx)
         self.frame_no = self.points.shape[0]
 
-    def plot_pose_frame(self, frame=0):
+    def plot_3d_pose_frame(self, frame=0):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         for joint_name in self.key_joint_name:

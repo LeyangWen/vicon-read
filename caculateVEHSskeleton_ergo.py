@@ -13,6 +13,7 @@ import datetime
 import warnings
 from utility import *
 from Camera import *
+from Skeleton import *
 
 warnings.filterwarnings("ignore", message="invalid value encountered in divide")
 warnings.filterwarnings("ignore", message="invalid value encountered in arccos")
@@ -37,7 +38,7 @@ if __name__ == '__main__':
     subject_info = vicon.GetSubjectInfo()
     weight = vicon.GetSubjectParam(subject_names[0], 'Bodymass')[0]
     height = vicon.GetSubjectParam(subject_names[0], 'Height')[0]
-    gender_idx = vicon.GetSubjectParam(subject_names[0], 'Gender')[0]
+    gender_idx = vicon.GetSubjectParam(subject_names[0], 'Gender_1M_2F_3O')[0]
     gender = ['No input', 'Male', 'Female', 'Others'][int(gender_idx)]
     BMI = BMI_caculate(weight, height/1000)
     BMI_class = BMI_classUS(BMI)
@@ -153,7 +154,8 @@ if __name__ == '__main__':
 
     base_dir_name = trial_name[0]
     activity_name = trial_name[1]
-    output_dir = os.path.join(trial_name[0], 'cdf_output')
+    cdf_output_dir = os.path.join(trial_name[0], 'cdf_output', activity_name)
+    frame_output_dir = os.path.join(trial_name[0], 'frame_output', activity_name)
     basename = os.path.join(trial_name[0], trial_name[1])
     xcp_filename = basename + '.xcp'
     cameras = batch_load_from_xcp(xcp_filename)
@@ -163,8 +165,12 @@ if __name__ == '__main__':
     fps_ratio = 100 / rgb_frame_rate
     rep = 1
     frames = np.linspace(start_frame / fps_ratio, end_frame / fps_ratio, int((end_frame - start_frame) / fps_ratio), dtype=int)
-    world3D_filename = os.path.join(output_dir, '3D_Pose_World', activity_name, f'{activity_name}_{rep}.world.cdf')
-    store_cdf(world3D_filename, world3D, TaskID=activity_name, kp_names=kpt_names)
+    world3D_filename = os.path.join(cdf_output_dir, '3D_Pose_World', f'{activity_name}_{rep}.world.cdf')
+    # store_cdf(world3D_filename, world3D, TaskID=activity_name, kp_names=kpt_names)
+    world3D_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml')
+    world3D_skeleton.load_name_list_and_np_points(kpt_names, world3D)
+    world3D_skeleton.plot_3d_pose(os.path.join(frame_output_dir, '3D_Pose_World'))
+
     for cam_idx, camera in enumerate(cameras):
         print(f'Processing camera {cam_idx}: {camera.DEVICEID}')
 
@@ -182,10 +188,17 @@ if __name__ == '__main__':
             points_3d_camera_list.append(points_3d_camera)
         points_2d_list = np.array(points_2d_list)
         points_3d_camera_list = np.swapaxes(np.array(points_3d_camera_list), 1, 2)
-        points_2d_filename = os.path.join(output_dir, '2D_Pose', activity_name, f'Cam_{camera.DEVICEID}', f'{activity_name}_{rep}.{camera.DEVICEID}.cdf')
-        points_3d_camera_filename = os.path.join(output_dir, '3D_Pose', activity_name, f'Cam_{camera.DEVICEID}', f'{activity_name}_{rep}.{camera.DEVICEID}.cdf')
-        store_cdf(points_2d_filename, points_2d_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names)
-        store_cdf(points_3d_camera_filename, points_3d_camera_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names)
+        points_2d_filename = os.path.join(cdf_output_dir, '2D_Pose', activity_name, f'Cam_{camera.DEVICEID}', f'{activity_name}_{rep}.{camera.DEVICEID}.cdf')
+        points_3d_camera_filename = os.path.join(cdf_output_dir, '3D_Pose', activity_name, f'Cam_{camera.DEVICEID}', f'{activity_name}_{rep}.{camera.DEVICEID}.cdf')
+        world2D_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml')
+        world2D_skeleton.load_name_list_and_np_points(kpt_names, points_2d_list)
+        world2D_skeleton.plot_2d_pose(os.path.join(frame_output_dir, f'2D_Pose_Camera{camera.DEVICEID}'))
+        # store_cdf(points_2d_filename, points_2d_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names)
+        # store_cdf(points_3d_camera_filename, points_3d_camera_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names)
+
+
+    # video_filename = f'{basename}.{camera.DEVICEID}.{time}.avi'
+
 
     # # visualize for debugging
     # frame = 0
@@ -391,3 +404,5 @@ if __name__ == '__main__':
     # #     print('**** Back_angles done ****')
     # # except:
     # #     print('Back_angles failed')
+
+

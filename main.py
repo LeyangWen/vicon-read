@@ -24,7 +24,7 @@ skeleton = Skeleton.PulginGaitSkeleton(c3d_file)
 # skeleton.point_labels
 # frame = 0
 # for frame in range(0,1000,1):
-#     fig, ax = skeleton.plot_pose_frame(frame)
+#     fig, ax = skeleton.plot_3d_pose_frame(frame)
 #     # format frame number to 5 digits with filler 0
 #     frame = format(frame, '05')
 #     fig.savefig('frames/Gunwoo02_0-1000/{}.png'.format(frame))

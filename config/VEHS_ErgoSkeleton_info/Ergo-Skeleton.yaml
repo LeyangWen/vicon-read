@@ -5,11 +5,9 @@ joints:
   botR: ['RHIP', 'RKNEE', 'RANKLE', 'RFOOT']
   botL: ['LHIP', 'LKNEE', 'LANKLE', 'LFOOT']
 
-
-
 parent:
-  mid: ['HEAD', 'HEAD', 'HEAD', 'HEAD', 'THORAX', 'THORAX', 'THORAX', 'PELVIS', None]
+  mid: ['HEAD', 'HEAD', 'HEAD', 'C7', 'C7_d', 'THORAX', 'THORAX', 'PELVIS', None]
   topR: ['RSHOULDER', 'RSHOULDER', 'THORAX', 'RELBOW', 'RELBOW', 'RSHOULDER', 'RELBOW', 'RHAND', 'RHAND', 'RWRIST']
   topL: ['LSHOULDER', 'LSHOULDER', 'THORAX', 'LELBOW', 'LELBOW', 'LSHOULDER', 'LELBOW', 'LHAND', 'LHAND', 'LWRIST']
-  botR: ['THORAX', 'RHIP', 'RKNEE', 'RANKLE']
-  botL: ['THORAX', 'LHIP', 'LKNEE', 'LANKLE']
+  botR: ['PELVIS', 'RHIP', 'RKNEE', 'RANKLE']
+  botL: ['PELVIS', 'LHIP', 'LKNEE', 'LANKLE']
