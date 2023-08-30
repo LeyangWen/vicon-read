@@ -155,7 +155,7 @@ if __name__ == '__main__':
     base_dir_name = trial_name[0]
     activity_name = trial_name[1]
     cdf_output_dir = os.path.join(trial_name[0], 'cdf_output', activity_name)
-    frame_output_dir = os.path.join(trial_name[0], 'frame_output', activity_name)
+    frame_output_dir = os.path.join(trial_name[0], 'render', 'frame_output', activity_name)
     basename = os.path.join(trial_name[0], trial_name[1])
     xcp_filename = basename + '.xcp'
     cameras = batch_load_from_xcp(xcp_filename)
@@ -169,7 +169,7 @@ if __name__ == '__main__':
     # store_cdf(world3D_filename, world3D, TaskID=activity_name, kp_names=kpt_names)
     world3D_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml')
     world3D_skeleton.load_name_list_and_np_points(kpt_names, world3D)
-    world3D_skeleton.plot_3d_pose(os.path.join(frame_output_dir, '3D_Pose_World'))
+    # world3D_skeleton.plot_3d_pose(os.path.join(frame_output_dir, '3D_Pose_World'))
 
     for cam_idx, camera in enumerate(cameras):
         print(f'Processing camera {cam_idx}: {camera.DEVICEID}')

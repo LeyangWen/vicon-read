@@ -77,6 +77,7 @@ class Skeleton:
 
     def plot_3d_pose_frame(self, frame=0, filename=False):
         fig = plt.figure()
+
         ax = fig.add_subplot(111, projection='3d')
         for joint_name in self.key_joint_name:
             point_type, point_size = self.get_polt_property(joint_name)
@@ -102,8 +103,14 @@ class Skeleton:
         ax.set_ylabel('Y (mm)')
         ax.set_zlabel('Z (mm)')
         fig.tight_layout()
-        fig.subplots_adjust(right=0.65)
-        ax.legend(loc='center left', bbox_to_anchor=(1.08, 0.5), fontsize=7, ncol=2)
+        if True:
+            fig.subplots_adjust(right=0.65)
+            ax.legend(loc='center left', bbox_to_anchor=(1.08, 0.5), fontsize=7, ncol=2)
+        else:  # use this to get a legend screenshot
+            ax.legend(loc='upper center', fontsize=7, ncol=5)
+            plt.gca().set_axis_off()
+            plt.savefig(r'C:\Users\Public\Documents\Vicon\data\Vicon_F\Round3\LeyangWen\FullCollection\render\frame_output\legend.png', dpi=250)
+            raise NameError  # break here
         if filename:
             plt.savefig(filename, dpi=250)
             plt.close(fig)
@@ -111,13 +118,6 @@ class Skeleton:
         else:
             plt.show()
             return fig, ax
-
-    def plot_3d_pose(self, foldername=False):
-        if foldername:
-            create_dir(foldername)
-        for i in range(self.frame_number):
-            filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
-            self.plot_3d_pose_frame(frame=i, filename=filename)
 
     def plot_2d_pose_frame(self, frame=0, baseimage=False, filename=False):
         if baseimage:
@@ -139,6 +139,7 @@ class Skeleton:
                             [self.poses[joint_name][frame, 1], self.poses[parent_name][frame, 1]], 'k-', zorder=1)
             ax.set_xlim(0, img_width)
             ax.set_ylim(0, img_height)
+            ax.set_aspect('equal', adjustable='box')
             ax.invert_yaxis()  # flip y axis
             fig.tight_layout()
             ax.set_axis_off()
@@ -150,13 +151,22 @@ class Skeleton:
                 plt.show()
                 return fig, ax
 
+    def plot_3d_pose(self, foldername=False):
+        if foldername:
+            create_dir(foldername)
+        for i in range(self.frame_number):
+            print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
+            filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
+            self.plot_3d_pose_frame(frame=i, filename=filename)
 
     def plot_2d_pose(self, foldername=False):
         if foldername:
             create_dir(foldername)
         for i in range(self.frame_number):
+            print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
             self.plot_2d_pose_frame(frame=i, filename=filename)
+
 
 
 class VEHSErgoSkeleton(Skeleton):
