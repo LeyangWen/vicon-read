@@ -10,6 +10,10 @@ class Point():
         self.random_id = np.random.randint(0, 100000000)
         pass
 
+    def copy(self):
+        copied_point = MarkerPoint([self.x, self.y, self.z, self.exist])
+        return copied_point
+
     @staticmethod
     def mid_point(p1, p2):
         try:
@@ -138,6 +142,69 @@ class Point():
         xyz = np.array([p.xyz.T for p in point_list])
         xyz = np.swapaxes(xyz, 0, 1)
         return xyz
+
+    @staticmethod
+    def swap_trajectory(p1, p2, index):
+        '''
+        swap p1 and p2 trajectory from index forward (including index)
+        '''
+        out1 = p1.copy()
+        out2 = p2.copy()
+        index = index
+        out1.xyz[:, index:], out2.xyz[:, index:] = p2.xyz[:, index:], p1.xyz[:, index:]
+        out1.exist[index:], out2.exist[index:] = p2.exist[index:], p1.exist[index:]
+        return out1, out2
+
+    @staticmethod
+    def check_marker_swap(p1, p2, threshold=35):
+        '''
+        check if p1 and p2 are swapped, one way, need to check both directions
+        '''
+        p1_xyz = p1.xyz[:, :-1]
+        p2_xyz = p2.xyz[:, :-1]
+        p2_xyz_shift = p2.xyz[:, 1:]
+        criteria = np.linalg.norm(p1_xyz - p2_xyz_shift, axis=0) < np.linalg.norm(p2_xyz - p2_xyz_shift, axis=0)  # check for swaps when both markers are present
+        swap_index = criteria.nonzero()[0]+1
+        p2_missing = (~np.array(p2.exist)).nonzero()[0]
+        for swap_id in swap_index:
+            if swap_id in p2_missing or swap_id - 1 in p2_missing:
+                if p1.exist[swap_id-1]:  # if p1 is present at swap_id-1 and p2 is missing, then it is not a swap
+                    check = True
+                else:
+                    criteria_2 = np.linalg.norm(p1_xyz[:, swap_id - 1] - p2_xyz_shift[:, swap_id - 1])
+                    check = criteria_2 < threshold and criteria_2 > 0  # check for swaps when p2 is actually missing (p1 is incorrectly swapped and labeled as missing instead)
+                    check = not check
+                if check:
+                    swap_index = np.delete(swap_index, np.where(swap_index == swap_id))
+                else:
+                    print(f'Caught by check: swap_id: ', swap_id, 'check: ', check)
+        # todo: can not detect when p1 is missing before and p2 is present
+        return swap_index
+
+    @staticmethod
+    def check_marker_swap_by_speed(p1, p2, threshold=15):
+        '''
+        check if p1 and p2 are swapped by speed threshold only, one way, need to check both directions
+        '''
+        p1_xyz = p1.xyz[:, :-1]
+        p2_xyz_shift = p2.xyz[:, 1:]
+        criteria_value = np.linalg.norm(p1_xyz - p2_xyz_shift, axis=0)
+        criteria = np.logical_and(criteria_value < threshold, criteria_value > 0)
+        swap_index = criteria.nonzero()[0]+1
+        return swap_index
+
+    def check_marker_speed(self, threshold=35):
+        '''
+        check if marker speed is too high
+        '''
+        xyz = self.xyz[:, :-1]
+        xyz_shift = self.xyz[:, 1:]
+        criteria = np.linalg.norm(xyz - xyz_shift, axis=0) > threshold
+        swap_index = criteria.nonzero()[0]+1
+        for swap_id in swap_index:
+            if (not self.exist[swap_id-1]) or (not self.exist[swap_id]):
+                swap_index = np.delete(swap_index, np.where(swap_index == swap_id))
+        return swap_index
 
 
 class MarkerPoint(Point):

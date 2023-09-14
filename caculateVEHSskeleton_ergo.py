@@ -154,7 +154,7 @@ if __name__ == '__main__':
 
     base_dir_name = trial_name[0]
     activity_name = trial_name[1]
-    cdf_output_dir = os.path.join(trial_name[0], 'cdf_output', activity_name)
+    cdf_output_dir = os.path.join(trial_name[0], 'cdf_output')
     frame_output_dir = os.path.join(trial_name[0], 'render', 'frame_output', activity_name)
     basename = os.path.join(trial_name[0], trial_name[1])
     xcp_filename = basename + '.xcp'
@@ -165,10 +165,10 @@ if __name__ == '__main__':
     fps_ratio = 100 / rgb_frame_rate
     rep = 1
     frames = np.linspace(start_frame / fps_ratio, end_frame / fps_ratio, int((end_frame - start_frame) / fps_ratio), dtype=int)
-    world3D_filename = os.path.join(cdf_output_dir, '3D_Pose_World', f'{activity_name}_{rep}.world.cdf')
-    # store_cdf(world3D_filename, world3D, TaskID=activity_name, kp_names=kpt_names)
-    world3D_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml')
-    world3D_skeleton.load_name_list_and_np_points(kpt_names, world3D)
+    world3D_filename = os.path.join(cdf_output_dir, '3D_Pose_World', activity_name, f'{activity_name}_{rep}.world.cdf')
+    store_cdf(world3D_filename, world3D, TaskID=activity_name, kp_names=kpt_names)
+    # world3D_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml')
+    # world3D_skeleton.load_name_list_and_np_points(kpt_names, world3D)
     # world3D_skeleton.plot_3d_pose(os.path.join(frame_output_dir, '3D_Pose_World'))
 
     for cam_idx, camera in enumerate(cameras):
@@ -176,6 +176,7 @@ if __name__ == '__main__':
 
         points_2d_list = []
         points_3d_camera_list = []
+        points_2d_bbox_list = []
         for frame_idx, frame_no in enumerate(frames):
             frame_idx = int(frame_idx * fps_ratio)
             print(f'Processing frame {frame_no}/{frames[-1]} of {activity_name}.{camera.DEVICEID}.timestamp.avi',
@@ -184,17 +185,21 @@ if __name__ == '__main__':
             points_3d_camera = camera.project_w_depth(points_3d)
             points_2d = camera.project(points_3d)
             points_2d = camera.distort(points_2d)
+            bbox_top_left, bbox_bottom_right = points_2d.min(axis=0)-20, points_2d.max(axis=0)+20
             points_2d_list.append(points_2d)
             points_3d_camera_list.append(points_3d_camera)
+            points_2d_bbox_list.append([bbox_top_left, bbox_bottom_right])
+
         points_2d_list = np.array(points_2d_list)
         points_3d_camera_list = np.swapaxes(np.array(points_3d_camera_list), 1, 2)
+        points_2d_bbox_list = np.array(points_2d_bbox_list)
         points_2d_filename = os.path.join(cdf_output_dir, '2D_Pose', activity_name, f'Cam_{camera.DEVICEID}', f'{activity_name}_{rep}.{camera.DEVICEID}.cdf')
         points_3d_camera_filename = os.path.join(cdf_output_dir, '3D_Pose', activity_name, f'Cam_{camera.DEVICEID}', f'{activity_name}_{rep}.{camera.DEVICEID}.cdf')
-        world2D_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml')
-        world2D_skeleton.load_name_list_and_np_points(kpt_names, points_2d_list)
-        world2D_skeleton.plot_2d_pose(os.path.join(frame_output_dir, f'2D_Pose_Camera{camera.DEVICEID}'))
-        # store_cdf(points_2d_filename, points_2d_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names)
-        # store_cdf(points_3d_camera_filename, points_3d_camera_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names)
+        # world2D_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml')
+        # world2D_skeleton.load_name_list_and_np_points(kpt_names, points_2d_list)
+        # world2D_skeleton.plot_2d_pose(os.path.join(frame_output_dir, f'2D_Pose_Camera{camera.DEVICEID}'))
+        store_cdf(points_2d_filename, points_2d_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names, bbox=points_2d_bbox_list)
+        store_cdf(points_3d_camera_filename, points_3d_camera_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names)
 
 
     # video_filename = f'{basename}.{camera.DEVICEID}.{time}.avi'

@@ -80,7 +80,7 @@ def dist_array(p1s, p2s):
     return np.sqrt((p1s[:, 0] - p2s[:, 0]) ** 2 + (p1s[:, 1] - p2s[:, 1]) ** 2 + (p1s[:, 2] - p2s[:, 2]) ** 2)
 
 
-def store_cdf(file_name, data, date='', kp_names='', subjectID='', TaskID='', CamID = '', jointName=''):
+def store_cdf(file_name, data, date='', kp_names='', subjectID='', TaskID='', CamID = '', jointName='', bbox=np.array([])):
     create_dir(os.path.dirname(file_name))
     if os.path.exists(file_name):
         os.remove(file_name)
@@ -92,4 +92,5 @@ def store_cdf(file_name, data, date='', kp_names='', subjectID='', TaskID='', Ca
     cdf.attrs['UpdateDate'] = datetime.datetime.now()
     cdf.attrs['CaptureDate'] = os.path.basename(date)
     cdf.attrs['KeypointNames'] = kp_names
+    cdf['bbox'] = bbox
     cdf.close()
