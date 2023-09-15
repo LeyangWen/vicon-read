@@ -10,9 +10,9 @@ Get-ChildItem -Filter *.avi | ForEach-Object { If (!(Test-Path "$($_.DirectoryNa
 ```
 - Batch rename of all files in one folder from "activity{x}" to "activit{y)"
 ```powershell
-cd 'C:\Users\Public\Documents\Vicon\data\Vicon_F\Round3\JohnSohn\FullCollection'
-$old_activity_name = 'activity002.'
-$new_activity_name = 'activity02.'
+cd 'C:\Users\Public\Documents\Vicon\data\Vicon_F\Round3\DanLi\FullCollection'
+$old_activity_name = 'activity001.'
+$new_activity_name = 'activity01.'
 Get-ChildItem -Filter $old_activity_name* | ForEach-Object {Rename-Item $_ -NewName ($_.Name -replace $old_activity_name, $new_activity_name)}
 
 ```

@@ -159,6 +159,7 @@ class Point():
     def check_marker_swap(p1, p2, threshold=35):
         '''
         check if p1 and p2 are swapped, one way, need to check both directions
+        this does not work well when the marker pairs are moving fast in the direction of each other
         '''
         p1_xyz = p1.xyz[:, :-1]
         p2_xyz = p2.xyz[:, :-1]
@@ -186,10 +187,11 @@ class Point():
         '''
         check if p1 and p2 are swapped by speed threshold only, one way, need to check both directions
         '''
-        p1_xyz = p1.xyz[:, :-1]
-        p2_xyz_shift = p2.xyz[:, 1:]
+        interval_frames = 1
+        p1_xyz = p1.xyz[:, :-interval_frames]
+        p2_xyz_shift = p2.xyz[:, interval_frames:]
         criteria_value = np.linalg.norm(p1_xyz - p2_xyz_shift, axis=0)
-        criteria = np.logical_and(criteria_value < threshold, criteria_value > 0)
+        criteria = np.logical_and(criteria_value < (threshold * interval_frames), criteria_value > 0)
         swap_index = criteria.nonzero()[0]+1
         return swap_index
 
@@ -197,9 +199,10 @@ class Point():
         '''
         check if marker speed is too high
         '''
-        xyz = self.xyz[:, :-1]
-        xyz_shift = self.xyz[:, 1:]
-        criteria = np.linalg.norm(xyz - xyz_shift, axis=0) > threshold
+        interval_frames = 1
+        xyz = self.xyz[:, :-interval_frames]
+        xyz_shift = self.xyz[:, interval_frames:]
+        criteria = np.linalg.norm(xyz - xyz_shift, axis=0) > (threshold * interval_frames)
         swap_index = criteria.nonzero()[0]+1
         for swap_id in swap_index:
             if (not self.exist[swap_id-1]) or (not self.exist[swap_id]):

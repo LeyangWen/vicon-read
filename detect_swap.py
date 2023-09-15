@@ -38,10 +38,10 @@ if __name__ == '__main__':
     # read arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--swap', type=bool, default=False, help='swap and fix marker pairs in list')
-    parser.add_argument('--swap_threshold', type=int, default=35, help='swap movement threshold for one frame in mm')
+    parser.add_argument('--swap_threshold', type=int, default=35, help='swap movement threshold for one frame in mm, not the main threshold')
     parser.add_argument('--mark', type=bool, default=False, help='mark high speed markers with event')
-    parser.add_argument('--mark_threshold', type=int, default=35, help='mark movement threshold for one frame in mm')
-    parser.add_argument('--mark_swap_threshold', type=int, default=35, help='mark swap movement threshold for one frame in mm')
+    parser.add_argument('--mark_threshold', type=int, default=35, help='mark movement threshold for one frame in mm, smaller value is more sensitive')
+    parser.add_argument('--mark_swap_threshold', type=int, default=25, help='mark swap movement threshold for one frame in mm, bigger value is more sensitive')
     parser.add_argument('--clear', type=bool, default=True, help='clear all events')
 
     vicon = ViconNexus.ViconNexus()
@@ -62,13 +62,12 @@ if __name__ == '__main__':
         ['LLE', 'LME'],
         ['LIC', 'LGT'], ['RIC', 'RGT'],
         ['LIC', 'LASIS'], ['RIC', 'RASIS'],
-
+        # ['SS', 'RAP_f'], ['SS', 'LAP_f'],
+        # ['SS', 'RAP'], ['SS', 'LAP'],
         ['LMFC', 'LLFC'], ['RMFC', 'RLFC'],
         ['LLE', 'LMM'], ['LMTP5', 'LMTP1'],
         ['RLE', 'RMM'], ['RMTP5', 'RMTP1'],
-        ['LEAR', 'REAR'],
-        ['HDTP', 'MDFH'],
-        # ['LEAR', 'HDTP'], ['REAR', 'HDTP'],
+        ['LEAR', 'REAR'], ['HDTP', 'MDFH'],
     ]
     name_tuple = ()
     for names in check_marker_pairs:
@@ -113,13 +112,15 @@ if __name__ == '__main__':
             speed_index = joints_dict[joint_name].check_marker_speed(threshold=parser.parse_args().mark_threshold)
             left_right = get_left_right(joint_name)
             store_j = -100
-            for j in speed_index:
-                if abs(j - store_j) < 10:
-                    store_j = j
+            count = 0
+            for frame_j in speed_index:
+                if abs(frame_j - store_j) < 20:
                     continue
-                vicon.CreateAnEvent(subject_names[0], left_right, 'Foot Off', int(j + 1), 0)
-                store_j = j
-                if j > 50:
+                store_j = frame_j
+                vicon.CreateAnEvent(subject_names[0], left_right, 'Foot Off', int(frame_j + 1), 0)
+                count += 1
+                print(f'{joint_name} speed index: {frame_j}')
+                if count > 25:
                     print(f'too many speed index for {joint_name}')
                     break
         for names in check_marker_pairs:
@@ -131,13 +132,15 @@ if __name__ == '__main__':
                 speed_swap_index = Point.check_marker_swap_by_speed(joints_dict[pt1_name], joints_dict[pt2_name], threshold=parser.parse_args().mark_swap_threshold)
                 left_right = get_left_right(pt1_name)
                 store_j = -100
-                for j in speed_index:
-                    if abs(j - store_j) < 10:
-                        store_j = j
+                count = 0
+                for frame_j in speed_swap_index:
+                    if abs(frame_j - store_j) < 20:
                         continue
-                    vicon.CreateAnEvent(subject_names[0], left_right, 'Foot Off', int(j + 1), 0)
-                    store_j = j
-                    if j > 50:
-                        print(f'too many speed index for {joint_name}')
+                    store_j = frame_j
+                    vicon.CreateAnEvent(subject_names[0], left_right, 'Foot Off', int(frame_j + 1), 0)
+                    count += 1
+                    print(f'{pt1_name} - {pt2_name} speed swap index: {frame_j}')
+                    if count > 25:
+                        print(f'too many pair index for {pt1_name}')
                         break
 
