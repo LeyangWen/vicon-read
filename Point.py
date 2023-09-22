@@ -183,26 +183,24 @@ class Point():
         return swap_index
 
     @staticmethod
-    def check_marker_swap_by_speed(p1, p2, threshold=15):
+    def check_marker_swap_by_speed(p1, p2, threshold=15, interval_frames=1):
         '''
         check if p1 and p2 are swapped by speed threshold only, one way, need to check both directions
         '''
-        interval_frames = 1
         p1_xyz = p1.xyz[:, :-interval_frames]
         p2_xyz_shift = p2.xyz[:, interval_frames:]
         criteria_value = np.linalg.norm(p1_xyz - p2_xyz_shift, axis=0)
-        criteria = np.logical_and(criteria_value < (threshold * interval_frames), criteria_value > 0)
+        criteria = np.logical_and(criteria_value < (threshold), criteria_value > 0)
         swap_index = criteria.nonzero()[0]+1
         return swap_index
 
-    def check_marker_speed(self, threshold=35):
+    def check_marker_speed(self, threshold=35, interval_frames=1):
         '''
         check if marker speed is too high
         '''
-        interval_frames = 1
         xyz = self.xyz[:, :-interval_frames]
         xyz_shift = self.xyz[:, interval_frames:]
-        criteria = np.linalg.norm(xyz - xyz_shift, axis=0) > (threshold * interval_frames)
+        criteria = np.linalg.norm(xyz - xyz_shift, axis=0) > (threshold)  # * interval_frames)
         swap_index = criteria.nonzero()[0]+1
         for swap_id in swap_index:
             if (not self.exist[swap_id-1]) or (not self.exist[swap_id]):

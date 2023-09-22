@@ -24,7 +24,6 @@ warnings.filterwarnings("ignore", message="invalid value encountered in arccos")
 # help(vicon.GetSubjectParam)
 
 if __name__ == '__main__':
-
     ######################################## START UP ########################################
     # specify big or small marker
     marker_height = 14/2+2  # 14mm marker
@@ -42,6 +41,7 @@ if __name__ == '__main__':
     gender = ['No input', 'Male', 'Female', 'Others'][int(gender_idx)]
     BMI = BMI_caculate(weight, height/1000)
     BMI_class = BMI_classUS(BMI)
+
 
     # write to yaml file
     trial_yaml_file = os.path.join(trial_name[0],trial_name[1]+ '.yaml')
@@ -178,7 +178,7 @@ if __name__ == '__main__':
         points_3d_camera_list = []
         points_2d_bbox_list = []
         for frame_idx, frame_no in enumerate(frames):
-            frame_idx = int(frame_idx * fps_ratio)
+            frame_idx = int(frame_idx * fps_ratio)  # todo: bug if fps_ratio is not an 1
             print(f'Processing frame {frame_no}/{frames[-1]} of {activity_name}.{camera.DEVICEID}.timestamp.avi',
                   end='\r')
             points_3d = world3D[frame_idx, :, :].reshape(-1, 3) / 1000
@@ -200,7 +200,6 @@ if __name__ == '__main__':
         # world2D_skeleton.plot_2d_pose(os.path.join(frame_output_dir, f'2D_Pose_Camera{camera.DEVICEID}'))
         store_cdf(points_2d_filename, points_2d_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names, bbox=points_2d_bbox_list)
         store_cdf(points_3d_camera_filename, points_3d_camera_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names)
-
 
     # video_filename = f'{basename}.{camera.DEVICEID}.{time}.avi'
 
