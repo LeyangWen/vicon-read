@@ -38,7 +38,7 @@ def get_left_right(pt_name):
 def trim_close_index(swap_index, threshold_frame=10, start_frame=0):
     last_recorded_index = -100
     for swap_id in swap_index:
-        if abs(swap_id - last_recorded_index) < threshold_frame or swap_id < threshold_frame:
+        if abs(swap_id - last_recorded_index) < threshold_frame or swap_id < start_frame:
                 swap_index = np.delete(swap_index, np.where(swap_index == swap_id))
         last_recorded_index = swap_id
     return swap_index
@@ -66,8 +66,8 @@ if __name__ == '__main__':
 
     start_frame = parser.parse_args().start_frame
     swap_pairs = [
-        ['RRS', 'RUS'], ['LRS', 'LUS'],
-        ['RMCP2', 'RMCP5'], ['LMCP2', 'LMCP5'],
+        # ['RRS', 'RUS'], ['LRS', 'LUS'],
+        # ['RMCP2', 'RMCP5'], ['LMCP2', 'LMCP5'],
         ['RAP', 'RAP_f'],
         ['LAP', 'LAP_f'],
         ['RAP_f', 'RAP_b'],
@@ -81,7 +81,7 @@ if __name__ == '__main__':
         ['LMFC', 'LLFC'], ['RMFC', 'RLFC'],
         ['LLM', 'LMM'], ['LMTP5', 'LMTP1'],
         ['RLM', 'RMM'], ['RMTP5', 'RMTP1'],
-        ['LEAR', 'REAR'], ['HDTP', 'MDFH'],
+        ['LEAR', 'REAR'],  ['HDTP', 'MDFH'],
         ['LEAR', 'HDTP'], ['REAR', 'MDFH'],
         ['REAR', 'HDTP'], ['LEAR', 'MDFH'],
         ['C7_d', 'C7'], ['C7_d', 'SS'],
@@ -160,7 +160,7 @@ if __name__ == '__main__':
                                   ['RAP', 'RAP_b'], ['LAP', 'LAP_b'],
                                   ['RLE', 'RME'],
                                   ['LLE', 'LME'],
-                                  # ['LIC', 'LGT'], ['RIC', 'RGT'],
+                                  ['LIC', 'LGT'], ['RIC', 'RGT'],
                                   ['LIC', 'LASIS'], ['RIC', 'RASIS'],
                                   ['LGT', 'LASIS'], ['RGT', 'RASIS'],
                                   ['SS', 'RAP_f'], ['SS', 'LAP_f'],

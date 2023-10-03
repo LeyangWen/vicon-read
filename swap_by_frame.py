@@ -41,8 +41,8 @@ if __name__ == '__main__':
     foot = ['MTP1', 'MTP5', 'MM', 'LM', 'HEEL']
     pelvis = ['ASIS', 'PSIS']
 
-    frame = 10630
-    target_markers = arm
+    frame = 14578
+    target_markers = None
 
     joints_dict = {}
     for marker in target_markers:
@@ -127,26 +127,25 @@ if __name__ == '__main__':
             print(f'{cdf_file} stored')
 
     if False:
-        target_markers = ['LME', 'RME', 'RLE']
+        target_markers = ['LME', 'RME']
         joints_dict = {}
         for marker in target_markers:
             joints_dict[marker] = MarkerPoint(vicon.GetTrajectory(subject_names[0], marker))
 
-        frame_1 = 270
-        frame_2 = 20573
+        frame_1 = 2
+        frame_2 = 19360
         frame_number = vicon.GetFrameCount()
         for i in range(frame_1):
-            joints_dict['LME'].xyz[:,i] = joints_dict['LME'].xyz[:,frame_1]
-            joints_dict['LME'].exist[i] = joints_dict['LME'].exist[frame_1]
-            joints_dict['RLE'].xyz[:,i] = joints_dict['RLE'].xyz[:,frame_1]
-            joints_dict['RLE'].exist[i] = joints_dict['RLE'].exist[frame_1]
+            # joints_dict['LME'].xyz[:,i] = joints_dict['LME'].xyz[:,frame_1]
+            # joints_dict['LME'].exist[i] = joints_dict['LME'].exist[frame_1]
+            joints_dict['RME'].xyz[:,i] = joints_dict['RME'].xyz[:,frame_1]
+            joints_dict['RME'].exist[i] = joints_dict['RME'].exist[frame_1]
         for j in range(frame_number-frame_2):
-            # joints_dict['RME'].xyz[:,j+frame_2] = joints_dict['RME'].xyz[:,frame_2]
-            # joints_dict['RME'].exist[j+frame_2] = joints_dict['RME'].exist[frame_2]
+        #     # joints_dict['RME'].xyz[:,j+frame_2] = joints_dict['RME'].xyz[:,frame_2]
+        #     # joints_dict['RME'].exist[j+frame_2] = joints_dict['RME'].exist[frame_2]
             joints_dict['LME'].xyz[:,j+frame_2] = joints_dict['LME'].xyz[:,frame_2]
             joints_dict['LME'].exist[j+frame_2] = joints_dict['LME'].exist[frame_2]
         vicon.SetTrajectory(subject_names[0], 'LME', joints_dict['LME'].x, joints_dict['LME'].y, joints_dict['LME'].z, joints_dict['LME'].exist)
         vicon.SetTrajectory(subject_names[0], 'RME', joints_dict['RME'].x, joints_dict['RME'].y, joints_dict['RME'].z, joints_dict['RME'].exist)
-        vicon.SetTrajectory(subject_names[0], 'RLE', joints_dict['RLE'].x, joints_dict['RLE'].y, joints_dict['RLE'].z, joints_dict['RLE'].exist)
 
 

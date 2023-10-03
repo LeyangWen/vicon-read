@@ -237,7 +237,6 @@ class VirtualPoint(Point):
         return (self.xyz, self.exist)
 
 
-
 class Plane:
     def __init__(self, pt1=None, pt2=None, pt3=None):
         self.random_id = np.random.randint(0, 100000000)
@@ -310,7 +309,6 @@ class Plane:
         angle_sign = Point.angle(plane1.normal_vector, plane2.normal_vector_end)
         angle = np.where(angle_sign > np.pi / 2, -angle, angle)
         return angle
-
 
 
 class CoordinateSystem3D:

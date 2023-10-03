@@ -190,6 +190,96 @@ class VEHSErgoSkeleton(Skeleton):
     def __int__(self, skeleton_file):
         super().__init__(skeleton_file)
 
+    def calculate_joint_center(self):
+        self.poses['HEAD'] = Point.mid_point(self.poses['LEAR'], self.poses['REAR'])
+        self.poses['RSHOULDER'] = Point.mid_point(self.poses['RAP_f'], self.poses['RAP_b'])
+        self.poses['LSHOULDER'] = Point.mid_point(self.poses['LAP_f'], self.poses['LAP_b'])
+        self.poses['C7_m'] = Point.mid_point(self.poses['C7_d'], self.poses['SS'])
+        self.poses['THORAX'] = Point.translate_point(self.poses['SS'], Point.vector(self.poses['SS'], self.poses['C7_m'], normalize=self.marker_height))  # offset by marker height
+        self.poses['LELBOW'] = Point.mid_point(self.poses['LME'], self.poses['LLE'])
+        self.poses['RELBOW'] = Point.mid_point(self.poses['RME'], self.poses['RLE'])
+        self.poses['RWRIST'] = Point.mid_point(self.poses['RRS'], self.poses['RUS'])
+        self.poses['LWRIST'] = Point.mid_point(self.poses['LRS'], self.poses['LUS'])
+        self.poses['RHAND'] = Point.mid_point(self.poses['RMCP2'], self.poses['RMCP5'])
+        self.poses['LHAND'] = Point.mid_point(self.poses['LMCP2'], self.poses['LMCP5'])
+
+        ##### lower body #####
+        self.poses['PELVIS_f'] = Point.mid_point(self.poses['RASIS'], self.poses['LASIS'])
+        self.poses['PELVIS_b'] = Point.mid_point(self.poses['RPSIS'], self.poses['LPSIS'])
+        self.poses['PELVIS'] = Point.mid_point(self.poses['PELVIS_f'], self.poses['PELVIS_b'])
+        self.poses['RHIP'] = Point.translate_point(self.poses['RGT'], Point.vector(self.poses['RASIS'], self.poses['LASIS'], normalize=2 * 25.4))  # offset 2 inches
+        self.poses['RKNEE'] = Point.mid_point(self.poses['RLFC'], self.poses['RMFC'])
+        self.poses['RANKLE'] = Point.mid_point(self.poses['RMM'], self.poses['RLM'])
+        self.poses['RFOOT'] = Point.mid_point(self.poses['RMTP1'], self.poses['RMTP5'])
+        self.poses['LHIP'] = Point.translate_point(self.poses['LGT'], Point.vector(self.poses['LASIS'], self.poses['RASIS'], normalize=2 * 25.4))  # offset 2 inches
+        self.poses['LKNEE'] = Point.mid_point(self.poses['LLFC'], self.poses['LMFC'])
+        self.poses['LANKLE'] = Point.mid_point(self.poses['LMM'], self.poses['LLM'])
+        self.poses['LFOOT'] = Point.mid_point(self.poses['LMTP1'], self.poses['LMTP5'])
+
+    def calculate_camera_projection(self, camera_xcp_file):
+        kpts_of_interest = [HDTP, REAR, LEAR, C7, C7_d, SS, RAP_b, RAP_f, LAP_b, LAP_f, RLE, RME, LLE, LME, RMCP2, RMCP5, LMCP2, LMCP5, PELVIS, RWRIST, LWRIST, RHIP, LHIP, RKNEE,
+                            LKNEE, RANKLE, LANKLE, RFOOT, LFOOT, RHAND, LHAND, RELBOW, LELBOW, RSHOULDER, LSHOULDER, HEAD, THORAX]
+        kpt_names = ['HDTP', 'REAR', 'LEAR', 'C7', 'C7_d', 'SS', 'RAP_b', 'RAP_f', 'LAP_b', 'LAP_f', 'RLE', 'RME', 'LLE', 'LME', 'RMCP2', 'RMCP5', 'LMCP2', 'LMCP5', 'PELVIS', 'RWRIST', 'LWRIST',
+                     'RHIP', 'LHIP', 'RKNEE',
+                     'LKNEE', 'RANKLE', 'LANKLE', 'RFOOT', 'LFOOT', 'RHAND', 'LHAND', 'RELBOW', 'LELBOW', 'RSHOULDER', 'LSHOULDER', 'HEAD', 'THORAX']
+        world3D = Point.batch_export_to_nparray(kpts_of_interest)
+
+        base_dir_name = trial_name[0]
+        activity_name = trial_name[1]
+        cdf_output_dir = os.path.join(trial_name[0], 'cdf_output')
+        frame_output_dir = os.path.join(trial_name[0], 'render', 'frame_output', activity_name)
+        basename = os.path.join(trial_name[0], trial_name[1])
+        xcp_filename = basename + '.xcp'
+
+
+        cameras = batch_load_from_xcp(camera_xcp_file)
+        start_frame = 0
+        end_frame = frame_count
+        rgb_frame_rate = 100
+        fps_ratio = 100 / rgb_frame_rate
+        rep = 1
+        frames = np.linspace(start_frame / fps_ratio, end_frame / fps_ratio, int((end_frame - start_frame) / fps_ratio), dtype=int)
+        store_cdf(world3D_filename, world3D, TaskID=activity_name, kp_names=kpt_names)
+
+        for cam_idx, camera in enumerate(cameras):
+            print(f'Processing camera {cam_idx}: {camera.DEVICEID}')
+
+            points_2d_list = []
+            points_3d_camera_list = []
+            points_2d_bbox_list = []
+            for frame_idx, frame_no in enumerate(frames):
+                frame_idx = int(frame_idx * fps_ratio)  # todo: bug if fps_ratio is not an 1
+                print(f'Processing frame {frame_no}/{frames[-1]} of {activity_name}.{camera.DEVICEID}.timestamp.avi',
+                      end='\r')
+                points_3d = world3D[frame_idx, :, :].reshape(-1, 3) / 1000
+                points_3d_camera = camera.project_w_depth(points_3d)
+                points_2d = camera.project(points_3d)
+                points_2d = camera.distort(points_2d)
+                bbox_top_left, bbox_bottom_right = points_2d.min(axis=0) - 20, points_2d.max(axis=0) + 20
+                points_2d_list.append(points_2d)
+                points_3d_camera_list.append(points_3d_camera)
+                points_2d_bbox_list.append([bbox_top_left, bbox_bottom_right])
+
+            points_2d_list = np.array(points_2d_list)
+            points_3d_camera_list = np.swapaxes(np.array(points_3d_camera_list), 1, 2)
+            points_2d_bbox_list = np.array(points_2d_bbox_list)
+
+            store_cdf(points_2d_filename, points_2d_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names, bbox=points_2d_bbox_list)
+            store_cdf(points_3d_camera_filename, points_3d_camera_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names)
+
+    def output_MotionBert_SMPL(self):
+        '''
+        MotionBert Style
+        '''
+        pass
+
+    def output_MotionBert_6Dpose(self):
+        pass
+
+    def output_MotionBert_3Dpose(self, output_3D_dataset, downsample=1):
+        # append data at end
+        return output_3D_dataset
+
     def output_3DSSPP_loc(self, frame_range=None, loc_file=None):
         # 3DSSPP format:
         # LOC File filename.loc
@@ -326,7 +416,7 @@ class PulginGaitSkeleton(Skeleton):
         self.__load_acronym(acronym_file)
         self.__load_key_joints(skeleton_file)
         self.joint_number = len(self.key_joint_name)
-        self.__load_c3d(c3d_file)
+        self.load_c3d(c3d_file)
         self.c3d_file = c3d_file
         # exclude .c3d
         base_dir = c3d_file[:-4]
@@ -476,7 +566,7 @@ class PulginGaitSkeleton(Skeleton):
         pose_idx = self.get_pose_idx_from_acronym(input_name_list, extract_pt=extract_pt)
         return self.get_poses(self.points, pose_idx, output_type=output_type)
 
-    def __load_c3d(self, c3d_file):
+    def load_c3d(self, c3d_file):
         reader = c3d.Reader(open(c3d_file, 'rb'))
         try:
             self.analog_labels = reader.analog_labels

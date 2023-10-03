@@ -1,6 +1,6 @@
 # VICON Reader
 
-#### Snipets
+#### Snippets
 - Powershell code to convert all avi files in a folder to mp4, keep original files
 ```powershell
 cd 'C:\Users\Public\Documents\Vicon\data\Vicon_F\Round3\LeyangWen\FullCollection'
