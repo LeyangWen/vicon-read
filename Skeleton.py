@@ -65,6 +65,11 @@ class Skeleton:
                 self.key_joint_parent = data['parent']['mid'] + data['parent']['botL'] + data['parent']['topL'] + data['parent']['botR'] + data['parent']['topR']
             except yaml.YAMLError as exc:
                 print(filename, exc)
+                raise exc
+
+    def update_pose_from_point_pose(self):
+        for i in range(self.point_number):
+            self.poses[self.point_labels[i]] = self.points[:, i, :]
 
     def get_parent(self, joint_name):
         parent_idx = self.key_joint_name.index(joint_name)
@@ -187,60 +192,52 @@ class Skeleton:
 
 
 class VEHSErgoSkeleton(Skeleton):
-    def __int__(self, skeleton_file):
+    def __init__(self, skeleton_file):
         super().__init__(skeleton_file)
+        self.marker_height = 14/2+2  # 14mm marker
+        # marker_height = 9.5/2+2  # 9.5mm marker
 
     def calculate_joint_center(self):
-        self.poses['HEAD'] = Point.mid_point(self.poses['LEAR'], self.poses['REAR'])
-        self.poses['RSHOULDER'] = Point.mid_point(self.poses['RAP_f'], self.poses['RAP_b'])
-        self.poses['LSHOULDER'] = Point.mid_point(self.poses['LAP_f'], self.poses['LAP_b'])
-        self.poses['C7_m'] = Point.mid_point(self.poses['C7_d'], self.poses['SS'])
-        self.poses['THORAX'] = Point.translate_point(self.poses['SS'], Point.vector(self.poses['SS'], self.poses['C7_m'], normalize=self.marker_height))  # offset by marker height
-        self.poses['LELBOW'] = Point.mid_point(self.poses['LME'], self.poses['LLE'])
-        self.poses['RELBOW'] = Point.mid_point(self.poses['RME'], self.poses['RLE'])
-        self.poses['RWRIST'] = Point.mid_point(self.poses['RRS'], self.poses['RUS'])
-        self.poses['LWRIST'] = Point.mid_point(self.poses['LRS'], self.poses['LUS'])
-        self.poses['RHAND'] = Point.mid_point(self.poses['RMCP2'], self.poses['RMCP5'])
-        self.poses['LHAND'] = Point.mid_point(self.poses['LMCP2'], self.poses['LMCP5'])
+        self.point_poses['HEAD'] = Point.mid_point(self.point_poses['LEAR'], self.point_poses['REAR'])
+        self.point_poses['RSHOULDER'] = Point.mid_point(self.point_poses['RAP_f'], self.point_poses['RAP_b'])
+        self.point_poses['LSHOULDER'] = Point.mid_point(self.point_poses['LAP_f'], self.point_poses['LAP_b'])
+        self.point_poses['C7_m'] = Point.mid_point(self.point_poses['C7_d'], self.point_poses['SS'])
+        self.point_poses['THORAX'] = Point.translate_point(self.point_poses['SS'], Point.vector(self.point_poses['SS'], self.point_poses['C7_m'], normalize=self.marker_height))  # offset by marker height
+        self.point_poses['LELBOW'] = Point.mid_point(self.point_poses['LME'], self.point_poses['LLE'])
+        self.point_poses['RELBOW'] = Point.mid_point(self.point_poses['RME'], self.point_poses['RLE'])
+        self.point_poses['RWRIST'] = Point.mid_point(self.point_poses['RRS'], self.point_poses['RUS'])
+        self.point_poses['LWRIST'] = Point.mid_point(self.point_poses['LRS'], self.point_poses['LUS'])
+        self.point_poses['RHAND'] = Point.mid_point(self.point_poses['RMCP2'], self.point_poses['RMCP5'])
+        self.point_poses['LHAND'] = Point.mid_point(self.point_poses['LMCP2'], self.point_poses['LMCP5'])
 
         ##### lower body #####
-        self.poses['PELVIS_f'] = Point.mid_point(self.poses['RASIS'], self.poses['LASIS'])
-        self.poses['PELVIS_b'] = Point.mid_point(self.poses['RPSIS'], self.poses['LPSIS'])
-        self.poses['PELVIS'] = Point.mid_point(self.poses['PELVIS_f'], self.poses['PELVIS_b'])
-        self.poses['RHIP'] = Point.translate_point(self.poses['RGT'], Point.vector(self.poses['RASIS'], self.poses['LASIS'], normalize=2 * 25.4))  # offset 2 inches
-        self.poses['RKNEE'] = Point.mid_point(self.poses['RLFC'], self.poses['RMFC'])
-        self.poses['RANKLE'] = Point.mid_point(self.poses['RMM'], self.poses['RLM'])
-        self.poses['RFOOT'] = Point.mid_point(self.poses['RMTP1'], self.poses['RMTP5'])
-        self.poses['LHIP'] = Point.translate_point(self.poses['LGT'], Point.vector(self.poses['LASIS'], self.poses['RASIS'], normalize=2 * 25.4))  # offset 2 inches
-        self.poses['LKNEE'] = Point.mid_point(self.poses['LLFC'], self.poses['LMFC'])
-        self.poses['LANKLE'] = Point.mid_point(self.poses['LMM'], self.poses['LLM'])
-        self.poses['LFOOT'] = Point.mid_point(self.poses['LMTP1'], self.poses['LMTP5'])
+        self.point_poses['PELVIS_f'] = Point.mid_point(self.point_poses['RASIS'], self.point_poses['LASIS'])
+        self.point_poses['PELVIS_b'] = Point.mid_point(self.point_poses['RPSIS'], self.point_poses['LPSIS'])
+        self.point_poses['PELVIS'] = Point.mid_point(self.point_poses['PELVIS_f'], self.point_poses['PELVIS_b'])
+        self.point_poses['RHIP'] = Point.translate_point(self.point_poses['RGT'], Point.vector(self.point_poses['RASIS'], self.point_poses['LASIS'], normalize=2 * 25.4))  # offset 2 inches
+        self.point_poses['RKNEE'] = Point.mid_point(self.point_poses['RLFC'], self.point_poses['RMFC'])
+        self.point_poses['RANKLE'] = Point.mid_point(self.point_poses['RMM'], self.point_poses['RLM'])
+        self.point_poses['RFOOT'] = Point.mid_point(self.point_poses['RMTP1'], self.point_poses['RMTP5'])
+        self.point_poses['LHIP'] = Point.translate_point(self.point_poses['LGT'], Point.vector(self.point_poses['LASIS'], self.point_poses['RASIS'], normalize=2 * 25.4))  # offset 2 inches
+        self.point_poses['LKNEE'] = Point.mid_point(self.point_poses['LLFC'], self.point_poses['LMFC'])
+        self.point_poses['LANKLE'] = Point.mid_point(self.point_poses['LMM'], self.point_poses['LLM'])
+        self.point_poses['LFOOT'] = Point.mid_point(self.point_poses['LMTP1'], self.point_poses['LMTP5'])
+        self.update_pose_from_point_pose()
 
     def calculate_camera_projection(self, camera_xcp_file):
-        kpts_of_interest = [HDTP, REAR, LEAR, C7, C7_d, SS, RAP_b, RAP_f, LAP_b, LAP_f, RLE, RME, LLE, LME, RMCP2, RMCP5, LMCP2, LMCP5, PELVIS, RWRIST, LWRIST, RHIP, LHIP, RKNEE,
-                            LKNEE, RANKLE, LANKLE, RFOOT, LFOOT, RHAND, LHAND, RELBOW, LELBOW, RSHOULDER, LSHOULDER, HEAD, THORAX]
-        kpt_names = ['HDTP', 'REAR', 'LEAR', 'C7', 'C7_d', 'SS', 'RAP_b', 'RAP_f', 'LAP_b', 'LAP_f', 'RLE', 'RME', 'LLE', 'LME', 'RMCP2', 'RMCP5', 'LMCP2', 'LMCP5', 'PELVIS', 'RWRIST', 'LWRIST',
-                     'RHIP', 'LHIP', 'RKNEE',
-                     'LKNEE', 'RANKLE', 'LANKLE', 'RFOOT', 'LFOOT', 'RHAND', 'LHAND', 'RELBOW', 'LELBOW', 'RSHOULDER', 'LSHOULDER', 'HEAD', 'THORAX']
+        kpts_of_interest = self.point_poses.values()
         world3D = Point.batch_export_to_nparray(kpts_of_interest)
-
-        base_dir_name = trial_name[0]
-        activity_name = trial_name[1]
-        cdf_output_dir = os.path.join(trial_name[0], 'cdf_output')
-        frame_output_dir = os.path.join(trial_name[0], 'render', 'frame_output', activity_name)
-        basename = os.path.join(trial_name[0], trial_name[1])
-        xcp_filename = basename + '.xcp'
-
+        self.pose_3d_world = world3D
 
         cameras = batch_load_from_xcp(camera_xcp_file)
         start_frame = 0
-        end_frame = frame_count
+        end_frame = self.frame_number
         rgb_frame_rate = 100
         fps_ratio = 100 / rgb_frame_rate
-        rep = 1
         frames = np.linspace(start_frame / fps_ratio, end_frame / fps_ratio, int((end_frame - start_frame) / fps_ratio), dtype=int)
-        store_cdf(world3D_filename, world3D, TaskID=activity_name, kp_names=kpt_names)
-
+        self.cameras = cameras
+        self.pose_3d_camera = {}
+        self.pose_2d_camera = {}
         for cam_idx, camera in enumerate(cameras):
             print(f'Processing camera {cam_idx}: {camera.DEVICEID}')
 
@@ -249,7 +246,7 @@ class VEHSErgoSkeleton(Skeleton):
             points_2d_bbox_list = []
             for frame_idx, frame_no in enumerate(frames):
                 frame_idx = int(frame_idx * fps_ratio)  # todo: bug if fps_ratio is not an 1
-                print(f'Processing frame {frame_no}/{frames[-1]} of {activity_name}.{camera.DEVICEID}.timestamp.avi',
+                print(f'Processing frame {frame_no}/{frames[-1]} of {self.c3d_file}',
                       end='\r')
                 points_3d = world3D[frame_idx, :, :].reshape(-1, 3) / 1000
                 points_3d_camera = camera.project_w_depth(points_3d)
@@ -263,9 +260,8 @@ class VEHSErgoSkeleton(Skeleton):
             points_2d_list = np.array(points_2d_list)
             points_3d_camera_list = np.swapaxes(np.array(points_3d_camera_list), 1, 2)
             points_2d_bbox_list = np.array(points_2d_bbox_list)
-
-            store_cdf(points_2d_filename, points_2d_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names, bbox=points_2d_bbox_list)
-            store_cdf(points_3d_camera_filename, points_3d_camera_list, TaskID=activity_name, CamID=camera.DEVICEID, kp_names=kpt_names)
+            self.pose_3d_camera[camera.DEVICEID] = points_3d_camera_list
+            self.pose_2d_camera[camera.DEVICEID] = points_2d_list
 
     def output_MotionBert_SMPL(self):
         '''
@@ -276,9 +272,37 @@ class VEHSErgoSkeleton(Skeleton):
     def output_MotionBert_6Dpose(self):
         pass
 
-    def output_MotionBert_3Dpose(self, output_3D_dataset, downsample=1):
+    def output_MotionBert_3Dpose(self, downsample=4):
         # append data at end
-        return output_3D_dataset
+        output = {}
+        joint_2d = []
+        confidence = []
+        joint3d_image = []
+        camera_name = []
+        source = []
+        c3d_frame = []
+        for this_camera in self.cameras:
+            for downsample_idx in range(downsample):
+                for frame_idx in range(0, self.frame_number, downsample):
+                    real_frame_idx = frame_idx + downsample_idx
+                    if real_frame_idx >= self.frame_number:
+                        break
+                    joint_2d.append(self.pose_2d_camera[this_camera.DEVICEID][real_frame_idx, :, :])
+                    confidence.append(np.ones((self.point_number, 1)))
+                    joint3d_image.append(self.pose_3d_camera[this_camera.DEVICEID][real_frame_idx, :, :])
+                    camera_name.append(this_camera.DEVICEID)
+                    source.append(self.c3d_file)
+                    c3d_frame.append(real_frame_idx)
+
+        output['joint_2d'] = np.array(joint_2d)
+        output['confidence'] = np.array(confidence)
+        output['joint3d_image'] = np.array(joint3d_image)
+        output['camera_name'] = np.array(camera_name)
+        output['source'] = np.array(source)
+        output['c3d_frame'] = np.array(c3d_frame)
+        output['2.5d_factor'] = 1  # set to 1 for now, it seems to only affect motionbert eval
+        output['joints_2.5d_image'] = output['joint3d_image'] * output['2.5d_factor']
+        return output
 
     def output_3DSSPP_loc(self, frame_range=None, loc_file=None):
         # 3DSSPP format:

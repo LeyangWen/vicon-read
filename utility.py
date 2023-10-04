@@ -94,3 +94,26 @@ def store_cdf(file_name, data, date='', kp_names='', subjectID='', TaskID='', Ca
     cdf.attrs['KeypointNames'] = kp_names
     cdf['bbox'] = bbox
     cdf.close()
+
+def empty_MotionBert_dataset_dict(joint_number):
+    return {
+        'train': {
+            'joint_2d': np.empty((0, joint_number, 2)),
+            'confidence': np.empty((0, joint_number, 1)),
+            'joint3d_image': np.empty((0, joint_number, 3)),
+            'camera_name': np.empty((0,)),
+            'source': [],
+            'c3d_frame': []
+        },
+        'test': {
+            'joint_2d': np.empty((0, joint_number, 2)),
+            'confidence': np.empty((0, joint_number, 1)),
+            'joint3d_image': np.empty((0, joint_number, 3)),
+            'joints_2.5d_image': np.empty((0, joint_number, 3)),
+            '2.5d_factor': np.empty((0,)),
+            'camera_name': np.empty((0,)),
+            'action': [],
+            'source': [],
+            'c3d_frame': []
+        }
+    }

@@ -8,6 +8,7 @@ import os
 class Point():
     def __init__(self):
         self.random_id = np.random.randint(0, 100000000)
+        self.name = None
         pass
 
     def copy(self):
@@ -18,12 +19,12 @@ class Point():
     def mid_point(p1, p2):
         try:
             xyz = (p1.xyz + p2.xyz) / 2
-            exist = p1.exist and p2.exist
+            exist = p1.exist and p2.exist  # exist need to be in pyton list, not np array
             p_out = VirtualPoint((xyz, exist))
             return p_out
         except:
-            print('Point not defined')
-            return None
+            print('Error in "mid_point", Point not defined or exist not in python list')
+            raise ValueError
 
     @staticmethod
     def distance(p1, p2 = None):
@@ -209,7 +210,7 @@ class Point():
 
 
 class MarkerPoint(Point):
-    def __init__(self, data):
+    def __init__(self, data, name=None):
         super().__init__()
         self.data = data
         self.type = 'marker'
@@ -219,10 +220,11 @@ class MarkerPoint(Point):
         self.y = self.xyz[1]
         self.z = self.xyz[2]
         self.frame_no = len(self.exist)
+        self.name = name
 
 
 class VirtualPoint(Point):
-    def __init__(self, data):
+    def __init__(self, data, name=None):
         super().__init__()
         self.data = data
         self.type = 'virtual'
@@ -232,6 +234,7 @@ class VirtualPoint(Point):
         self.y = self.xyz[1]
         self.z = self.xyz[2]
         self.frame_no = len(self.exist)
+        self.name = name
 
     def output_format(self):
         return (self.xyz, self.exist)
