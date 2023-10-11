@@ -129,7 +129,7 @@ if __name__ == '__main__':
     try:  # RShoulder angles
     # if True:
     #     #  Upper_lim_angles01
-    #     PELVIS_b = Point.translate_point(C7, Point.create_const_vector(0,0,-1000,examplePt=C7))  # todo: this is temp for this shoulder trial, change to real marker in the future
+    #     PELVIS_b = Point.translate_point(C7, Point.create_const_vector(0,0,-1000,examplePt=C7))
     #     # RSHOULDER = Point.translate_point(RAP, Point.create_const_vector(0,0,-50,examplePt=RAP))
     #     zero_frame = [941, 1320, 941]
     #     frame_range = [941, 5756]
@@ -151,7 +151,7 @@ if __name__ == '__main__':
         RSHOULDER_angles.flexion = Point.angle(Point.vector(RSHOULDER, RELBOW).xyz, Point.vector(C7, PELVIS_b).xyz)
         RSHOULDER_angles.flexion = RSHOULDER_angles.zero_by_idx(0)  # zero by zero frame after setting flexion without function
 
-        # todo: add this filter as a function; set undefined angles to zero
+
         shoulder_threshold = 10/180*np.pi  # the H-abduction is not well defined when the flexion is small or near 180 degrees
         shoulder_filter = np.logical_and(np.abs(RSHOULDER_angles.flexion) > shoulder_threshold, np.abs(RSHOULDER_angles.flexion) < (np.pi - shoulder_threshold))
         RSHOULDER_angles.abduction = np.array([np.where(shoulder_filter[i], RSHOULDER_angles.abduction[i], 0) for i in range(len(shoulder_filter))])  # set abduction to nan if shoulder filter is false

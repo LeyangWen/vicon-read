@@ -68,8 +68,8 @@ class Skeleton:
                 raise exc
 
     def update_pose_from_point_pose(self):
-        for i in range(self.point_number):
-            self.poses[self.point_labels[i]] = self.points[:, i, :]
+        for point_key, point_pose in self.point_poses.items():
+            self.poses[point_key] = point_pose.xyz.T
 
     def get_parent(self, joint_name):
         parent_idx = self.key_joint_name.index(joint_name)
@@ -102,7 +102,7 @@ class Skeleton:
 
         ax = fig.add_subplot(111, projection='3d')
         for joint_name in self.key_joint_name:
-            point_type, point_size = self.get_polt_property(joint_name)
+            point_type, point_size = self.get_plot_property(joint_name)
             ax.scatter(self.poses[joint_name][frame, 0],
                        self.poses[joint_name][frame, 1],
                        self.poses[joint_name][frame, 2], label=joint_name, marker=point_type, s=point_size)
@@ -150,7 +150,7 @@ class Skeleton:
             fig = plt.figure()
             ax = fig.add_subplot(111)
             for joint_name in self.key_joint_name:
-                point_type, point_size = self.get_polt_property(joint_name)
+                point_type, point_size = self.get_plot_property(joint_name)
                 ax.scatter(self.poses[joint_name][frame, 0],
                            self.poses[joint_name][frame, 1], label=joint_name, marker=point_type, s=point_size, zorder=2)
             # connect points to parent
@@ -209,6 +209,10 @@ class VEHSErgoSkeleton(Skeleton):
         self.point_poses['LWRIST'] = Point.mid_point(self.point_poses['LRS'], self.point_poses['LUS'])
         self.point_poses['RHAND'] = Point.mid_point(self.point_poses['RMCP2'], self.point_poses['RMCP5'])
         self.point_poses['LHAND'] = Point.mid_point(self.point_poses['LMCP2'], self.point_poses['LMCP5'])
+        self.point_poses['LGRIP'] = Point.translate_point(self.point_poses['LHAND'],
+                                                          Point.orthogonal_vector(self.point_poses['LMCP5'], self.point_poses['LMCP2'], self.point_poses['LWRIST'], normalize=40))
+        self.point_poses['RGRIP'] = Point.translate_point(self.point_poses['RHAND'],
+                                                            Point.orthogonal_vector(self.point_poses['RMCP2'], self.point_poses['RMCP5'], self.point_poses['RWRIST'], normalize=40))
 
         ##### lower body #####
         self.point_poses['PELVIS_f'] = Point.mid_point(self.point_poses['RASIS'], self.point_poses['LASIS'])
@@ -222,10 +226,17 @@ class VEHSErgoSkeleton(Skeleton):
         self.point_poses['LKNEE'] = Point.mid_point(self.point_poses['LLFC'], self.point_poses['LMFC'])
         self.point_poses['LANKLE'] = Point.mid_point(self.point_poses['LMM'], self.point_poses['LLM'])
         self.point_poses['LFOOT'] = Point.mid_point(self.point_poses['LMTP1'], self.point_poses['LMTP5'])
+
         self.update_pose_from_point_pose()
 
-    def calculate_camera_projection(self, camera_xcp_file):
-        kpts_of_interest = self.point_poses.values()
+    def calculate_camera_projection(self, camera_xcp_file, kpts_of_interest_name='all'):
+        # todo: currently real world only, pelvis center option
+        if kpts_of_interest_name == 'all':  # get all points
+            kpts_of_interest = self.point_poses.values()
+        else:
+            kpts_of_interest = [self.point_poses[kpt] for kpt in kpts_of_interest_name]
+        self.current_kpts_of_interest_name = kpts_of_interest_name
+        self.current_kpts_of_interest = kpts_of_interest
         world3D = Point.batch_export_to_nparray(kpts_of_interest)
         self.pose_3d_world = world3D
 
@@ -269,10 +280,7 @@ class VEHSErgoSkeleton(Skeleton):
         '''
         pass
 
-    def output_MotionBert_6Dpose(self):
-        pass
-
-    def output_MotionBert_3Dpose(self, downsample=4):
+    def output_MotionBert_pose(self, downsample=4):
         # append data at end
         output = {}
         joint_2d = []
@@ -288,7 +296,7 @@ class VEHSErgoSkeleton(Skeleton):
                     if real_frame_idx >= self.frame_number:
                         break
                     joint_2d.append(self.pose_2d_camera[this_camera.DEVICEID][real_frame_idx, :, :])
-                    confidence.append(np.ones((self.point_number, 1)))
+                    confidence.append(np.ones((len(self.current_kpts_of_interest_name), 1)))
                     joint3d_image.append(self.pose_3d_camera[this_camera.DEVICEID][real_frame_idx, :, :])
                     camera_name.append(this_camera.DEVICEID)
                     source.append(self.c3d_file)
@@ -296,12 +304,13 @@ class VEHSErgoSkeleton(Skeleton):
 
         output['joint_2d'] = np.array(joint_2d)
         output['confidence'] = np.array(confidence)
-        output['joint3d_image'] = np.array(joint3d_image)
+        output['joint3d_image'] = np.array(joint3d_image)*1000  # convert to mm
         output['camera_name'] = np.array(camera_name)
-        output['source'] = np.array(source)
-        output['c3d_frame'] = np.array(c3d_frame)
-        output['2.5d_factor'] = 1  # set to 1 for now, it seems to only affect motionbert eval
-        output['joints_2.5d_image'] = output['joint3d_image'] * output['2.5d_factor']
+        output['source'] = source
+        output['c3d_frame'] = c3d_frame
+        output['2.5d_factor'] = np.ones((output['joint_2d'].shape[0],))  # set to 1 for now, it seems to only affect motionbert eval
+        output['joints_2.5d_image'] = output['joint3d_image']  # * output['2.5d_factor']  # * or /?, figure it out from example pkl file if we change 2.5d_factor
+        output['action'] = [self.c3d_file[-14:-4]] * len(source)
         return output
 
     def output_3DSSPP_loc(self, frame_range=None, loc_file=None):
@@ -361,54 +370,51 @@ class VEHSErgoSkeleton(Skeleton):
             step = frame_range[2]
         else:
             start_frame = 0
-            end_frame = self.frame_no
+            end_frame = self.frame_number
             step = 1
         if True:
-            fill = 0
-            loc = np.zeros((self.frame_no, 117))
-            loc[:,0:3] =    self.poses['HDTP']  # 1 - 3 Top Head Skin Surface
-            loc[:,3:6] =    self.poses['LEAR']  # 4 - 6 L. Head Skin Surface
-            loc[:,6:9] =    self.poses['REAR']  # 7 - 9 R. Head Skin Surface
-            loc[:, 9:12] =  self.poses['HEAD']  # 10 - 12 Head origin Virtual point
-            # loc[:, 12:15] = self.poses['HDEY']  # 13 - 15 Nasion Skin Surface
-            # loc[:,15:18] =  self.get_pose_from_acronym('HDTP', extract_pt='all', output_type='list_last')  # 16 - 18 Sight end Virtual point
-            loc[:, 18:21] = (self.get_pose_from_acronym('C7', extract_pt='all', output_type='list_last') * 3 + self.get_pose_from_acronym('T10', extract_pt='all',
-                                                                                                                                          output_type='list_last') * 1) / 4  # 19 - 21 C7/T1 Joint Center
-            loc[:, 21:24] = (self.get_pose_from_acronym('TRXO', extract_pt='all', output_type='list_last') * 3 + self.get_pose_from_acronym('T10', extract_pt='all',
-                                                                                                                                            output_type='list_last') * 1) / 4  # 22 - 24 Sternoclavicular Joint Joint Center
-            # loc[:,24:27] = self.get_pose_from_acronym('CLAV', extract_pt='all', output_type='list_last')  # 25 - 27 Suprasternale Skin Surface
-            loc[:, 27:30] = (self.get_pose_from_acronym('RPSI', extract_pt='all', output_type='list_last') + self.get_pose_from_acronym('LPSI', extract_pt='all', output_type='list_last')
-                             + self.get_pose_from_acronym('RASI', extract_pt='all', output_type='list_last') + self.get_pose_from_acronym('LASI', extract_pt='all', output_type='list_last')
-                             ) / 4  # 28 - 30 L5/S1 Joint Center
-            loc[:, 30:33] = fill  # 31 - 33 PSIS Joint Center
-            loc[:, 33:36] = self.get_pose_from_acronym('LSHO', extract_pt='all', output_type='list_last')  # 34 - 36 L. Shoulder Joint Center
-            # loc[:,36:39] = self.get_pose_from_acronym('LSHO', extract_pt='all', output_type='list_last')  # 37 - 39 L. Acromion Skin Surface
-            loc[:, 39:42] = self.get_pose_from_acronym('LEJC', extract_pt='all', output_type='list_last')  # 40 - 42 L. Elbow Joint Center
-            loc[:, 42:45] = fill  # 43 - 45 L. Lat. Epicon. of Humer. Skin Surface
-            loc[:, 45:48] = self.get_pose_from_acronym('LWJC', extract_pt='all', output_type='list_last')  # 46 - 48 L. Wrist Joint Center
-            loc[:, 48:51] = self.get_pose_from_acronym('LMFO', extract_pt='all', output_type='list_last')  # 49 - 51 L. Grip Center Virtual point
-            loc[:, 51:54] = self.get_pose_from_acronym('LFIN', extract_pt='all', output_type='list_last')  # 52 - 54 L. Hand Skin Surface
-            loc[:, 54:57] = self.get_pose_from_acronym('RSHO', extract_pt='all', output_type='list_last')  # 55 - 57 R. Shoulder Joint Center
-            # loc[:,57:60] = self.get_pose_from_acronym('RSHO', extract_pt='all', output_type='list_last')  # 58 - 60 R. Acromion Skin Surface
-            loc[:, 60:63] = self.get_pose_from_acronym('REJC', extract_pt='all', output_type='list_last')  # 61 - 63 R. Elbow Joint Center
-            loc[:, 63:66] = fill  # 64 - 66 R. Lat. Epicon. of Humer. Skin Surface
-            loc[:, 66:69] = self.get_pose_from_acronym('RWJC', extract_pt='all', output_type='list_last')  # 67 - 69 R. Wrist Joint Center
-            loc[:, 69:72] = self.get_pose_from_acronym('RMFO', extract_pt='all', output_type='list_last')  # 70 - 72 R. Grip Center Virtual point
-            loc[:, 72:75] = self.get_pose_from_acronym('RFIN', extract_pt='all', output_type='list_last')  # 73 - 75 R. Hand Skin Surface
-            loc[:, 75:78] = self.get_pose_from_acronym('LHJC', extract_pt='all', output_type='list_last')  # 76 - 78 L. Hip Joint Center
-            loc[:, 78:81] = self.get_pose_from_acronym('LKJC', extract_pt='all', output_type='list_last')  # 79 - 81 L. Knee Joint Center
-            loc[:, 81:84] = fill  # 82 - 84 L. Lat. Epicon. of Femur Skin Surface
-            loc[:, 84:87] = self.get_pose_from_acronym('LAJC', extract_pt='all', output_type='list_last')  # 85 - 87 L. Ankle Joint Center
-            loc[:, 87:90] = self.get_pose_from_acronym('RANK', extract_pt='all', output_type='list_last')  # 88 - 90 L. Lateral Malleolus Skin Surface
-            loc[:, 90:93] = self.get_pose_from_acronym('LFOO', extract_pt='all', output_type='list_last')  # 91 - 93 L. Ball of Foot Virtual point
-            loc[:, 93:96] = fill  # self.get_pose_from_acronym('LTOE', extract_pt='all', output_type='list_last')  # 94 - 96 L. Metatarsalphalangeal Skin Surface
-            loc[:, 96:99] = self.get_pose_from_acronym('RHJC', extract_pt='all', output_type='list_last')  # 97 - 99 R. Hip Joint Center
-            loc[:, 99:102] = self.get_pose_from_acronym('RKJC', extract_pt='all', output_type='list_last')  # 100 - 102 R. Knee Joint Center
-            loc[:, 102:105] = fill  # 103 - 105 R. Lat. Epicon. of Femur Skin Surface
-            loc[:, 105:108] = self.get_pose_from_acronym('RAJC', extract_pt='all', output_type='list_last')  # 106 - 108 R. Ankle Joint Center
-            loc[:, 108:111] = self.get_pose_from_acronym('RANK', extract_pt='all', output_type='list_last')  # 109 - 111 R. Lateral Malleolus Skin Surface
-            loc[:, 111:114] = self.get_pose_from_acronym('RFOO', extract_pt='all', output_type='list_last')  # 112 - 114 R. Ball of Foot Virtual point
-            loc[:, 114:117] = fill  # self.get_pose_from_acronym('RTOE', extract_pt='all', output_type='list_last')  # 115 - 117 R. Metatarsalphalangeal Skin Surface
+            loc = np.zeros((self.frame_number, 117))
+            loc[:, 0:3] = self.poses['HDTP']  # 1 - 3 Top Head Skin Surface
+            loc[:, 3:6] = self.poses['LEAR']  # 4 - 6 L. Head Skin Surface
+            loc[:, 6:9] = self.poses['REAR']  # 7 - 9 R. Head Skin Surface
+            loc[:, 9:12] = self.point_poses['HEAD'].xyz.T  # 10 - 12 Head origin Virtual point
+            head_plane = Plane(self.point_poses['HDTP'], self.point_poses['REAR'], self.point_poses['LEAR'])
+            loc[:, 12:15] = Point.translate_point(self.point_poses['HEAD'], head_plane.normal_vector, direction=100).xyz.T  # 13 - 15 Nasion Skin Surface
+            loc[:, 15:18] = Point.translate_point(self.point_poses['HEAD'], head_plane.normal_vector, direction=200).xyz.T  # 16 - 18 Sight end Virtual point
+            loc[:, 18:21] = Point.mid_point(self.point_poses['THORAX'], self.point_poses['C7'], 0.85).xyz.T  # 19 - 21 C7/T1 Joint Center
+            loc[:, 21:24] = self.point_poses['THORAX'].xyz.T  # 22 - 24 Sternoclavicular Joint Joint Center
+            loc[:, 24:27] = self.point_poses['SS'].xyz.T  # 25 - 27 Suprasternale Skin Surface
+            loc[:, 27:30] = self.point_poses['PELVIS'].xyz.T  # 28 - 30 L5/S1 Joint Center
+                #Point.mid_point(self.point_poses['PELVIS'], Point.mid_point(self.point_poses['RHIP'], self.point_poses['LHIP'], 0.5), 0.5).xyz.T  # 28 - 30 L5/S1 Joint Center
+            loc[:, 30:33] = self.point_poses['PELVIS_b'].xyz.T  # 31 - 33 PSIS Joint Center
+            loc[:, 33:36] = self.point_poses['LSHOULDER'].xyz.T  # 34 - 36 L. Shoulder Joint Center
+            loc[:, 36:39] = self.point_poses['LAP'].xyz.T  # 37 - 39 L. Acromion Skin Surface
+            loc[:, 39:42] = self.point_poses['LELBOW'].xyz.T  # 40 - 42 L. Elbow Joint Center
+            loc[:, 42:45] = self.point_poses['LLE'].xyz.T  # 43 - 45 L. Lat. Epicon. of Humer. Skin Surface
+            loc[:, 45:48] = self.point_poses['LWRIST'].xyz.T  # 46 - 48 L. Wrist Joint Center
+            loc[:, 48:51] = self.point_poses['LGRIP'].xyz.T  # 49 - 51 L. Grip Center Virtual point
+            loc[:, 51:54] = self.point_poses['LHAND'].xyz.T  # 52 - 54 L. Hand Skin Surface
+            loc[:, 54:57] = self.point_poses['RSHOULDER'].xyz.T  # 55 - 57 R. Shoulder Joint Center
+            loc[:, 57:60] = self.point_poses['RAP'].xyz.T  # 58 - 60 R. Acromion Skin Surface
+            loc[:, 60:63] = self.point_poses['RELBOW'].xyz.T  # 61 - 63 R. Elbow Joint Center
+            loc[:, 63:66] = self.point_poses['RLE'].xyz.T  # 64 - 66 R. Lat. Epicon. of Humer. Skin Surface
+            loc[:, 66:69] = self.point_poses['RWRIST'].xyz.T  # 67 - 69 R. Wrist Joint Center
+            loc[:, 69:72] = self.point_poses['RGRIP'].xyz.T  # 70 - 72 R. Grip Center Virtual point
+            loc[:, 72:75] = self.point_poses['RHAND'].xyz.T  # 73 - 75 R. Hand Skin Surface
+            loc[:, 75:78] = self.point_poses['LHIP'].xyz.T  # 76 - 79 L. Hip Joint Center
+            loc[:, 78:81] = self.point_poses['LKNEE'].xyz.T  # 79 - 81 L. Knee Joint Center
+            loc[:, 81:84] = self.point_poses['LLFC'].xyz.T  # 82 - 84 L. Lat. Epicon. of Femur Skin Surface
+            loc[:, 84:87] = self.point_poses['LANKLE'].xyz.T  # 85 - 87 L. Ankle Joint Center
+            loc[:, 87:90] = self.point_poses['LLM'].xyz.T  # 88 - 90 L. Lateral Malleolus Skin Surface
+            loc[:, 90:93] = Point.mid_point(self.point_poses['LFOOT'], self.point_poses['LHEEL'], 0.4).xyz.T  # 91 - 93 L. Ball of Foot Virtual point
+            loc[:, 93:96] = self.point_poses['LFOOT'].xyz.T  # 94 - 96 L. Metatarsalphalangeal Skin Surface
+            loc[:, 96:99] = self.point_poses['RHIP'].xyz.T  # 97 - 99 R. Hip Joint Center
+            loc[:, 99:102] = self.point_poses['RKNEE'].xyz.T  # 100 - 102 R. Knee Joint Center
+            loc[:, 102:105] = self.point_poses['RLFC'].xyz.T  # 103 - 105 R. Lat. Epicon. of Femur Skin Surface
+            loc[:, 105:108] = self.point_poses['RANKLE'].xyz.T  # 106 - 108 R. Ankle Joint Center
+            loc[:, 108:111] = self.point_poses['RLM'].xyz.T  # 109 - 111 R. Lateral Malleolus Skin Surface
+            loc[:, 111:114] = Point.mid_point(self.point_poses['RFOOT'], self.point_poses['RHEEL'], 0.4).xyz.T  # 112 - 114 R. Ball of Foot Virtual point
+            loc[:, 114:117] = self.point_poses['RFOOT'].xyz.T  # 115 - 117 R. Metatarsalphalangeal Skin Surface
         loc = loc / 1000  # convert to meters
         # convert np list to space separated string
         if loc_file is None:
@@ -420,14 +426,25 @@ class VEHSErgoSkeleton(Skeleton):
             f.write('DES 1 "Task Name" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
             for i, k in enumerate(np.arange(start_frame, end_frame, step)):
                 joint_locations = np.array2string(loc[k], separator=' ', max_line_width=1000000, precision=3, suppress_small=True)[1:-1].replace('0. ', '0 ')
-                # f.write('AUT 1 #\n')
-                f.write('FRM ' + str(i + 1) + ' #\n')
-                f.write(f'ANT 0 3 {height} {weight} #\n')  # male 0, female 1, self-set 3, height  , weight
-
+                f.write('FRM ' + str(i) + ' #\n')
+                f.write(f'ANT 0 3 {height} {weight} #\n')  # male 0, female 1, self-set-height-weight-values (not population percentile) 3, height  , weight
+                support_feet_max_height = 0.15
+                left_foot_supported = True if self.poses['LFOOT'][k, 2] < support_feet_max_height else False
+                right_foot_supported = True if self.poses['RFOOT'][k, 2] < support_feet_max_height else False
+                if left_foot_supported and right_foot_supported:
+                    foot_support_parameter = 0
+                elif left_foot_supported and (not right_foot_supported):
+                    foot_support_parameter = 1
+                elif (not left_foot_supported) and right_foot_supported:
+                    foot_support_parameter = 2
+                else:
+                    foot_support_parameter = 3
+                f.write(f'SUP {foot_support_parameter} 0 0 0 20.0 –15 #\n')  # set support: Feet Support (0=both, 1=left, 2=right, 3=none), Position (0=stand, 1=seated), Front Seat Pan Support (0=no, 1=yes), Seat Has Back Rest (0=no, 1=yes), and Back Rest Center Height (real number in cm, greater than 19.05).
                 f.write(f'LOC {joint_locations} #\n')
                 # f.write('HAN 15 -20 85 15 -15 80 #\n')
                 # f.write('EXP #\n')
-            # f.write('AUT 1 #\n')
+                f.write('AUT 1 #\n')
+            # f.write('OUT #\n')
 
         return loc
 

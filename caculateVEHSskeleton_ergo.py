@@ -241,7 +241,7 @@ if __name__ == '__main__':
     # try:  # RShoulder angles
     # # if True:
     # #     #  Upper_lim_angles01
-    # #     PELVIS_b = Point.translate_point(C7, Point.create_const_vector(0,0,-1000,examplePt=C7))  # todo: this is temp for this shoulder trial, change to real marker in the future
+    # #     PELVIS_b = Point.translate_point(C7, Point.create_const_vector(0,0,-1000,examplePt=C7))
     # #     # RSHOULDER = Point.translate_point(RAP, Point.create_const_vector(0,0,-50,examplePt=RAP))
     # #     zero_frame = [941, 1320, 941]
     # #     frame_range = [941, 5756]

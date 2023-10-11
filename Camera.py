@@ -170,7 +170,7 @@ class FLIR_Camera(Camera):
         points_2d = points_2d.T
         return points_2d
 
-    def project_w_depth(self, points_3d):  # todo: test
+    def project_w_depth(self, points_3d):
         '''
         :param points_3d: 3d points in world coordinate
         :return: 3d points in camera coordinate, with depth, in mm/m

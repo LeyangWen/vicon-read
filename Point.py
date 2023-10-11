@@ -16,9 +16,12 @@ class Point():
         return copied_point
 
     @staticmethod
-    def mid_point(p1, p2):
+    def mid_point(p1, p2, precentage=0.5):
+        '''
+        return the midpoint of p1 and p2, if precentage is 0.5, return the mid point, if 0.25, return the point 1/4 way from p1 to p2
+        '''
         try:
-            xyz = (p1.xyz + p2.xyz) / 2
+            xyz = p1.xyz * precentage + p2.xyz * (1 - precentage)
             exist = p1.exist and p2.exist  # exist need to be in pyton list, not np array
             p_out = VirtualPoint((xyz, exist))
             return p_out
