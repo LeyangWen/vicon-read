@@ -10,13 +10,15 @@
 - [ ] Write a make file
 - [ ] Finish this readme file with examples
 
+### Estimated time to complete: _x weeks_
+
 ## Installation
 
-### Download built app
+### Option 1: Download built app
 
 link: 
 
-### Build from scratch
+### Option 1: Build from scratch
 
 ```bash
 g++ -o 3DSSPP_wrapper 3DSSPP_wrapper.cpp
