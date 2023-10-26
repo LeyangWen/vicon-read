@@ -3,10 +3,12 @@
 
 ## Todo:
 - [ ] Find & remove codes that calls windows GUI in wrapper.cpp
-- [ ] compile app using g++
-- [ ] test app: compare the output difference between the GUI version and the command line version on the example batch file
-- [ ] write a make file
-- [ ] finish this readme file with examples
+  - [ ] file 1.cpp
+  - [ ] Let's keep a rough list the files you completed here for tracking
+- [ ] Compile app using g++
+- [ ] Test app: compare the output between the GUI version and the command line version on the example batch file
+- [ ] Write a make file
+- [ ] Finish this readme file with examples
 
 ## Installation
 
