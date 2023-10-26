@@ -280,7 +280,7 @@ class VEHSErgoSkeleton(Skeleton):
         '''
         pass
 
-    def output_MotionBert_pose(self, downsample=4):
+    def output_MotionBert_pose(self, downsample=5, downsample_keep=1):
         # append data at end
         output = {}
         joint_2d = []
@@ -291,6 +291,8 @@ class VEHSErgoSkeleton(Skeleton):
         c3d_frame = []
         for this_camera in self.cameras:
             for downsample_idx in range(downsample):
+                if downsample_idx == downsample_keep:
+                    break
                 for frame_idx in range(0, self.frame_number, downsample):
                     real_frame_idx = frame_idx + downsample_idx
                     if real_frame_idx >= self.frame_number:
