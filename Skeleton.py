@@ -10,6 +10,9 @@ from utility import *
 from spacepy import pycdf
 import cv2
 from Point import *
+from Camera import *
+
+# todo: self.frame_no vs self.frame_number be consistent
 
 class Skeleton:
     def __init__(self, skeleton_file):
@@ -52,6 +55,40 @@ class Skeleton:
         self.load_name_list(name_list)
         self.load_np_points(pt_np)
 
+    def load_c3d(self, c3d_file, analog_read=True):
+        self.c3d_file = c3d_file
+        reader = c3d.Reader(open(c3d_file, 'rb'))
+        if analog_read:
+            try:
+                self.analog_labels = reader.analog_labels
+                self.analog_labels = [label.strip() for label in self.analog_labels]  # strip whitespace from analog labels
+            except AttributeError:
+                self.analog_labels = None
+        else:
+            self.analog_labels = None
+        self.point_labels = [label.strip() for label in reader.point_labels]  # strip whitespace from point labels
+        points = []
+        analog = []
+        for i, this_points, this_analog in reader.read_frames():
+            print('frame {}: point {}, analog {}'.format(
+                i, this_points.shape, this_analog.shape), end='\r')
+            points.append(this_points)
+            analog.append(this_analog)
+        pt_np = np.array(points)
+        self.analog = np.array(analog)
+        self.frame_number = pt_np.shape[0]
+        self.point_number = pt_np.shape[1]
+        self.points = pt_np
+        self.poses = {}
+        self.point_poses = {}
+        self.frame_number = np.shape(pt_np)[0]
+        self.points_dimension = np.shape(pt_np)[-1]
+        for i in range(self.point_number):
+            self.poses[self.point_labels[i]] = pt_np[:, i, :3]
+            exist = pt_np[:, i, 0] != np.nan  # todo: check if missing points is expressed as np.nan in c3d
+            xyz_exist = [pt_np[:, i, 0], pt_np[:, i, 1], pt_np[:, i, 2], exist.tolist()]
+            self.point_poses[self.point_labels[i]] = MarkerPoint(xyz_exist, name=self.point_labels[i])
+
     def __load_key_joints(self, filename):  # read xml
         with open(filename, 'r') as stream:
             try:
@@ -79,7 +116,7 @@ class Skeleton:
         except IndexError:
             return None
 
-    def get_polt_property(self, joint_name):
+    def get_plot_property(self, joint_name):
         '''
         return point_type and point_size for plot
         '''
