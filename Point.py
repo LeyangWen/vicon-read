@@ -324,8 +324,10 @@ class CoordinateSystem3D:
 
     def set_by_plane(self, plane, origin_pt, axis_pt, sequence='xyz', axis_positive=True):
         '''
+        requirement: need axis_pt and origin_pt to be in the specified plane
+        sequence [first, second, thrid axis] meaning:
         first axis is the in-plane axis, if axis_positive is True, the direction is from origin_pt to axis_pt
-        second axis is the orthogonal axis
+        second axis is the orthogonal axis to plane
         third axis is orthogonal to the first two (also should be in the plane)
         '''
         '''
