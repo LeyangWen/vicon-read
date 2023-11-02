@@ -392,6 +392,7 @@ if __name__ == '__main__':
     # #     BACK_plane = Plane()
     # #     BACK_plane.set_by_vector(PELVIS_b, Point.create_const_vector(0, 0, 1000, examplePt=PELVIS_b),direction=1)
     # #     BACK_coord = CoordinateSystem3D()
+#todo: need to project RPSIS into plane first
     # #     BACK_coord.set_by_plane(BACK_plane, PELVIS_b, RPSIS, sequence='zyx', axis_positive=True)
     # #     BACK_angles = JointAngles()
     # #     BACK_angles.set_zero_frame(zero_frame)
