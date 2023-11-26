@@ -493,14 +493,19 @@ class JointAngles:
         plane2 = Plane(pt2a, pt2b, pt1mid)
         rotation_angle = Point.angle(plane1.normal_vector.xyz, plane2.normal_vector.xyz)
 
+        rotation_sign = plane2.above_or_below(pt1a)
+        rotation_angle = rotation_angle * rotation_sign * flip_sign
+
         if self.zero_frame[2] is not None:
             rotation_zero = rotation_angle[self.zero_frame[2]]
             rotation_angle = rotation_angle - rotation_zero
         else:
             rotation_zero = None
-        # todo: rot angle should be in range of -pi to pi
-        rotation_sign = plane2.above_or_below(pt1a)
-        rotation_angle = rotation_angle * rotation_sign * flip_sign
+            
+        # make plot in -pi to pi range
+        rotation_angle = np.where(rotation_angle > np.pi, rotation_angle - 2 * np.pi, rotation_angle)
+        rotation_angle = np.where(rotation_angle < -np.pi, rotation_angle + 2 * np.pi, rotation_angle)
+        
         self.rotation = rotation_angle
         self.rotation_info = {'plane': None, 'zero_angle': rotation_zero, 'zero_frame': self.zero_frame[2]}
         self.is_empty = False
