@@ -1,6 +1,36 @@
 # VICON Reader
 
-#### Snippets
+This repo contains tools for reading and processing Vicon data.
+1. Scripts to use with an open Vicon Nexus session to read and save data in real-time
+2. Scripts to process the saved c3d data
+3. Supporting classes and functions
+
+Here is a [YouTube playlist](https://youtube.com/playlist?list=PLjMAlxkYpRr0PwPyE3-LDrwiz8xIsNuma&si=HpLm-B3SFCHOHMK4) generated using this repo.
+
+## 1. Scripts to use with an open Vicon Nexus session to read and save data in real-time
+### 1.1. Tools for cleaning up Vicon data
+* [detect_swap.py](detect_swap.py): Detects if the markers are swapped and mark as Vicon events, also automatically swaps the markers in simpler cases
+* [swap_by_frame.py](swap_by_frame.py): Batch swap markers by frame number, normally between left and right
+* [export_files.py](export_files.py): Export files from Vicon Nexus session
+* [backup_c3d.py](backup_c3d.py): Backup c3d files in the backup folder before irreversible operations like smoothing. 
+
+### 1.2. Tools for processing Vicon data
+* [caculateVEHSskeleton_ergo.py](caculateVEHSskeleton_ergo.py): Calculate the 2D and 3D VEHS skeleton joint centers and angles using the VEHSR3 dataset skeleton. Also output cdf in H36M format
+* [analog_compare.py](analog_compare.py): Compare analog data from two analog forceplates/transducers, used for rough calibration of force and torque data
+* [branch-drop_accel.acceltest.py](acceltest.py): contains code to validate Vicon acceleration calculations by dropping markers
+* [branch-pendulum_accel.acceltest.py](acceltest.py): contains code to validate Vicon acceleration calculations by pendulum motion
+
+## 2. Scripts to process the saved c3d data
+* [caculateSkeleton.py](caculateSkeleton.py): Reads the c3d files, calculates the 2D and 3D skeleton joint centers (66) and outputs in a MotionBert format. 
+
+
+## 3. Supporting classes and functions
+* [ForceTorqueTransducer.py](ForceTorqueTransducer.py): Class for calculating the force and torque from the force plate and a custom-wired analog AMTI force transducer
+* [Camera.py](Camera.py): Class for projection, distortion correction, and other camera-related calculations
+* [Point.py](Point.py): Classes for 3D point, plane, coordinate system, and joint angles calculations.
+* [Skeleton.py](Skeleton.py): Class for defining pose skeleton structure, outputting 3DSSPP batch file, and visualization
+
+### Useful snippets
 - Powershell code to convert all avi files in a folder to mp4, keep original files
 ```powershell
 cd 'C:\Users\Public\Documents\Vicon\data\Vicon_F\Round3\LeyangWen\FullCollection'
@@ -8,7 +38,7 @@ cd 'C:\Users\Public\Documents\Vicon\data\Vicon_F\Round3\LeyangWen\FullCollection
 Get-ChildItem -Filter *.avi | ForEach-Object { If (!(Test-Path "$($_.DirectoryName)/$($_.BaseName).mp4")) {ffmpeg -i $_.FullName -c:v copy -c:a copy -y "$($_.DirectoryName)/$($_.BaseName).mp4"}}
 
 ```
-- Batch rename of all files in one folder from "activity{x}" to "activit{y)"
+- Batch rename of all files in one folder from "activity{x}" to "activity{y)"
 ```powershell
 cd 'C:\Users\Public\Documents\Vicon\data\Vicon_F\Round3\XinyanWang\FullCollection'
 $old_activity_name = 'activity09.'
@@ -16,117 +46,5 @@ $new_activity_name = 'activity00.'
 Get-ChildItem -Filter $old_activity_name* | ForEach-Object {Rename-Item $_ -NewName ($_.Name -replace $old_activity_name, $new_activity_name)}
 
 ```
-```
 
-#### Visualizations
-https://www.youtube.com/watch?v=BCuvBHVFi4Q&ab_channel=leyangwen
-
-```
-
-### 3DSSPP Modifications
-* **SSPPAPP/hom_doc.h**: 
-```diff
--line 592: protected:
-
-+line 592: public:
-```
-* **SSPPAPP/Hom_doc.cpp**:
-```diff
--line 3389: if( lDiag.DoModal() == IDOK )
--line 3390: {
--line 3391:   mBatchFilePathName = lDiag.GetPathName();
--line 3392:   mBatchFileRootName = lDiag.GetFileTitle();
--line 3401:   CString lMsg("Begin processing batch file '");
--line 3402:   lMsg += mBatchFilePathName;
--line 3403:   lMsg += "'?";
-
--line 3405:   if(AfxMessageBox(lMsg, MB_OKCANCEL) == IDOK)
--line 3406:   {
--line 3407:     CString RootPath = mBatchFilePathName;
--line 3408:     RootPath.Delete(RootPath.GetLength() - 4,4);
--line 3409:     BatchFile   lBatchFile
--line 3410:     (
--line 3411:       LPCTSTR( mBatchFilePathName ),
--line 3412:       LPCTSTR( RootPath ) ,
--line 3413:       this
--line 3414:     );
-
--line 3416:     lBatchFile.Process();
--line 3417:  }
--line 3418:  else
--line 3419:  {
--line 3420:    AfxMessageBox( "Canceling batch processing." );
--line 3421:  }
--line 3422: }
-
-+line 3424: string batchfilename = "./batchinput.txt";
-+line 3425: string batchfileroot = "../export/batchinput";
-+line 3426: bf(batchfilename, batchfileroot, this);
-+line 3427: bf.process();
-
-+line 1026: this->OnTaskinputBatch();
-+line 1027: this->DoClose()
-```
-
-* **SSPPAPP/hom.cpp**:
-```diff
--line 230: if (1)
-
-+line 230: if (0)
-```
-
-* **SSPPAPP/Main_frm.cpp**:
-```diff
--line 600: int lBoxAnswer = AfxMessageBox("Save chanegs to current task?", MB_YESNOCANCEL);
-
-+line 600: int lBoxAnswer = 2(IDCANCEL);
-+line 601: // AfxMessageBox("Save changes to current task?", MB_YESNOCANCEL);
-```
-
-* **SSPPAPP/BatchFile.cpp**:
-```diff
--line 1695: AfxMessageBox(lMsg.str());
-
-+line 1695: // AfxMessageBox(lMsg.str());
-```
-
-* **SSPPAPP/Logon.cpp**:
-
-```diff
--line 30: if (Diag.DoModal() == IDOK)
-{
-                               //--- Intro 2
-   // Diag.Intro_Message = this->Intro_Text_2();
-   // if (Diag.DoModal() == IDOK)
-   // {
-                               //--- Intro 3
-      // Diag.Intro_Message = this->Intro_Text_3();
-      // if( Diag.DoModal() == IDOK )
-      // {
-            Permission_Granted = TRUE;
-      // }         
-      // else  AfxMessageBox( "Exiting program at user's request." ); //Intro 3 
-   // }      
-   // else  AfxMessageBox( "Exiting program at user's request." ); //Intro 2
-}
--line 46: else  AfxMessageBox( "Exiting program at user's request." ); //Intro 1
-
-+line 30: // if (Diag.DoModal() == IDOK)
-+line 31: // {
-                               //--- Intro 2
-   // Diag.Intro_Message = this->Intro_Text_2();
-   // if (Diag.DoModal() == IDOK)
-   // {
-                               //--- Intro 3
-      // Diag.Intro_Message = this->Intro_Text_3();
-      // if( Diag.DoModal() == IDOK )
-      // {
-            Permission_Granted = TRUE;
-      // }         
-      // else  AfxMessageBox( "Exiting program at user's request." ); //Intro 3 
-   // }      
-   // else  AfxMessageBox( "Exiting program at user's request." ); //Intro 2
-+line 45: // }
-+line 46: // else  AfxMessageBox( "Exiting program at user's request." ); //Intro 1 
-```
 
