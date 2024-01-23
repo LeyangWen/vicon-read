@@ -159,7 +159,7 @@ class FLIR_Camera(Camera):
         return self.projection_matrix
 
     def project(self, points_3d):
-        '''
+        ''' extrinsic and intrinsic projection
         :param points_3d: 3d points in world coordinate
         :return: 2d points in camera coordinate, in pixel
         '''
@@ -171,7 +171,7 @@ class FLIR_Camera(Camera):
         return points_2d
 
     def project_w_depth(self, points_3d):
-        '''
+        ''' world to camera coordinate system, extrinsic projection
         :param points_3d: 3d points in world coordinate
         :return: 3d points in camera coordinate, with depth, in mm/m
         '''
@@ -181,7 +181,19 @@ class FLIR_Camera(Camera):
         # translation_vector = self.POSITION.reshape([3, 1])
         # rotM = self.rot3x3
         # points_3d_cam = (rotM.dot(points_3d.T) + translation_vector).T
-        return points_3d_cam
+        return points_3d_cam.T
+
+    def _weak_project(self, pose3d):
+        """ From LCN, intrinsic projection
+        """
+        fx, fy = self.FOCAL_LENGTH, self.FOCAL_LENGTH / self.PIXEL_ASPECT_RATIO
+        cx, cy = self.PRINCIPAL_POINT
+        pose2d = pose3d[:, :2] / pose3d[:, 2:3]
+        pose2d[:, 0] *= fx
+        pose2d[:, 1] *= fy
+        pose2d[:, 0] += cx
+        pose2d[:, 1] += cy
+        return pose2d
 
     @staticmethod
     def plugingait_to_H36M_converter(points_2d, frame_no, joint_names):

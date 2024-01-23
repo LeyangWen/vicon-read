@@ -26,6 +26,8 @@ if __name__ == '__main__':
     parser.add_argument('--downsample_keep', type=int, default=1)
     parser.add_argument('--split_output', action='store_true')  # not implemented yet
     parser.add_argument('--output_type', type=list, default=[True, False, False, False], help='3D, 6D, SMPL, 3DSSPP')
+
+    parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
     args = parser.parse_args()
 
 
@@ -90,11 +92,11 @@ if __name__ == '__main__':
                 camera_xcp_file = c3d_file.replace('.c3d', '.xcp')
 
                 if args.output_type[0]:  # calculate 3D pose first
-                    this_skeleton.calculate_camera_projection(camera_xcp_file, kpts_of_interest_name=h36m_joint_names)
+                    this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=h36m_joint_names)
                     output3D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep)
                     output_3D_dataset = append_output_xD_dataset(output_3D_dataset, train_val_test, output3D)
                 if args.output_type[1]:  # calculate 6D pose
-                    this_skeleton.calculate_camera_projection(camera_xcp_file, kpts_of_interest_name=custom_6D_joint_names)
+                    this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=custom_6D_joint_names)
                     output6D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep)
                     output_6D_dataset = append_output_xD_dataset(output_6D_dataset, train_val_test, output6D)
                 if args.output_type[2]:  # todo: calculate SMPL pose

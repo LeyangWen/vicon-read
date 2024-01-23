@@ -266,7 +266,7 @@ class VEHSErgoSkeleton(Skeleton):
 
         self.update_pose_from_point_pose()
 
-    def calculate_camera_projection(self, camera_xcp_file, kpts_of_interest_name='all'):
+    def calculate_camera_projection(self, args, camera_xcp_file, kpts_of_interest_name='all'):
         # todo: currently real world only, pelvis center option
         if kpts_of_interest_name == 'all':  # get all points
             kpts_of_interest = self.point_poses.values()
@@ -286,29 +286,71 @@ class VEHSErgoSkeleton(Skeleton):
         self.cameras = cameras
         self.pose_3d_camera = {}
         self.pose_2d_camera = {}
+        self.pose_2d_bbox = {}
+        self.pose_depth_px = {}
+        self.pose_depth_ratio = {}
         for cam_idx, camera in enumerate(cameras):
             print(f'Processing camera {cam_idx}: {camera.DEVICEID}')
 
             points_2d_list = []
             points_3d_camera_list = []
             points_2d_bbox_list = []
+            points_depth_px_list = []
+            depth_ratio_list = []
             for frame_idx, frame_no in enumerate(frames):
                 frame_idx = int(frame_idx * fps_ratio)  # todo: bug if fps_ratio is not an 1
                 print(f'Processing frame {frame_no}/{frames[-1]} of {self.c3d_file}', end='\r')
-                points_3d = world3D[frame_idx, :, :].reshape(-1, 3) / 1000
-                points_3d_camera = camera.project_w_depth(points_3d)
+                points_3d = world3D[frame_idx, :, :].reshape(-1, 3) / 1000  # convert to meters, (n_joints, 3)
                 points_2d = camera.project(points_3d)
-                points_2d = camera.distort(points_2d)
+                if args.distort:
+                    points_2d = camera.distort(points_2d)
+                points_3d_camera = camera.project_w_depth(points_3d)  # (n_joints, 3)
+                points_depth_px, ratio = self.get_norm_depth_ratio(points_3d_camera, camera, rootIdx=0)
                 bbox_top_left, bbox_bottom_right = points_2d.min(axis=0) - 20, points_2d.max(axis=0) + 20
+
                 points_2d_list.append(points_2d)
                 points_3d_camera_list.append(points_3d_camera)
                 points_2d_bbox_list.append([bbox_top_left, bbox_bottom_right])
+                points_depth_px_list.append(points_depth_px)
+                depth_ratio_list.append(ratio)
 
-            points_2d_list = np.array(points_2d_list)
-            points_3d_camera_list = np.swapaxes(np.array(points_3d_camera_list), 1, 2)
-            points_2d_bbox_list = np.array(points_2d_bbox_list)
-            self.pose_3d_camera[camera.DEVICEID] = points_3d_camera_list
-            self.pose_2d_camera[camera.DEVICEID] = points_2d_list
+
+            self.pose_3d_camera[camera.DEVICEID] = np.array(points_3d_camera_list)
+            self.pose_2d_camera[camera.DEVICEID] = np.array(points_2d_list)
+            self.pose_2d_bbox[camera.DEVICEID] = np.array(points_2d_bbox_list)
+            self.pose_depth_px[camera.DEVICEID] = np.array(points_depth_px_list)
+            self.pose_depth_ratio[camera.DEVICEID] = np.array(depth_ratio_list)
+
+
+
+    def get_norm_depth_ratio(self, pose3d, camera, rootIdx=0):
+        """
+        LCN style, convert to px, center by pelvis
+        in here meters * ratio = px
+        """
+        rectangle_3d_size = 2.0  # 2000mm
+        box = self._infer_box(pose3d, camera, rootIdx, size=rectangle_3d_size)
+        ratio = (box[2] - box[0] + 1) / rectangle_3d_size
+        pose3d_depth = ratio * (pose3d[:, 2] - pose3d[rootIdx, 2])
+        # print(f"box: {box}")
+        # print(f"ratio: {ratio}, lcm_ratio {1000/ratio}")
+        return pose3d_depth, ratio
+
+    def _infer_box(self, pose3d, camera, rootIdx, size):
+        """
+        a 2d box 2000mm x 2000mm in px, centered at rootIdx (pelvis if 0)
+        """
+        root_joint = pose3d[rootIdx, :]
+        tl_joint = root_joint.copy()
+        tl_joint[:2] -= size/2
+        br_joint = root_joint.copy()
+        br_joint[:2] += size/2
+        tl_joint = np.reshape(tl_joint, (1, 3))
+        br_joint = np.reshape(br_joint, (1, 3))
+        tl_br_joint = np.concatenate([tl_joint, br_joint], axis=0)
+        tl_br = camera._weak_project(tl_br_joint).flatten()
+        return tl_br
+
 
     def output_MotionBert_SMPL(self):
         '''
@@ -321,7 +363,10 @@ class VEHSErgoSkeleton(Skeleton):
         output = {}
         joint_2d = []
         confidence = []
-        joint3d_image = []
+        joint_3d_image = []  # px coordinate, px
+        joint_3d_camera = []  # camera coordinate, mm
+        joint_25d_image = []  # px coordinate, mm
+        factor_25d = []  # ratio, ~4.xx, 2.5d_image/3d_image
         camera_name = []
         source = []
         c3d_frame = []
@@ -335,20 +380,36 @@ class VEHSErgoSkeleton(Skeleton):
                         break
                     joint_2d.append(self.pose_2d_camera[this_camera.DEVICEID][real_frame_idx, :, :])
                     confidence.append(np.ones((len(self.current_kpts_of_interest_name), 1)))
-                    joint3d_image.append(self.pose_3d_camera[this_camera.DEVICEID][real_frame_idx, :, :])
+                    joint_3d_camera.append(self.pose_3d_camera[this_camera.DEVICEID][real_frame_idx, :, :])
+
+                    joint_3d_image_frame = self.pose_3d_camera[this_camera.DEVICEID][real_frame_idx, :, :].copy()  # need the shape
+                    joint_3d_image_frame[:, :2] = self.pose_2d_camera[this_camera.DEVICEID][real_frame_idx, :, :]  # overwrite xy
+                    joint_3d_image_frame[:, 2] = self.pose_depth_px[this_camera.DEVICEID][real_frame_idx, :]  # overwrite z
+                    joint_3d_image.append(joint_3d_image_frame)
+                    factor_25d_frame = self.pose_depth_ratio[this_camera.DEVICEID][real_frame_idx]
+                    factor_25d_frame = 1000/factor_25d_frame  # in motionbert 2.5d factor, px * factor = mm
+                    factor_25d.append(factor_25d_frame)
+                    joint_25d_image_frame = joint_3d_image_frame.copy() * factor_25d_frame
+                    joint_25d_image.append(joint_25d_image_frame)
+
                     camera_name.append(this_camera.DEVICEID)
                     source.append(self.c3d_file)
                     c3d_frame.append(real_frame_idx)
 
-        output['joint_2d'] = np.array(joint_2d)
+        output['joint_2d'] = np.array(joint_2d)  # this is gt, but should be detection
         output['confidence'] = np.array(confidence)
-        output['joint3d_image'] = np.array(joint3d_image)*1000  # convert to mm
+        output['joint3d_image'] = np.array(joint_3d_image)  # px coordinate, px
         output['camera_name'] = np.array(camera_name)
         output['source'] = source
-        output['c3d_frame'] = c3d_frame
-        output['2.5d_factor'] = np.ones((output['joint_2d'].shape[0],))  # set to 1 for now, it seems to only affect motionbert eval
-        output['joints_2.5d_image'] = output['joint3d_image']  # * output['2.5d_factor']  # * or /?, figure it out from example pkl file if we change 2.5d_factor
+        output['2.5d_factor'] = np.array(factor_25d)
+        output['joints_2.5d_image'] = np.array(joint_25d_image)  # mm
         output['action'] = [self.c3d_file[-14:-4]] * len(source)
+
+        ################## additional ##################
+        # LCN format https://github.com/CHUNYUWANG/lcn-pose/blob/master/tools/gendb.py#L85
+        output['joint_3d_camera'] = np.array(joint_3d_camera) * 1000  # convert to mm
+        # c3d info
+        output['c3d_frame'] = c3d_frame
         return output
 
     def output_3DSSPP_loc(self, frame_range=None, loc_file=None):

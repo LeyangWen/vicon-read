@@ -184,7 +184,7 @@ if __name__ == '__main__':
                 print(f'Processing frame {frame_no}/{frames[-1]} of {activity_name}.{camera.DEVICEID}.timestamp.avi',
                       end='\r')
                 points_3d = world3D[frame_idx, :, :].reshape(-1, 3) / 1000
-                points_3d_camera = camera.project_w_depth(points_3d)
+                points_3d_camera = camera.project_w_depth(points_3d)  # todo: test if transpose is still needed
                 points_2d = camera.project(points_3d)
                 points_2d = camera.distort(points_2d)
                 bbox_top_left, bbox_bottom_right = points_2d.min(axis=0)-20, points_2d.max(axis=0)+20
@@ -193,7 +193,8 @@ if __name__ == '__main__':
                 points_2d_bbox_list.append([bbox_top_left, bbox_bottom_right])
 
             points_2d_list = np.array(points_2d_list)
-            points_3d_camera_list = np.swapaxes(np.array(points_3d_camera_list), 1, 2)
+            # points_3d_camera_list = np.swapaxes(np.array(points_3d_camera_list), 1, 2)
+            points_3d_camera_list = np.array(points_3d_camera_list)
             points_2d_bbox_list = np.array(points_2d_bbox_list)
             points_2d_filename = os.path.join(cdf_output_dir, '2D_Pose', activity_name, f'Cam_{camera.DEVICEID}', f'{activity_name}_{rep}.{camera.DEVICEID}.cdf')
             points_3d_camera_filename = os.path.join(cdf_output_dir, '3D_Pose', activity_name, f'Cam_{camera.DEVICEID}', f'{activity_name}_{rep}.{camera.DEVICEID}.cdf')
@@ -388,7 +389,7 @@ if __name__ == '__main__':
         #     BACK_plane = Plane()
         #     BACK_plane.set_by_vector(PELVIS_b, Point.create_const_vector(0, 0, 1000, examplePt=PELVIS_b),direction=1)
         #     BACK_coord = CoordinateSystem3D()
-    todo: need to project RPSIS into plane first
+    # todo: need to project RPSIS into plane first
         #     BACK_coord.set_by_plane(BACK_plane, PELVIS_b, RPSIS, sequence='zyx', axis_positive=True)
         #     BACK_angles = JointAngles()
         #     BACK_angles.set_zero_frame(zero_frame)
