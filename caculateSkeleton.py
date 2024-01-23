@@ -20,11 +20,11 @@ def append_output_xD_dataset(output_xD_dataset, this_train_val_test, append_outp
 if __name__ == '__main__':
     # read arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/VEHS-R3-811-MotionBert.yaml')
+    parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/VEHS-R3-622-MotionBert.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml')
-    parser.add_argument('--downsample', type=int, default=5)
+    parser.add_argument('--downsample', type=int, default=2)
     parser.add_argument('--downsample_keep', type=int, default=1)
-    parser.add_argument('--split_output', action='store_true')
+    parser.add_argument('--split_output', action='store_true')  # not implemented yet
     parser.add_argument('--output_type', type=list, default=[True, False, False, False], help='3D, 6D, SMPL, 3DSSPP')
     args = parser.parse_args()
 
@@ -57,16 +57,19 @@ if __name__ == '__main__':
     output_smpl_dataset = {}
     count = 0
     pkl_filenames = {'3D': [], '6D': [], 'SMPL': []}  # if split_output, save intermediate results
+    dataset_statistics = {}
+    total_frame_number = 0
     for root, dirs, files in os.walk(base_folder):
         for file in files:
             if file.endswith('.c3d') and root[-6:] != 'backup' and (not file.startswith('ROM')) and (not file.endswith('_bad.c3d')):
-                if val_keyword in root:  # todo: only one subject for val set now, expand to multiple subjects
+                # val_keyword is a list of string, if any of them is in the root, then it is val set
+                if any(keyword in root for keyword in val_keyword):
+                    train_val_test = 'validate'
+                elif any(keyword in root for keyword in test_keyword):
                     train_val_test = 'test'
-                elif test_keyword in root:
-                    train_val_test = 'skip'
-                    continue
                 else:
                     train_val_test = 'train'
+
                 c3d_file = os.path.join(root, file)
                 count += 1
                 # if count > 1:  # give a very small file for testing
@@ -79,6 +82,10 @@ if __name__ == '__main__':
                 print(f'{count}: Starting on {c3d_file} as {train_val_test} set')
                 this_skeleton = VEHSErgoSkeleton(skeleton_file)
                 this_skeleton.load_c3d(c3d_file, analog_read=False)
+                this_frame_number = this_skeleton.frame_number
+                dataset_statistics[c3d_file] = this_frame_number
+                total_frame_number += this_frame_number
+
                 this_skeleton.calculate_joint_center()
                 camera_xcp_file = c3d_file.replace('.c3d', '.xcp')
 
@@ -122,13 +129,11 @@ if __name__ == '__main__':
     # # export: h36M 17 joint center, 6D pose 49 keypoints, SMPL-related, GT-Vicon to 3DSSPP
     if args.split_output:  #read and merge
         raise NotImplementedError  # need to merge the multilayer dict in the pkl files
-
     else:  # one output, for smaller dataset
         print(f'Saving final results in {output_3d_filename}, {output_6d_filename}, {output_smpl_filename}')
         if args.output_type[0]:  # 3D pose
             with open(f'{output_3d_filename}', 'wb') as f:
                 pickle.dump(output_3D_dataset, f)
-            print(f'Train set length: {len(output_3D_dataset["train"]["source"])}, Test set length: {len(output_3D_dataset["test"]["source"])}')
         if args.output_type[1]:  # 6D pose
             with open(f'{output_6d_filename}', 'wb') as f:
                 pickle.dump(output_6D_dataset, f)
@@ -136,7 +141,9 @@ if __name__ == '__main__':
             with open(output_smpl_filename, 'wb') as f:
                 pickle.dump(output_smpl_dataset, f)
 
-
+    # output statistics to json
+    with open(f'{output_3d_filename}_dataset_statistics_total_{total_frame_number}.json', 'w') as f:
+        json.dump(dataset_statistics, f)
 
     # dt_file -- .pkl
     # trainset = self.dt_dataset['train']['joint_2d'][::self.sample_stride, :, :2].astype(np.float32)  # [N, 17, 2]
@@ -148,8 +155,11 @@ if __name__ == '__main__':
     # file_name = r'C:\Users\Public\Documents\Vicon\vicon_coding_projects\MotionBERT\data\motion3d\h36m_sh_conf_cam_source_final.pkl\h36m_sh_conf_cam_source_final.pkl'
     # with open(file_name, 'rb') as f:
     #     data = pickle.load(f)
-    # data['test']['action'].shape
-    #
+    # data['train']['confidence']
+    # data['test']['joints_2.5d_image']/data['test']['joint3d_image'] == 2.5factor
+    # data['test']['joints_2.5d_image'][-1]
+    # data['test']['joint3d_image'][-1]
+    # data['test']['2.5d_factor']
         # >>> data.keys()
         # dict_keys(['train', 'test'])
         # >>> data['train'].keys()

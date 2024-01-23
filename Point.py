@@ -134,7 +134,7 @@ class Point():
 
     @staticmethod
     def point_from_nparray(xyz):
-        exist = np.ones(xyz.shape[1], dtype=bool).tolist()
+        exist = np.ones(xyz.shape[0], dtype=bool).tolist()
         return VirtualPoint((xyz, exist))
 
     @staticmethod

@@ -3,5 +3,5 @@ val_ratio: 0.1
 test_ratio: 0.1
 
 base_folder: W:\VEHS\VEHS data collection round 3\processed
-val_keyword: JohnSohn  # test set in motionbert dataset  # only one subject allowed for now
-test_keyword: RuiNie  # spare
+val_keyword: ['JohnSohn']  # test set in motionbert dataset
+test_keyword: ['RuiNie']  # spare

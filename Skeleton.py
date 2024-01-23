@@ -294,8 +294,7 @@ class VEHSErgoSkeleton(Skeleton):
             points_2d_bbox_list = []
             for frame_idx, frame_no in enumerate(frames):
                 frame_idx = int(frame_idx * fps_ratio)  # todo: bug if fps_ratio is not an 1
-                print(f'Processing frame {frame_no}/{frames[-1]} of {self.c3d_file}',
-                      end='\r')
+                print(f'Processing frame {frame_no}/{frames[-1]} of {self.c3d_file}', end='\r')
                 points_3d = world3D[frame_idx, :, :].reshape(-1, 3) / 1000
                 points_3d_camera = camera.project_w_depth(points_3d)
                 points_2d = camera.project(points_3d)
