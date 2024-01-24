@@ -155,13 +155,14 @@ if __name__ == '__main__':
     # snipet to read example pkl file
 
     # file_name = r'C:\Users\Public\Documents\Vicon\vicon_coding_projects\MotionBERT\data\motion3d\h36m_sh_conf_cam_source_final.pkl\h36m_sh_conf_cam_source_final.pkl'
+    # file_name = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_3D_downsample2_keep1.pkl'
     # with open(file_name, 'rb') as f:
     #     data = pickle.load(f)
     # data['train']['confidence']
-    # data['test']['joints_2.5d_image']/data['test']['joint3d_image'] == 2.5factor
-    # data['test']['joints_2.5d_image'][-1]
+    # data['test']['joints_2.5d_image'][0]/data['test']['joint3d_image'][0] == 2.5factor
+    # data['test']['joints_2.5d_image'][0]
     # data['test']['joint3d_image'][-1]
-    # data['test']['2.5d_factor']
+    # data['test']['2.5d_factor'][0]
         # >>> data.keys()
         # dict_keys(['train', 'test'])
         # >>> data['train'].keys()
