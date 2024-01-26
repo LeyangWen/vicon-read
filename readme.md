@@ -30,6 +30,11 @@ Here is a [YouTube playlist](https://youtube.com/playlist?list=PLjMAlxkYpRr0PwPy
 * [Point.py](Point.py): Classes for 3D point, plane, coordinate system, and joint angles calculations.
 * [Skeleton.py](Skeleton.py): Class for defining pose skeleton structure, outputting 3DSSPP batch file, and visualization
 
+## Figures
+
+![Alt Text](/figures/26joints.png)
+![Alt Text](/figures/angle_coord.png)
+
 ### Useful snippets
 - Powershell code to convert all avi files in a folder to mp4, keep original files
 ```powershell
