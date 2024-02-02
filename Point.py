@@ -5,7 +5,7 @@ from matplotlib.ticker import MaxNLocator
 import os
 
 
-class Point():
+class Point:
     def __init__(self):
         self.random_id = np.random.randint(0, 100000000)
         self.name = None
