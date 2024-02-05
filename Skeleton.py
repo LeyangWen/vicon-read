@@ -321,8 +321,6 @@ class VEHSErgoSkeleton(Skeleton):
             self.pose_depth_px[camera.DEVICEID] = np.array(points_depth_px_list)
             self.pose_depth_ratio[camera.DEVICEID] = np.array(depth_ratio_list)
 
-
-
     def get_norm_depth_ratio(self, pose3d, camera, rootIdx=0):
         """
         LCN style, convert to px, center by pelvis
@@ -356,7 +354,7 @@ class VEHSErgoSkeleton(Skeleton):
         '''
         MotionBert Style
         '''
-        pass
+        raise NotImplementedError
 
     def output_MotionBert_pose(self, downsample=5, downsample_keep=1):
         # append data at end
@@ -930,8 +928,55 @@ class PulginGaitSkeleton(Skeleton):
         return loc
 
 
+class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
+    def __init__(self, c3d_file, skeleton_file='config/VEHS_info/VEHS.yaml', acronym_file='config/VEHS_info/acronym.yaml'):
+        super().__init__(c3d_file, skeleton_file, acronym_file)
 
 
+    # def right_shoulder_angles(self):
+    #         RSHOULDER = self.point_poses['RSHOULDER']
+    #         C7 = self.point_poses['C7']
+    #         C7_d = self.point_poses['C7_d']
+    #         PELVIS_b = self.point_poses['PELVIS_b']
+    #         C7_m = self.point_poses['C7_m']
+    #         SS = self.point_poses['SS']
+    #         RELBOW = self.point_poses['RELBOW']
+    #         RAP_b = self.point_poses['RAP_b']
+    #         RAP_f = self.point_poses['RAP_f']
+    #         RME = self.point_poses['RME']
+    #         RLE = self.point_poses['RLE']
+    #
+    #         RSHOULDER_plane = Plane()
+    #         RSHOULDER_plane.set_by_vector(RSHOULDER, Point.vector(C7_d, PELVIS_b), direction=-1)
+    #         RSHOULDER_C7_m_project = RSHOULDER_plane.project_point(C7_m)
+    #         RSHOULDER_SS_project = RSHOULDER_plane.project_point(SS)
+    #         RSHOULDER_coord = CoordinateSystem3D()
+    #         RSHOULDER_coord.set_by_plane(RSHOULDER_plane, C7_d, RSHOULDER_SS_project, sequence='xyz', axis_positive=True)  # new: use back to chest vector
+    #         # RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, RSHOULDER_C7_m_project, sequence='zyx', axis_positive=False)  # old: use shoulder to chest vector
+    #         RSHOULDER_angles = JointAngles()
+    #         RSHOULDER_angles.set_zero_frame(zero_frame)
+    #         RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, Point.vector(RSHOULDER, RELBOW), plane_seq=['xy', 'xz'])
+    #         RSHOULDER_angles.get_rot(RAP_b, RAP_f, RME, RLE)
+    #         RSHOULDER_angles.flexion = Point.angle(Point.vector(RSHOULDER, RELBOW).xyz, Point.vector(C7, PELVIS_b).xyz)
+    #         RSHOULDER_angles.flexion = RSHOULDER_angles.zero_by_idx(0)  # zero by zero frame after setting flexion without function
+    #
+    #         # todo: add this filter as a function; set undefined angles to zero
+    #         shoulder_threshold = 10/180*np.pi  # the H-abduction is not well defined when the flexion is small or near 180 degrees
+    #         shoulder_filter = np.logical_and(np.abs(RSHOULDER_angles.flexion) > shoulder_threshold, np.abs(RSHOULDER_angles.flexion) < (np.pi - shoulder_threshold))
+    #         RSHOULDER_angles.abduction = np.array([np.where(shoulder_filter[i], RSHOULDER_angles.abduction[i], 0) for i in range(len(shoulder_filter))])  # set abduction to nan if shoulder filter is false
+    #
+    #         ##### Visual for debugging #####
+    #         frame = 1000
+    #         # print(f'RSHOULDER_angles:\n Flexion: {RSHOULDER_angles.flexion[frame]}, \n Abduction: {RSHOULDER_angles.abduction[frame]},\n Rotation: {RSHOULDER_angles.rotation[frame]}')
+    #         # Point.plot_points([
+    #         #                    RSHOULDER_coord.origin, RSHOULDER_coord.x_axis_end, RSHOULDER_coord.y_axis_end, RSHOULDER_coord.z_axis_end,
+    #         #                    RSHOULDER, C7_m, RSHOULDER_C7_m_project, RELBOW, RSHO_f, RSHO_b,
+    #         #                    ], frame=frame)
+    #         # RSHOULDER_angles.plot_angles(joint_name='Right Shoulder', frame_range=frame_range)
+    #         render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RSHOULDER_1_all_filtered')
+    #         RSHOULDER_angles.plot_angles_by_frame(render_dir, joint_name='Right Shoulder', frame_range=frame_range, angle_names=['Flexion', 'H-Abduction', 'Rotation'])
+    #         print('**** RSHOULDER_angles done ****')
+    #
 
 
 

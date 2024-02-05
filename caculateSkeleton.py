@@ -25,7 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('--downsample', type=int, default=2)
     parser.add_argument('--downsample_keep', type=int, default=1)
     parser.add_argument('--split_output', action='store_true')  # not implemented yet
-    parser.add_argument('--output_type', type=list, default=[True, False, False, False], help='3D, 6D, SMPL, 3DSSPP')
+    parser.add_argument('--output_type', type=list, default=[False, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
 
     parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
     args = parser.parse_args()

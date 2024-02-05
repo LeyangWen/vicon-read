@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import os
 
+print("Migrated to package ergo3d.ergo3d, please import from there.")
 
 class Point:
     def __init__(self):
