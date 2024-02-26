@@ -6,6 +6,10 @@ This repo contains tools for reading and processing Vicon data.
 3. Supporting classes and functions
 
 Here is a [YouTube playlist](https://youtube.com/playlist?list=PLjMAlxkYpRr0PwPyE3-LDrwiz8xIsNuma&si=HpLm-B3SFCHOHMK4) generated using this repo.
+* Youtube 3D pose preview:
+  ![Alt Text](/figures/Youtube_pose_preview.png)
+* Youtube angle preview:
+  ![Alt Text](/figures/Youtube_angle_preview.png)
 
 ## 1. Scripts to use with an open Vicon Nexus session to read and save data in real-time
 ### 1.1. Tools for cleaning up Vicon data
@@ -21,7 +25,8 @@ Here is a [YouTube playlist](https://youtube.com/playlist?list=PLjMAlxkYpRr0PwPy
 * [branch-pendulum_accel.acceltest.py](acceltest.py): contains code to validate Vicon acceleration calculations by pendulum motion
 
 ## 2. Scripts to process the saved c3d data
-* [caculateSkeleton.py](caculateSkeleton.py): Reads the c3d files, calculates the 2D and 3D skeleton joint centers (66) and outputs in a MotionBert format. 
+* [c3d_to_angles.py](/conversion_script/c3d_to_angles.py): Reads the c3d files, calculates the 2D and 3D skeleton joint centers (66) and outputs in a MotionBert format. Also output the ergonomic joint angles
+* [np_to_angles.py](/conversion_script/np_to_angles.py): Reads the c3d files, calculates the 2D and 3D skeleton joint centers as well as the ergonomic joint angles
 
 
 ## 3. Supporting classes and functions
@@ -32,8 +37,9 @@ Here is a [YouTube playlist](https://youtube.com/playlist?list=PLjMAlxkYpRr0PwPy
 * [Skeleton.py](Skeleton.py): Class for defining pose skeleton structure, outputting 3DSSPP batch file, and visualization
 
 ## Figures
-
+* 26 joint format visualization
 ![Alt Text](/figures/26joints.png)
+* Ergonomic angle coordinate system definitions
 ![Alt Text](/figures/angle_coord.png)
 
 ### Useful snippets
