@@ -28,6 +28,7 @@ Here is a [YouTube playlist](https://youtube.com/playlist?list=PLjMAlxkYpRr0PwPy
 * [ForceTorqueTransducer.py](ForceTorqueTransducer.py): Class for calculating the force and torque from the force plate and a custom-wired analog AMTI force transducer
 * [Camera.py](Camera.py): Class for projection, distortion correction, and other camera-related calculations
 * [Point.py](Point.py): Classes for 3D point, plane, coordinate system, and joint angles calculations.
+  * Migrated to https://github.com/LeyangWen/ergo3d 
 * [Skeleton.py](Skeleton.py): Class for defining pose skeleton structure, outputting 3DSSPP batch file, and visualization
 
 ## Figures

@@ -48,8 +48,12 @@ class Skeleton:
         self.poses = {}
         self.frame_number = np.shape(pt_np)[0]
         self.points_dimension = np.shape(pt_np)[-1]
+        self.point_poses = {}
         for i in range(self.point_number):
             self.poses[self.point_labels[i]] = pt_np[:, i, :]
+            exist = pt_np[:, i, 0] != np.nan  # todo: check if missing points is expressed as np.nan in c3d
+            xyz_exist = [pt_np[:, i, 0], pt_np[:, i, 1], pt_np[:, i, 2], exist.tolist()]
+            self.point_poses[self.point_labels[i]] = MarkerPoint(xyz_exist, name=self.point_labels[i])
 
     def load_name_list_and_np_points(self, name_list, pt_np):
         self.load_name_list(name_list)
@@ -134,33 +138,49 @@ class Skeleton:
             point_size = 4
         return point_type, point_size
 
-    def plot_3d_pose_frame(self, frame=0, filename=False):
+    def plot_3d_pose_frame(self, frame=0, filename=False, range=1000, coord_system="camera-px"):
+        """
+        plot 3d pose in 3d space
+        coord_system: camera or world
+        """
         fig = plt.figure()
-
         ax = fig.add_subplot(111, projection='3d')
+        if coord_system == "camera-px":
+            pose_sequence = [0, 2, 1]
+            xyz_label = ['X (px)', 'Y (px)', 'Z (px)']
+        elif coord_system == "camera-mm":
+            pose_sequence = [0, 2, 1]
+            xyz_label = ['X (mm)', 'Y (mm)', 'Z (mm)']
+        elif coord_system == "world":
+            pose_sequence = [0, 1, 2]
+            xyz_label = ['X (mm)', 'Y (mm)', 'Z (mm)']
+        else:
+            raise ValueError(f"coord_system {coord_system} not recognized, set to camera or world")
+
         for joint_name in self.key_joint_name:
             point_type, point_size = self.get_plot_property(joint_name)
-            ax.scatter(self.poses[joint_name][frame, 0],
-                       self.poses[joint_name][frame, 1],
-                       self.poses[joint_name][frame, 2], label=joint_name, marker=point_type, s=point_size)
+            ax.scatter(self.poses[joint_name][frame, pose_sequence[0]],
+                       self.poses[joint_name][frame, pose_sequence[1]],
+                       self.poses[joint_name][frame, pose_sequence[2]], label=joint_name, marker=point_type, s=point_size)
         # connect points to parent
         for joint_name in self.key_joint_name:
             parent_name = self.get_parent(joint_name)
             if parent_name is not None and parent_name != 'None':
-                ax.plot([self.poses[joint_name][frame, 0], self.poses[parent_name][frame, 0]],
-                        [self.poses[joint_name][frame, 1], self.poses[parent_name][frame, 1]],
-                        [self.poses[joint_name][frame, 2], self.poses[parent_name][frame, 2]], 'k-')
-
+                ax.plot([self.poses[joint_name][frame, pose_sequence[0]], self.poses[parent_name][frame, pose_sequence[0]]],
+                        [self.poses[joint_name][frame, pose_sequence[1]], self.poses[parent_name][frame, pose_sequence[1]]],
+                        [self.poses[joint_name][frame, pose_sequence[2]], self.poses[parent_name][frame, pose_sequence[2]]], 'k-')
         # ax.legend(bbox_to_anchor=(0.95, 1), loc=2, borderaxespad=0.)
         # uniform scale based on pelvis location and 1800mm
-        range = 1800
+
         pelvis_loc = self.poses['PELVIS'][frame, :]
-        ax.set_xlim(pelvis_loc[0] - range / 2, pelvis_loc[0] + range / 2)
-        ax.set_ylim(pelvis_loc[1] - range / 2, pelvis_loc[1] + range / 2)
-        ax.set_zlim(pelvis_loc[2] - range / 2, pelvis_loc[2] + range / 2)
-        ax.set_xlabel('X (mm)')
-        ax.set_ylabel('Y (mm)')
-        ax.set_zlabel('Z (mm)')
+        ax.set_xlim(pelvis_loc[pose_sequence[0]] - range / 2, pelvis_loc[pose_sequence[0]] + range / 2)
+        ax.set_ylim(pelvis_loc[pose_sequence[1]] - range / 2, pelvis_loc[pose_sequence[1]] + range / 2)
+        ax.set_zlim(pelvis_loc[pose_sequence[2]] - range / 2, pelvis_loc[pose_sequence[2]] + range / 2)
+        if coord_system[:6] == "camera":  # invert y axis in camera coord
+            ax.invert_zaxis()
+        ax.set_xlabel(xyz_label[pose_sequence[0]])
+        ax.set_ylabel(xyz_label[pose_sequence[1]])
+        ax.set_zlabel(xyz_label[pose_sequence[2]])
         fig.tight_layout()
         if True:
             fig.subplots_adjust(right=0.65)
@@ -225,7 +245,6 @@ class Skeleton:
             print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
             self.plot_2d_pose_frame(frame=i, filename=filename)
-
 
 
 class VEHSErgoSkeleton(Skeleton):
@@ -929,88 +948,221 @@ class PulginGaitSkeleton(Skeleton):
 
 
 class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
-    def __init__(self, c3d_file, skeleton_file='config/VEHS_info/VEHS.yaml', acronym_file='config/VEHS_info/acronym.yaml'):
-        super().__init__(c3d_file, skeleton_file, acronym_file)
+    def __init__(self, skeleton_file='config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml'):
+        super().__init__(skeleton_file)
+        self.angle_names = ['head', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'right_wrist', 'left_wrist', 'back', 'right_knee', 'left_knee']
 
+    def head_angles(self):
+        zero_frame = [-90, -180, -180]
+        REAR = self.point_poses['REAR']
+        LEAR = self.point_poses['LEAR']
+        HDTP = self.point_poses['HDTP']
+        EAR = Point.mid_point(REAR, LEAR)
+        RSHOULDER = self.point_poses['RSHOULDER']
+        LSHOULDER = self.point_poses['LSHOULDER']
+        C7 = self.point_poses['C7']
+        RPSIS = self.point_poses['RPSIS']
+        LPSIS = self.point_poses['LPSIS']
 
-    # def right_shoulder_angles(self):
-    #         RSHOULDER = self.point_poses['RSHOULDER']
-    #         C7 = self.point_poses['C7']
-    #         C7_d = self.point_poses['C7_d']
-    #         PELVIS_b = self.point_poses['PELVIS_b']
-    #         C7_m = self.point_poses['C7_m']
-    #         SS = self.point_poses['SS']
-    #         RELBOW = self.point_poses['RELBOW']
-    #         RAP_b = self.point_poses['RAP_b']
-    #         RAP_f = self.point_poses['RAP_f']
-    #         RME = self.point_poses['RME']
-    #         RLE = self.point_poses['RLE']
-    #
-    #         RSHOULDER_plane = Plane()
-    #         RSHOULDER_plane.set_by_vector(RSHOULDER, Point.vector(C7_d, PELVIS_b), direction=-1)
-    #         RSHOULDER_C7_m_project = RSHOULDER_plane.project_point(C7_m)
-    #         RSHOULDER_SS_project = RSHOULDER_plane.project_point(SS)
-    #         RSHOULDER_coord = CoordinateSystem3D()
-    #         RSHOULDER_coord.set_by_plane(RSHOULDER_plane, C7_d, RSHOULDER_SS_project, sequence='xyz', axis_positive=True)  # new: use back to chest vector
-    #         # RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, RSHOULDER_C7_m_project, sequence='zyx', axis_positive=False)  # old: use shoulder to chest vector
-    #         RSHOULDER_angles = JointAngles()
-    #         RSHOULDER_angles.set_zero_frame(zero_frame)
-    #         RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, Point.vector(RSHOULDER, RELBOW), plane_seq=['xy', 'xz'])
-    #         RSHOULDER_angles.get_rot(RAP_b, RAP_f, RME, RLE)
-    #         RSHOULDER_angles.flexion = Point.angle(Point.vector(RSHOULDER, RELBOW).xyz, Point.vector(C7, PELVIS_b).xyz)
-    #         RSHOULDER_angles.flexion = RSHOULDER_angles.zero_by_idx(0)  # zero by zero frame after setting flexion without function
-    #
-    #         # todo: add this filter as a function; set undefined angles to zero
-    #         shoulder_threshold = 10/180*np.pi  # the H-abduction is not well defined when the flexion is small or near 180 degrees
-    #         shoulder_filter = np.logical_and(np.abs(RSHOULDER_angles.flexion) > shoulder_threshold, np.abs(RSHOULDER_angles.flexion) < (np.pi - shoulder_threshold))
-    #         RSHOULDER_angles.abduction = np.array([np.where(shoulder_filter[i], RSHOULDER_angles.abduction[i], 0) for i in range(len(shoulder_filter))])  # set abduction to nan if shoulder filter is false
-    #
-    #         ##### Visual for debugging #####
-    #         frame = 1000
-    #         # print(f'RSHOULDER_angles:\n Flexion: {RSHOULDER_angles.flexion[frame]}, \n Abduction: {RSHOULDER_angles.abduction[frame]},\n Rotation: {RSHOULDER_angles.rotation[frame]}')
-    #         # Point.plot_points([
-    #         #                    RSHOULDER_coord.origin, RSHOULDER_coord.x_axis_end, RSHOULDER_coord.y_axis_end, RSHOULDER_coord.z_axis_end,
-    #         #                    RSHOULDER, C7_m, RSHOULDER_C7_m_project, RELBOW, RSHO_f, RSHO_b,
-    #         #                    ], frame=frame)
-    #         # RSHOULDER_angles.plot_angles(joint_name='Right Shoulder', frame_range=frame_range)
-    #         render_dir = os.path.join(trial_name[0], 'render', trial_name[1], 'RSHOULDER_1_all_filtered')
-    #         RSHOULDER_angles.plot_angles_by_frame(render_dir, joint_name='Right Shoulder', frame_range=frame_range, angle_names=['Flexion', 'H-Abduction', 'Rotation'])
-    #         print('**** RSHOULDER_angles done ****')
-    #
+        HEAD_plane = Plane()
+        HEAD_plane.set_by_pts(REAR, LEAR, HDTP)
+        HEAD_coord = CoordinateSystem3D()
+        HEAD_coord.set_by_plane(HEAD_plane, EAR, HDTP, sequence='yxz', axis_positive=True)
+        HEAD_angles = JointAngles()
+        HEAD_angles.set_zero(zero_frame, by_frame=False)
+        HEAD_angles.get_flex_abd(HEAD_coord, Point.vector(C7, Point.mid_point(RPSIS, LPSIS)), plane_seq=['xy', 'yz'], flip_sign=[1, -1])
+        HEAD_angles.get_rot(LEAR, REAR, LSHOULDER, RSHOULDER)
+        return HEAD_angles
 
+    def right_shoulder_angles(self):
+        zero_frame = [0, -90, 90]
+        RSHOULDER = self.point_poses['RSHOULDER']
+        C7 = self.point_poses['C7']
+        C7_d = self.point_poses['C7_d']
+        PELVIS_b = Point.mid_point(self.point_poses['RPSIS'], self.point_poses['LPSIS'])
+        C7_m = self.point_poses['C7_m']
+        SS = self.point_poses['SS']
+        RELBOW = self.point_poses['RELBOW']
+        RAP_b = self.point_poses['RAP_b']
+        RAP_f = self.point_poses['RAP_f']
+        RME = self.point_poses['RME']
+        RLE = self.point_poses['RLE']
 
+        RSHOULDER_plane = Plane()
+        RSHOULDER_plane.set_by_vector(RSHOULDER, Point.vector(C7_d, PELVIS_b), direction=-1)
+        RSHOULDER_C7_m_project = RSHOULDER_plane.project_point(C7_m)
+        RSHOULDER_SS_project = RSHOULDER_plane.project_point(SS)
+        RSHOULDER_coord = CoordinateSystem3D()
+        RSHOULDER_coord.set_by_plane(RSHOULDER_plane, C7_d, RSHOULDER_SS_project, sequence='xyz', axis_positive=False)  # new: use back to chest vector
+        # RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, RSHOULDER_C7_m_project, sequence='zyx', axis_positive=False)  # old: use shoulder to chest vector
+        RSHOULDER_angles = JointAngles()
+        RSHOULDER_angles.set_zero(zero_frame, by_frame=False)
+        RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, Point.vector(RSHOULDER, RELBOW), plane_seq=['xy', 'xz'])
+        RSHOULDER_angles.get_rot(RAP_b, RAP_f, RME, RLE)
+        RSHOULDER_angles.flexion = Point.angle(Point.vector(RSHOULDER, RELBOW).xyz, Point.vector(C7, PELVIS_b).xyz)
+        RSHOULDER_angles.flexion = RSHOULDER_angles.zero_by_idx(0)  # zero by zero frame after setting flexion without function
 
+        # todo: add this filter as a function; set undefined angles to zero
+        shoulder_threshold = 10/180*np.pi  # the H-abduction is not well defined when the flexion is small or near 180 degrees
+        shoulder_filter = np.logical_and(np.abs(RSHOULDER_angles.flexion) > shoulder_threshold, np.abs(RSHOULDER_angles.flexion) < (np.pi - shoulder_threshold))
+        RSHOULDER_angles.abduction = np.array([np.where(shoulder_filter[i], RSHOULDER_angles.abduction[i], 0) for i in range(len(shoulder_filter))])  # set abduction to nan if shoulder filter is false
+        return RSHOULDER_angles
 
+    def left_shoulder_angles(self):     # not checked
+        zero_frame = [0, 0, -90]
+        LSHOULDER = self.point_poses['LSHOULDER']
+        C7 = self.point_poses['C7']
+        C7_d = self.point_poses['C7_d']
+        PELVIS_b = Point.mid_point(self.point_poses['RPSIS'], self.point_poses['LPSIS'])
+        C7_m = self.point_poses['C7_m']
+        SS = self.point_poses['SS']
+        LELBOW = self.point_poses['LELBOW']
+        LAP_b = self.point_poses['LAP_b']
+        LAP_f = self.point_poses['LAP_f']
+        LME = self.point_poses['LME']
+        LLE = self.point_poses['LLE']
 
+        LSHOULDER_plane = Plane()
+        LSHOULDER_plane.set_by_vector(LSHOULDER, Point.vector(C7_d, PELVIS_b), direction=-1)
+        LSHOULDER_C7_m_project = LSHOULDER_plane.project_point(C7_m)
+        LSHOULDER_SS_project = LSHOULDER_plane.project_point(SS)
+        LSHOULDER_coord = CoordinateSystem3D()
+        LSHOULDER_coord.set_by_plane(LSHOULDER_plane, C7_d, LSHOULDER_SS_project, sequence='zyx', axis_positive=True)
+        LSHOULDER_angles = JointAngles()
+        LSHOULDER_angles.set_zero(zero_frame, by_frame=False)
+        LSHOULDER_angles.get_flex_abd(LSHOULDER_coord, Point.vector(LSHOULDER, LELBOW), plane_seq=['xy', 'xz'], flip_sign=[1, -1])
+        LSHOULDER_angles.get_rot(LAP_b, LAP_f, LME, LLE)
+        LSHOULDER_angles.flexion = Point.angle(Point.vector(LSHOULDER, LELBOW).xyz, Point.vector(C7, PELVIS_b).xyz)
+        LSHOULDER_angles.flexion = LSHOULDER_angles.zero_by_idx(0)
+        shoulder_threshold = 10/180*np.pi
+        shoulder_filter = np.logical_and(np.abs(LSHOULDER_angles.flexion) > shoulder_threshold, np.abs(LSHOULDER_angles.flexion) < (np.pi - shoulder_threshold))
+        LSHOULDER_angles.abduction = np.array([np.where(shoulder_filter[i], LSHOULDER_angles.abduction[i], 0) for i in range(len(shoulder_filter))])
+        return LSHOULDER_angles
 
+    def right_elbow_angles(self):
+        zero_frame = [-180, 0, 0]
+        RELBOW = self.point_poses['RELBOW']
+        RSHOULDER = self.point_poses['RSHOULDER']
+        RWRIST = self.point_poses['RWRIST']
 
+        RELBOW_angles = JointAngles()
+        RELBOW_angles.set_zero(zero_frame, by_frame=False)
+        RELBOW_angles.flexion = -Point.angle(Point.vector(RELBOW, RSHOULDER).xyz, Point.vector(RELBOW, RWRIST).xyz)
+        RELBOW_angles.flexion = RELBOW_angles.zero_by_idx(0)  # zero by zero frame
+        RELBOW_angles.is_empty = False
+        RELBOW_angles.abduction = None
+        RELBOW_angles.rotation = None
+        return RELBOW_angles
 
+    def left_elbow_angles(self):  # not checked
+        zero_frame = [-180, 0, 0]
+        LELBOW = self.point_poses['LELBOW']
+        LSHOULDER = self.point_poses['LSHOULDER']
+        LWRIST = self.point_poses['LWRIST']
 
+        LELBOW_angles = JointAngles()
+        LELBOW_angles.set_zero(zero_frame, by_frame=False)
+        LELBOW_angles.flexion = -Point.angle(Point.vector(LELBOW, LSHOULDER).xyz, Point.vector(LELBOW, LWRIST).xyz)
+        LELBOW_angles.flexion = LELBOW_angles.zero_by_idx(0)
+        LELBOW_angles.is_empty = False
+        LELBOW_angles.abduction = None
+        LELBOW_angles.rotation = None
+        return LELBOW_angles
 
+    def right_wrist_angles(self):
+        zero_frame = [-90, -180, -90]
+        RWRIST = self.point_poses['RWRIST']
+        RMCP2 = self.point_poses['RMCP2']
+        RMCP5 = self.point_poses['RMCP5']
+        RHAND = self.point_poses['RHAND']
+        RRS = self.point_poses['RRS']
+        RUS = self.point_poses['RUS']
+        RLE = self.point_poses['RLE']
+        RME = self.point_poses['RME']
+        RELBOW = self.point_poses['RELBOW']
 
+        RWRIST_plane = Plane()
+        RWRIST_plane.set_by_pts(RMCP2, RWRIST, RMCP5)
+        RWRIST_coord = CoordinateSystem3D()
+        RWRIST_coord.set_by_plane(RWRIST_plane, RWRIST, RHAND, sequence='yxz', axis_positive=True)
+        RWRIST_angles = JointAngles()
+        RWRIST_angles.set_zero(zero_frame, by_frame=False)
+        RWRIST_angles.get_flex_abd(RWRIST_coord, Point.vector(RWRIST, RELBOW), plane_seq=['xy', 'yz'])
+        RWRIST_angles.get_rot(RRS, RUS, RLE, RME)
+        return RWRIST_angles
 
+    def left_wrist_angles(self):  # not checked
+        zero_frame = [-90, -180, 90]
+        LWrist = self.point_poses['LWRIST']
+        LMCP2 = self.point_poses['LMCP2']
+        LMCP5 = self.point_poses['LMCP5']
+        LHand = self.point_poses['LHAND']
+        LRS = self.point_poses['LRS']
+        LUS = self.point_poses['LUS']
+        LLE = self.point_poses['LLE']
+        LME = self.point_poses['LME']
+        LELBOW = self.point_poses['LELBOW']
 
+        LWrist_plane = Plane()
+        LWrist_plane.set_by_pts(LMCP2, LWrist, LMCP5)
+        LWrist_coord = CoordinateSystem3D()
+        LWrist_coord.set_by_plane(LWrist_plane, LWrist, LHand, sequence='yxz', axis_positive=True)
+        LWrist_angles = JointAngles()
+        LWrist_angles.set_zero(zero_frame, by_frame=False)
+        LWrist_angles.get_flex_abd(LWrist_coord, Point.vector(LWrist, LELBOW), plane_seq=['xy', 'yz'])
+        LWrist_angles.get_rot(LRS, LUS, LLE, LME)
+        return LWrist_angles
 
+    def back_angles(self, up_axis=[0, 1000, 0]):
+        zero_frame = [-90, 180, 180]
+        C7 = self.point_poses['C7']
+        RPSIS = self.point_poses['RPSIS']
+        LPSIS = self.point_poses['LPSIS']
+        RSHOULDER = self.point_poses['RSHOULDER']
+        LSHOULDER = self.point_poses['LSHOULDER']
+        PELVIS_b = Point.mid_point(RPSIS, LPSIS)
 
+        BACK_plane = Plane()
+        BACK_plane.set_by_vector(PELVIS_b, Point.create_const_vector(*up_axis, examplePt=PELVIS_b), direction=1)
+        BACK_coord = CoordinateSystem3D()
+        BACK_RPSIS_PROJECT = BACK_plane.project_point(RPSIS)
+        BACK_coord.set_by_plane(BACK_plane, PELVIS_b, BACK_RPSIS_PROJECT, sequence='zyx', axis_positive=True)
+        BACK_angles = JointAngles()
+        BACK_angles.set_zero(zero_frame)
+        BACK_angles.get_flex_abd(BACK_coord, Point.vector(PELVIS_b, C7), plane_seq=['xy', 'yz'])
+        BACK_angles.get_rot(RSHOULDER, LSHOULDER, RPSIS, LPSIS, flip_sign=1)
 
+        return BACK_angles
 
+    def right_knee_angles(self):
+        zero_frame = -180
+        RKNEE = self.point_poses['RKNEE']
+        RHIP = self.point_poses['RHIP']
+        RANKLE = self.point_poses['RANKLE']
 
+        RKNEE_angles = JointAngles()
+        RKNEE_angles.set_zero(zero_frame, by_frame=False)
+        RKNEE_angles.flexion = -Point.angle(Point.vector(RKNEE, RHIP).xyz, Point.vector(RKNEE, RANKLE).xyz)
+        RKNEE_angles.flexion = RKNEE_angles.zero_by_idx(0)  # zero by zero frame
+        RKNEE_angles.is_empty = False
+        RKNEE_angles.abduction = None
+        RKNEE_angles.rotation = None
+        return RKNEE_angles
 
+    def left_knee_angles(self):  # not checked
+        zero_frame = -180
+        LKNEE = self.point_poses['LKNEE']
+        LHIP = self.point_poses['LHIP']
+        LANKLE = self.point_poses['LANKLE']
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        LKNEE_angles = JointAngles()
+        LKNEE_angles.set_zero(zero_frame, by_frame=False)
+        LKNEE_angles.flexion = -Point.angle(Point.vector(LKNEE, LHIP).xyz, Point.vector(LKNEE, LANKLE).xyz)
+        LKNEE_angles.flexion = LKNEE_angles.zero_by_idx(0)
+        LKNEE_angles.is_empty = False
+        LKNEE_angles.abduction = None
+        LKNEE_angles.rotation = None
+        return LKNEE_angles
 
 
 

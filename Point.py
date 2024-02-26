@@ -343,7 +343,7 @@ class CoordinateSystem3D:
             RSHOULDER_coord = CoordinateSystem3D()
             RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, C7_m, sequence='zxy', axis_positive=False)
             RSHOULDER_angles = JointAngles()
-            RSHOULDER_angles.set_zero_frame(zero_frame)
+            RSHOULDER_angles.set_zero(zero_frame)
             RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, RELBOW, plane_seq=['xy', 'xz'])
             # RSHOULDER_angles.get_rot(RSHO_b, RSHO_f, RME, RLE)
             RSHOULDER_angles.flexion = Point.angle(Point.vector(RSHOULDER, RELBOW).xyz, Point.vector(C7, PELVIS_b).xyz)

@@ -1,3 +1,5 @@
+# c3d_to_MB.py
+
 import c3d
 from utility import *
 from spacepy import pycdf

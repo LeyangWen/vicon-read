@@ -254,7 +254,7 @@ if __name__ == '__main__':
             RSHOULDER_coord.set_by_plane(RSHOULDER_plane, C7_d, RSHOULDER_SS_project, sequence='xyz', axis_positive=True)  # new: use back to chest vector
             # RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, RSHOULDER_C7_m_project, sequence='zyx', axis_positive=False)  # old: use shoulder to chest vector
             RSHOULDER_angles = JointAngles()
-            RSHOULDER_angles.set_zero_frame(zero_frame)
+            RSHOULDER_angles.set_zero(zero_frame)
             RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, Point.vector(RSHOULDER, RELBOW), plane_seq=['xy', 'xz'])
             RSHOULDER_angles.get_rot(RAP_b, RAP_f, RME, RLE)
             RSHOULDER_angles.flexion = Point.angle(Point.vector(RSHOULDER, RELBOW).xyz, Point.vector(C7, PELVIS_b).xyz)
@@ -288,7 +288,7 @@ if __name__ == '__main__':
         #     HEAD_coord = CoordinateSystem3D()
         #     HEAD_coord.set_by_plane(HEAD_plane, EAR, HDTP, sequence='yxz', axis_positive=True)
         #     HEAD_angles = JointAngles()
-        #     HEAD_angles.set_zero_frame(zero_frame)
+        #     HEAD_angles.set_zero(zero_frame)
         #     HEAD_angles.get_flex_abd(HEAD_coord, Point.vector(C7, Point.mid_point(RPSIS, LPSIS)), plane_seq=['xy', 'yz'], flip_sign=[1, -1])
         #     HEAD_angles.get_rot(LEAR, REAR, LAP, RAP)
         #
@@ -309,7 +309,7 @@ if __name__ == '__main__':
         #     zero_frame = [1215, None, None]
         #     frame_range = [1215, 3414]
         #     RKNEE_angles = JointAngles()
-        #     RKNEE_angles.set_zero_frame(zero_frame)
+        #     RKNEE_angles.set_zero(zero_frame)
         #     RKNEE_angles.flexion = Point.angle(Point.vector(RKNEE, RHIP).xyz, Point.vector(RKNEE, RANKLE).xyz)
         #     RKNEE_angles.flexion = RKNEE_angles.zero_by_idx(0)  # zero by zero frame
         #     RKNEE_angles.is_empty = False
@@ -327,7 +327,7 @@ if __name__ == '__main__':
         #     zero_frame = [889, None, None]
         #     frame_range = [889, 1837]
         #     RELBOW_angles = JointAngles()
-        #     RELBOW_angles.set_zero_frame(zero_frame)
+        #     RELBOW_angles.set_zero(zero_frame)
         #     RELBOW_angles.flexion = Point.angle(Point.vector(RELBOW, RSHOULDER).xyz, Point.vector(RELBOW, RWRIST).xyz)
         #     RELBOW_angles.flexion = RELBOW_angles.zero_by_idx(0)  # zero by zero frame
         #     RELBOW_angles.is_empty = False
@@ -355,7 +355,7 @@ if __name__ == '__main__':
             # RWRIST_coord = CoordinateSystem3D()
             # RWRIST_coord.set_by_plane(RWRIST_plane, RWRIST, RELBOW, sequence='yxz', axis_positive=True)
             # RWRIST_angles = JointAngles()
-            # RWRIST_angles.set_zero_frame(zero_frame)
+            # RWRIST_angles.set_zero(zero_frame)
             # RWRIST_angles.get_flex_abd(RWRIST_coord, Point.vector(RWRIST, RHAND), plane_seq=['xy', 'yz'])
 
             # set by hand
@@ -364,7 +364,7 @@ if __name__ == '__main__':
             RWRIST_coord = CoordinateSystem3D()
             RWRIST_coord.set_by_plane(RWRIST_plane, RWRIST, RHAND, sequence='yxz', axis_positive=True)
             RWRIST_angles = JointAngles()
-            RWRIST_angles.set_zero_frame(zero_frame)
+            RWRIST_angles.set_zero(zero_frame)
             RWRIST_angles.get_flex_abd(RWRIST_coord, Point.vector(RWRIST, RELBOW), plane_seq=['xy', 'yz'])
             RWRIST_angles.get_rot(RRS, RUS, RLE, RME)
 
@@ -392,7 +392,7 @@ if __name__ == '__main__':
     # todo: need to project RPSIS into plane first
         #     BACK_coord.set_by_plane(BACK_plane, PELVIS_b, RPSIS, sequence='zyx', axis_positive=True)
         #     BACK_angles = JointAngles()
-        #     BACK_angles.set_zero_frame(zero_frame)
+        #     BACK_angles.set_zero(zero_frame)
         #     BACK_angles.get_flex_abd(BACK_coord, Point.vector(PELVIS_b, C7), plane_seq=['xy', 'yz'])
         #     BACK_angles.get_rot(RAP, LAP, RPSIS, LPSIS, flip_sign=1)
         #     frame = 3000
