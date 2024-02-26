@@ -6,9 +6,9 @@ This repo contains tools for reading and processing Vicon data.
 3. Supporting classes and functions
 
 Here is a [YouTube playlist](https://youtube.com/playlist?list=PLjMAlxkYpRr0PwPyE3-LDrwiz8xIsNuma&si=HpLm-B3SFCHOHMK4) generated using this repo.
-* Youtube 3D pose preview:
+* Youtube 3D pose preview:  
   ![Alt Text](/figures/Youtube_pose_preview.png)
-* Youtube angle preview:
+* Youtube angle preview:  
   ![Alt Text](/figures/Youtube_angle_preview.png)
 
 ## 1. Scripts to use with an open Vicon Nexus session to read and save data in real-time
