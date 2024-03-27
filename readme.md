@@ -45,9 +45,9 @@ Here is a [YouTube playlist](https://youtube.com/playlist?list=PLjMAlxkYpRr0PwPy
 ### Useful snippets
 - Powershell code to convert all avi files in a folder to mp4, keep original files
 ```powershell
-cd 'C:\Users\Public\Documents\Vicon\data\Vicon_F\Round3\LeyangWen\FullCollection'
+cd 'W:\VEHS\VEHS data collection round 3\processed\DanLi\FullCollection'
 # skip if mp4 already exists
-Get-ChildItem -Filter *.avi | ForEach-Object { If (!(Test-Path "$($_.DirectoryName)/$($_.BaseName).mp4")) {ffmpeg -i $_.FullName -c:v copy -c:a copy -y "$($_.DirectoryName)/$($_.BaseName).mp4"}}
+Get-ChildItem -Filter *ctivity06.66920734.20230825192231.avi | ForEach-Object { If (!(Test-Path "$($_.DirectoryName)/$($_.BaseName).mp4")) {ffmpeg -i $_.FullName -c:v copy -c:a copy -y "$($_.DirectoryName)/$($_.BaseName).mp4"}}
 
 ```
 - Batch rename of all files in one folder from "activity{x}" to "activity{y)"

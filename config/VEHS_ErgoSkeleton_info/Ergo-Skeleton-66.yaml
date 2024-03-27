@@ -1,15 +1,20 @@
-# 'LME', 'LUS', 'LRS', 'RUS', 'RRS', 'LGT', 'LMFC', 'LLFC', 'RGT', 'RMFC', 'RLFC', 'RMM', 'RLM', 'LMM', 'LLM', 'LMTP1', 'LMTP5', 'LHEEL', 'RMTP1', 'RMTP5', 'RHEEL',
-  # 'HEAD', 'RSHOULDER', 'LSHOULDER', 'C7_m', 'THORAX', 'LELBOW', 'RELBOW', 'RWRIST', 'LWRIST', 'RHAND', 'LHAND', 'PELVIS', 'RHIP', 'RKNEE', 'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']
 joints:
-  mid: ['HDTP', 'REAR', 'LEAR', 'HEAD', 'C7', 'C7_d', 'SS', 'THORAX', 'T8',  'PELVIS'] # 10
-  topR: ['RAP_b', 'RAP_f', 'RSHOULDER', 'RLE', 'RME', 'RELBOW', 'RWRIST', 'RMCP2', 'RMCP5', 'RHAND'] # 10
-  topL: ['LAP_b', 'LAP_f', 'LSHOULDER', 'LLE', 'LME', 'LELBOW', 'LWRIST', 'LMCP2', 'LMCP5', 'LHAND']
-  botR: ['RHIP', 'RPSIS', 'RASIS', 'RKNEE', 'RANKLE', 'RFOOT'] # 6
-  botL: ['LHIP', 'LPSIS', 'LASIS', 'LKNEE', 'LANKLE', 'LFOOT']
+  mid: ['HDTP', 'REAR', 'LEAR', 'MDFH', 'HEAD',   'C7', 'C7_d', 'SS',             'THORAX', 'XP','T8', 'PELVIS']
+  topR: ['RAP', 'RAP_b', 'RAP_f', 'RSHOULDER', 'RLE', 'RME', 'RELBOW', 'RUS', 'RRS', 'RWRIST', 'RMCP2', 'RMCP5', 'RHAND']
+  topL: ['LAP', 'LAP_b', 'LAP_f', 'LSHOULDER', 'LLE', 'LME', 'LELBOW', 'LUS', 'LRS', 'LWRIST', 'LMCP2', 'LMCP5', 'LHAND']
+  botR: ['RPSIS', 'RASIS', 'RGT', 'RHIP',       'RMFC', 'RLFC', 'RKNEE',        'RMM', 'RLM', 'RHEEL', 'RANKLE', 'RMTP1', 'RMTP5', 'RFOOT']
+  botL: ['LPSIS', 'LASIS', 'LGT', 'LHIP',       'LMFC', 'LLFC', 'LKNEE',        'LMM', 'LLM', 'LHEEL', 'LANKLE', 'LMTP1', 'LMTP5', 'LFOOT']
 
 parent:
-  mid: ['HEAD', 'HEAD', 'HEAD', 'C7', 'C7_d', 'T8', 'THORAX', 'C7_d', 'PELVIS', None]
-  topR: ['RSHOULDER', 'RSHOULDER', 'THORAX', 'RELBOW', 'RELBOW', 'RSHOULDER', 'RELBOW', 'RHAND', 'RHAND', 'RWRIST']
-  topL: ['LSHOULDER', 'LSHOULDER', 'THORAX', 'LELBOW', 'LELBOW', 'LSHOULDER', 'LELBOW', 'LHAND', 'LHAND', 'LWRIST']
-  botR: ['PELVIS', 'RASIS', 'LPSIS', 'RHIP', 'RKNEE', 'RANKLE']
-  botL: ['PELVIS', 'LASIS', 'RPSIS', 'LHIP', 'LKNEE', 'LANKLE']
+  mid: ['REAR', 'LEAR', 'HDTP', 'HEAD', 'C7',     'C7_d', 'THORAX', 'THORAX',      'XP', 'T8', 'C7_d', None]
+  topR: ['RSHOULDER', 'RSHOULDER', 'RSHOULDER', 'THORAX', 'RELBOW', 'RELBOW', 'RSHOULDER', 'RWRIST', 'RWRIST', 'RELBOW', 'RHAND', 'RHAND', 'RWRIST']
+  topL: ['LSHOULDER', 'LSHOULDER', 'LSHOULDER', 'THORAX', 'LELBOW', 'LELBOW', 'LSHOULDER', 'LWRIST', 'LWRIST', 'LELBOW', 'LHAND', 'LHAND', 'LWRIST']
+  botR: ['LPSIS', 'RPSIS', 'RHIP', 'PELVIS',    'RKNEE', 'RKNEE', 'RHIP',       'RANKLE', 'RANKLE', 'RANKLE', 'RKNEE', 'RFOOT', 'RFOOT', 'RANKLE']
+  botL: ['LASIS', 'RASIS', 'LHIP', 'PELVIS',    'LKNEE', 'LKNEE', 'LHIP',       'LANKLE', 'LANKLE', 'LANKLE', 'LKNEE', 'LFOOT', 'LFOOT', 'LANKLE']
+
+type:
+  surface_markers: ['RPSIS', 'RASIS', 'LPSIS', 'LASIS', 'C7_d', 'SS', 'T8', 'XP', 'C7', 'HDTP', 'MDFH', 'REAR', 'LEAR', 'RAP', 'RAP_f', 'RLE', 'RAP_b', 'RME', 'LAP', 'LAP_f', 'LLE',
+                    'LAP_b', 'LME', 'LUS', 'LRS', 'RUS', 'RRS', 'RMCP5', 'RMCP2', 'LMCP5', 'LMCP2', 'LGT', 'LMFC', 'LLFC', 'RGT', 'RMFC', 'RLFC', 'RMM', 'RLM', 'LMM',
+                    'LLM', 'LMTP1', 'LMTP5', 'LHEEL', 'RMTP1', 'RMTP5', 'RHEEL']
+  joint_centers: ['HEAD', 'RSHOULDER', 'LSHOULDER', 'THORAX', 'LELBOW', 'RELBOW', 'RWRIST', 'LWRIST', 'RHAND', 'LHAND', 'PELVIS', 'RHIP', 'RKNEE',
+                  'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']

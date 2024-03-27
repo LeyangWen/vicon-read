@@ -232,7 +232,7 @@ class FLIR_Camera(Camera):
 
 
 if __name__ == '__main__':
-    example_case = 2
+    example_case = 1
     if example_case == 1:  # visualize rgb with overlay 2d skeleton
         base_dir_name = r'C:\Users\Public\Documents\Vicon\data\VEHS_ske\Round3\Leyang Wen\Subject 3-1'
         activity_no = 1

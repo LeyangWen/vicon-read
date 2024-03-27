@@ -51,9 +51,10 @@ class Skeleton:
         self.point_poses = {}
         for i in range(self.point_number):
             self.poses[self.point_labels[i]] = pt_np[:, i, :]
-            exist = pt_np[:, i, 0] != np.nan  # todo: check if missing points is expressed as np.nan in c3d
-            xyz_exist = [pt_np[:, i, 0], pt_np[:, i, 1], pt_np[:, i, 2], exist.tolist()]
-            self.point_poses[self.point_labels[i]] = MarkerPoint(xyz_exist, name=self.point_labels[i])
+            if self.points_dimension == 3:
+                exist = pt_np[:, i, 0] != np.nan  # todo: check if missing points is expressed as np.nan in c3d
+                xyz_exist = [pt_np[:, i, 0], pt_np[:, i, 1], pt_np[:, i, 2], exist.tolist()]
+                self.point_poses[self.point_labels[i]] = MarkerPoint(xyz_exist, name=self.point_labels[i])
 
     def load_name_list_and_np_points(self, name_list, pt_np):
         self.load_name_list(name_list)
@@ -104,9 +105,18 @@ class Skeleton:
                 self.joint_name_topR = data['joints']['topR']
                 self.key_joint_name = data['joints']['mid'] + data['joints']['botL'] + data['joints']['topL'] + data['joints']['botR'] + data['joints']['topR']
                 self.key_joint_parent = data['parent']['mid'] + data['parent']['botL'] + data['parent']['topL'] + data['parent']['botR'] + data['parent']['topR']
+                self.surface_marker_list = []
+                self.joint_center_list = []
             except yaml.YAMLError as exc:
                 print(filename, exc)
                 raise exc
+            try:
+                self.surface_marker_list = data['type']['surface_markers']
+                self.joint_center_list = data['type']['joint_centers']
+            except KeyError:
+                pass
+
+
 
     def update_pose_from_point_pose(self):
         for point_key, point_pose in self.point_poses.items():
@@ -124,24 +134,30 @@ class Skeleton:
         '''
         return point_type and point_size for plot
         '''
+        size_2d = [3, 6]
+        size_3d = [8, 20]
+        size = size_2d
         if joint_name in self.joint_name_mid:
             point_type = 's'
-            point_size = 10
+            point_size = size[0]
         elif joint_name in self.joint_name_botL or joint_name in self.joint_name_topL:
-            point_type = '<'
-            point_size = 4
-        elif joint_name in self.joint_name_botR or joint_name in self.joint_name_topR:
             point_type = '>'
-            point_size = 4
+            point_size = size[0]
+        elif joint_name in self.joint_name_botR or joint_name in self.joint_name_topR:
+            point_type = '<'
+            point_size = size[0]
         else:
             point_type = 'o'
-            point_size = 4
+            point_size = size[1]
+        if joint_name in self.joint_center_list:
+            point_type = 'o'
+            point_size = size[1]
         return point_type, point_size
 
-    def plot_3d_pose_frame(self, frame=0, filename=False, range=1000, coord_system="camera-px"):
+    def plot_3d_pose_frame(self, frame=0, filename=False, range=1000, coord_system="world"):
         """
         plot 3d pose in 3d space
-        coord_system: camera or world
+        coord_system: camera-px or world
         """
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
@@ -182,13 +198,15 @@ class Skeleton:
         ax.set_ylabel(xyz_label[pose_sequence[1]])
         ax.set_zlabel(xyz_label[pose_sequence[2]])
         fig.tight_layout()
-        if True:
-            fig.subplots_adjust(right=0.65)
-            ax.legend(loc='center left', bbox_to_anchor=(1.08, 0.5), fontsize=7, ncol=2)
+        if True:  # legends
+            pass
+            # fig.subplots_adjust(right=0.65)
+            # ax.legend(loc='center left', bbox_to_anchor=(1.08, 0.5), fontsize=7, ncol=2)
         else:  # use this to get a legend screenshot
+            # also set range to big value
             ax.legend(loc='upper center', fontsize=7, ncol=5)
             plt.gca().set_axis_off()
-            plt.savefig(r'C:\Users\Public\Documents\Vicon\data\Vicon_F\Round3\LeyangWen\FullCollection\render\frame_output\legend.png', dpi=250)
+            plt.savefig(r'C:\Users\Public\Downloads\legend.png', dpi=250)
             raise NameError  # break here
         if filename:
             plt.savefig(filename, dpi=250)
@@ -237,6 +255,7 @@ class Skeleton:
             print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
             self.plot_3d_pose_frame(frame=i, filename=filename)
+            # break
 
     def plot_2d_pose(self, foldername=False):
         if foldername:
@@ -245,6 +264,7 @@ class Skeleton:
             print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
             self.plot_2d_pose_frame(frame=i, filename=filename)
+            # break
 
 
 class VEHSErgoSkeleton(Skeleton):
@@ -255,6 +275,17 @@ class VEHSErgoSkeleton(Skeleton):
 
     def calculate_joint_center(self):
         self.point_poses['HEAD'] = Point.mid_point(self.point_poses['LEAR'], self.point_poses['REAR'])
+
+        ear_vector = Point.vector(self.point_poses['REAR'], self.point_poses['LEAR'])
+        self.point_poses['REAR'] = Point.translate_point(self.point_poses['REAR'], ear_vector, direction=9)
+        self.point_poses['LEAR'] = Point.translate_point(self.point_poses['LEAR'], ear_vector, direction=-9)
+
+        head_plane = Plane()
+        head_plane.set_by_pts(self.point_poses['REAR'], self.point_poses['LEAR'], self.point_poses['HDTP'])
+        head = self.point_poses['HEAD']
+        distance_between_ears = Point.distance(self.point_poses['REAR'], self.point_poses['LEAR'])
+        self.point_poses['NOSE'] = Point.translate_point(head, head_plane.normal_vector, direction=distance_between_ears * 0.78)
+
         self.point_poses['RSHOULDER'] = Point.mid_point(self.point_poses['RAP_f'], self.point_poses['RAP_b'])
         self.point_poses['LSHOULDER'] = Point.mid_point(self.point_poses['LAP_f'], self.point_poses['LAP_b'])
         self.point_poses['C7_m'] = Point.mid_point(self.point_poses['C7_d'], self.point_poses['SS'])
@@ -263,6 +294,16 @@ class VEHSErgoSkeleton(Skeleton):
         self.point_poses['RELBOW'] = Point.mid_point(self.point_poses['RME'], self.point_poses['RLE'])
         self.point_poses['RWRIST'] = Point.mid_point(self.point_poses['RRS'], self.point_poses['RUS'])
         self.point_poses['LWRIST'] = Point.mid_point(self.point_poses['LRS'], self.point_poses['LUS'])
+
+        right_wrist_plane = Plane()
+        right_wrist_plane.set_by_pts(self.point_poses['RMCP2'], self.point_poses['RMCP5'], self.point_poses['RWRIST'])
+        self.point_poses['RMCP5'] = Point.translate_point(self.point_poses['RMCP5'], right_wrist_plane.normal_vector, direction=9)
+        self.point_poses['RMCP2'] = Point.translate_point(self.point_poses['RMCP2'], right_wrist_plane.normal_vector, direction=9)
+        left_wrist_plane = Plane()
+        left_wrist_plane.set_by_pts(self.point_poses['LMCP2'], self.point_poses['LWRIST'], self.point_poses['LMCP5'])
+        self.point_poses['LMCP5'] = Point.translate_point(self.point_poses['LMCP5'], left_wrist_plane.normal_vector, direction=9)
+        self.point_poses['LMCP2'] = Point.translate_point(self.point_poses['LMCP2'], left_wrist_plane.normal_vector, direction=9)
+
         self.point_poses['RHAND'] = Point.mid_point(self.point_poses['RMCP2'], self.point_poses['RMCP5'])
         self.point_poses['LHAND'] = Point.mid_point(self.point_poses['LMCP2'], self.point_poses['LMCP5'])
         self.point_poses['LGRIP'] = Point.translate_point(self.point_poses['LHAND'],
@@ -429,7 +470,31 @@ class VEHSErgoSkeleton(Skeleton):
         output['c3d_frame'] = c3d_frame
         return output
 
+    def get_pelvic_tilt(self, loc):
+        # 3DSSPP manual page 54
+        RHIP = Point(loc[:, 96:99])
+        LHIP = Point(loc[:, 75:78])
+        HIP_center = Point.mid_point(RHIP, LHIP)
+        L5S1 = Point(loc[:, 27:30])
+        up_axis = [0,0,1000]  # todo: world coord only
+        zero_frame = [90, 180, 180]
+        BACK_plane = Plane()
+        BACK_plane.set_by_vector(HIP_center, Point.create_const_vector(*up_axis, examplePt=HIP_center), direction=1)
+        BACK_coord = CoordinateSystem3D()
+        BACK_RHIP_PROJECT = BACK_plane.project_point(RHIP)
+        BACK_coord.set_by_plane(BACK_plane, HIP_center, BACK_RHIP_PROJECT, sequence='zyx', axis_positive=True)
+        BACK_angles = JointAngles()
+        BACK_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'L-flexion', 'rotation': 'rotation'}  #lateral flexion
+        BACK_angles.set_zero(zero_frame)
+        BACK_angles.get_flex_abd(BACK_coord, Point.vector(HIP_center, L5S1), plane_seq=['xy', 'yz'], flip_sign=[-1, 1])
+
+        angles = BACK_angles.flexion
+        angles = (angles/np.pi*180).astype(int)
+        # print(f'pelvic tilt: {angles} degree')
+        return angles
+
     def output_3DSSPP_loc(self, frame_range=None, loc_file=None):
+        """
         # 3DSSPP format:
         # LOC File filename.loc
         # Value Anatomical Location Attribute
@@ -472,14 +537,11 @@ class VEHSErgoSkeleton(Skeleton):
         # 109 - 111 R. Lateral Malleolus Skin Surface
         # 112 - 114 R. Ball of Foot Virtual point
         # 115 - 117 R. Metatarsalphalangeal Skin Surface
-        try:
-            weight = self.weight
-        except:
-            weight = 70
-        try:
-            height = self.height
-        except:
-            height = 180
+        """
+        weight = getattr(self, 'weight', 75)
+        height = getattr(self, 'height', 180)
+        gender = getattr(self, 'gender', 'male')
+        gender_id = 0 if gender=='male' else 1  # male 0, female 1
         if frame_range is not None:
             start_frame = frame_range[0]
             end_frame = frame_range[1]
@@ -500,8 +562,7 @@ class VEHSErgoSkeleton(Skeleton):
             loc[:, 18:21] = Point.mid_point(self.point_poses['THORAX'], self.point_poses['C7'], 0.85).xyz.T  # 19 - 21 C7/T1 Joint Center
             loc[:, 21:24] = self.point_poses['THORAX'].xyz.T  # 22 - 24 Sternoclavicular Joint Joint Center
             loc[:, 24:27] = self.point_poses['SS'].xyz.T  # 25 - 27 Suprasternale Skin Surface
-            loc[:, 27:30] = self.point_poses['PELVIS'].xyz.T  # 28 - 30 L5/S1 Joint Center
-                #Point.mid_point(self.point_poses['PELVIS'], Point.mid_point(self.point_poses['RHIP'], self.point_poses['LHIP'], 0.5), 0.5).xyz.T  # 28 - 30 L5/S1 Joint Center
+            loc[:, 27:30] = Point.mid_point(self.point_poses['T8'], self.point_poses['PELVIS_b'], 0.5).xyz.T  # 28 - 30 L5/S1 Joint Center
             loc[:, 30:33] = self.point_poses['PELVIS_b'].xyz.T  # 31 - 33 PSIS Joint Center
             loc[:, 33:36] = self.point_poses['LSHOULDER'].xyz.T  # 34 - 36 L. Shoulder Joint Center
             loc[:, 36:39] = self.point_poses['LAP'].xyz.T  # 37 - 39 L. Acromion Skin Surface
@@ -517,14 +578,16 @@ class VEHSErgoSkeleton(Skeleton):
             loc[:, 66:69] = self.point_poses['RWRIST'].xyz.T  # 67 - 69 R. Wrist Joint Center
             loc[:, 69:72] = self.point_poses['RGRIP'].xyz.T  # 70 - 72 R. Grip Center Virtual point
             loc[:, 72:75] = self.point_poses['RHAND'].xyz.T  # 73 - 75 R. Hand Skin Surface
-            loc[:, 75:78] = self.point_poses['LHIP'].xyz.T  # 76 - 79 L. Hip Joint Center
+            loc[:, 75:78] = Point.mid_point(self.point_poses['LHIP'], self.point_poses['LKNEE'], 0.7).xyz.T  # 76 - 79 L. Hip Joint Center
+                # self.point_poses['LHIP'].xyz.T  # 76 - 79 L. Hip Joint Center
             loc[:, 78:81] = self.point_poses['LKNEE'].xyz.T  # 79 - 81 L. Knee Joint Center
             loc[:, 81:84] = self.point_poses['LLFC'].xyz.T  # 82 - 84 L. Lat. Epicon. of Femur Skin Surface
             loc[:, 84:87] = self.point_poses['LANKLE'].xyz.T  # 85 - 87 L. Ankle Joint Center
             loc[:, 87:90] = self.point_poses['LLM'].xyz.T  # 88 - 90 L. Lateral Malleolus Skin Surface
             loc[:, 90:93] = Point.mid_point(self.point_poses['LFOOT'], self.point_poses['LHEEL'], 0.4).xyz.T  # 91 - 93 L. Ball of Foot Virtual point
             loc[:, 93:96] = self.point_poses['LFOOT'].xyz.T  # 94 - 96 L. Metatarsalphalangeal Skin Surface
-            loc[:, 96:99] = self.point_poses['RHIP'].xyz.T  # 97 - 99 R. Hip Joint Center
+            loc[:, 96:99] = Point.mid_point(self.point_poses['RHIP'], self.point_poses['RKNEE'], 0.7).xyz.T
+                # self.point_poses['RHIP'].xyz.T  # 97 - 99 R. Hip Joint Center
             loc[:, 99:102] = self.point_poses['RKNEE'].xyz.T  # 100 - 102 R. Knee Joint Center
             loc[:, 102:105] = self.point_poses['RLFC'].xyz.T  # 103 - 105 R. Lat. Epicon. of Femur Skin Surface
             loc[:, 105:108] = self.point_poses['RANKLE'].xyz.T  # 106 - 108 R. Ankle Joint Center
@@ -535,17 +598,21 @@ class VEHSErgoSkeleton(Skeleton):
         # convert np list to space separated string
         if loc_file is None:
             loc_file = self.c3d_file.replace('.c3d', '.txt')
+        pelvic_tilt_angles = self.get_pelvic_tilt(loc)
         # write as txt file
         with open(loc_file, 'w') as f:
             f.write('3DSSPPBATCHFILE #\n')
             f.write('COM #\n')
             f.write('DES 1 "Task Name" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
+            f.write(f'ANT {gender_id} 3 {height} {weight} #\n')  # male 0, female 1, self-set-height-weight-values (not population percentile) 3, height  , weight
+            f.write('COM Enabling auto output #\n')  # comment
+            f.write('AUT 1 #\n')   # auto output when ANT, HAN, JOA, JOI, and PPR commands are called
             for i, k in enumerate(np.arange(start_frame, end_frame, step)):
                 joint_locations = np.array2string(loc[k], separator=' ', max_line_width=1000000, precision=3, suppress_small=True)[1:-1].replace('0. ', '0 ')
                 f.write('FRM ' + str(i) + ' #\n')
-                f.write(f'ANT 0 3 {height} {weight} #\n')  # male 0, female 1, self-set-height-weight-values (not population percentile) 3, height  , weight
-                support_feet_max_height = 0.15
-                left_foot_supported = True if self.poses['LFOOT'][k, 2] < support_feet_max_height else False
+                f.write(f'LOC {joint_locations} #\n')
+                support_feet_max_height = 0.15  # m
+                left_foot_supported = True if self.poses['LFOOT'][k, 2] < support_feet_max_height else False  # todo: this only works in world coord
                 right_foot_supported = True if self.poses['RFOOT'][k, 2] < support_feet_max_height else False
                 if left_foot_supported and right_foot_supported:
                     foot_support_parameter = 0
@@ -554,14 +621,12 @@ class VEHSErgoSkeleton(Skeleton):
                 elif (not left_foot_supported) and right_foot_supported:
                     foot_support_parameter = 2
                 else:
-                    foot_support_parameter = 3
-                f.write(f'SUP {foot_support_parameter} 0 0 0 20.0 –15 #\n')  # set support: Feet Support (0=both, 1=left, 2=right, 3=none), Position (0=stand, 1=seated), Front Seat Pan Support (0=no, 1=yes), Seat Has Back Rest (0=no, 1=yes), and Back Rest Center Height (real number in cm, greater than 19.05).
-                f.write(f'LOC {joint_locations} #\n')
-                # f.write('HAN 15 -20 85 15 -15 80 #\n')
-                # f.write('EXP #\n')
-                f.write('AUT 1 #\n')
-            # f.write('OUT #\n')
-
+                    foot_support_parameter = 0  # 3
+                pelvic_tilt = 0 #pelvic_tilt_angles[k]  # -15
+                f.write(f'SUP {foot_support_parameter} 0 0 0 20.0 {pelvic_tilt} #\n')  # set support: Feet Support (0=both, 1=left, 2=right, 3=none), Position (0=stand, 1=seated), Front Seat Pan Support (0=no, 1=yes), Seat Has Back Rest (0=no, 1=yes), and Back Rest Center Height (real number in cm, greater than 19.05).
+                hand_load = 0  # N
+                f.write(f'HAN {hand_load / 2} -90 0 {hand_load / 2} -90 0 #\n')  # HAN can trigger output write line
+            f.write(f'COM Task done #')
         return loc
 
 
@@ -950,9 +1015,9 @@ class PulginGaitSkeleton(Skeleton):
 class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
     def __init__(self, skeleton_file='config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml'):
         super().__init__(skeleton_file)
-        self.angle_names = ['head', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'right_wrist', 'left_wrist', 'back', 'right_knee', 'left_knee']
+        self.angle_names = ['neck', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'right_wrist', 'left_wrist', 'back', 'right_knee', 'left_knee']
 
-    def head_angles(self):
+    def neck_angles(self):
         zero_frame = [-90, -180, -180]
         REAR = self.point_poses['REAR']
         LEAR = self.point_poses['LEAR']
@@ -968,11 +1033,12 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         HEAD_plane.set_by_pts(REAR, LEAR, HDTP)
         HEAD_coord = CoordinateSystem3D()
         HEAD_coord.set_by_plane(HEAD_plane, EAR, HDTP, sequence='yxz', axis_positive=True)
-        HEAD_angles = JointAngles()
-        HEAD_angles.set_zero(zero_frame, by_frame=False)
-        HEAD_angles.get_flex_abd(HEAD_coord, Point.vector(C7, Point.mid_point(RPSIS, LPSIS)), plane_seq=['xy', 'yz'], flip_sign=[1, -1])
-        HEAD_angles.get_rot(LEAR, REAR, LSHOULDER, RSHOULDER)
-        return HEAD_angles
+        NECK_angles = JointAngles()
+        NECK_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'L-bend', 'rotation': 'rotation'}  # lateral bend
+        NECK_angles.set_zero(zero_frame, by_frame=False)
+        NECK_angles.get_flex_abd(HEAD_coord, Point.vector(C7, Point.mid_point(RPSIS, LPSIS)), plane_seq=['xy', 'yz'], flip_sign=[1, -1])
+        NECK_angles.get_rot(LEAR, REAR, LSHOULDER, RSHOULDER)
+        return NECK_angles
 
     def right_shoulder_angles(self):
         zero_frame = [0, -90, 90]
@@ -996,6 +1062,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         RSHOULDER_coord.set_by_plane(RSHOULDER_plane, C7_d, RSHOULDER_SS_project, sequence='xyz', axis_positive=False)  # new: use back to chest vector
         # RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, RSHOULDER_C7_m_project, sequence='zyx', axis_positive=False)  # old: use shoulder to chest vector
         RSHOULDER_angles = JointAngles()
+        RSHOULDER_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'H-abduction', 'rotation': 'rotation'}
         RSHOULDER_angles.set_zero(zero_frame, by_frame=False)
         RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, Point.vector(RSHOULDER, RELBOW), plane_seq=['xy', 'xz'])
         RSHOULDER_angles.get_rot(RAP_b, RAP_f, RME, RLE)
@@ -1029,6 +1096,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         LSHOULDER_coord = CoordinateSystem3D()
         LSHOULDER_coord.set_by_plane(LSHOULDER_plane, C7_d, LSHOULDER_SS_project, sequence='zyx', axis_positive=True)
         LSHOULDER_angles = JointAngles()
+        LSHOULDER_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'H-abduction', 'rotation': 'rotation'}  # horizontal abduction
         LSHOULDER_angles.set_zero(zero_frame, by_frame=False)
         LSHOULDER_angles.get_flex_abd(LSHOULDER_coord, Point.vector(LSHOULDER, LELBOW), plane_seq=['xy', 'xz'], flip_sign=[1, -1])
         LSHOULDER_angles.get_rot(LAP_b, LAP_f, LME, LLE)
@@ -1046,6 +1114,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         RWRIST = self.point_poses['RWRIST']
 
         RELBOW_angles = JointAngles()
+        RELBOW_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'na', 'rotation': 'na'}
         RELBOW_angles.set_zero(zero_frame, by_frame=False)
         RELBOW_angles.flexion = -Point.angle(Point.vector(RELBOW, RSHOULDER).xyz, Point.vector(RELBOW, RWRIST).xyz)
         RELBOW_angles.flexion = RELBOW_angles.zero_by_idx(0)  # zero by zero frame
@@ -1061,6 +1130,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         LWRIST = self.point_poses['LWRIST']
 
         LELBOW_angles = JointAngles()
+        LELBOW_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'na', 'rotation': 'na'}
         LELBOW_angles.set_zero(zero_frame, by_frame=False)
         LELBOW_angles.flexion = -Point.angle(Point.vector(LELBOW, LSHOULDER).xyz, Point.vector(LELBOW, LWRIST).xyz)
         LELBOW_angles.flexion = LELBOW_angles.zero_by_idx(0)
@@ -1086,9 +1156,11 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         RWRIST_coord = CoordinateSystem3D()
         RWRIST_coord.set_by_plane(RWRIST_plane, RWRIST, RHAND, sequence='yxz', axis_positive=True)
         RWRIST_angles = JointAngles()
+        RWRIST_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'deviation', 'rotation': 'pronation'}
         RWRIST_angles.set_zero(zero_frame, by_frame=False)
         RWRIST_angles.get_flex_abd(RWRIST_coord, Point.vector(RWRIST, RELBOW), plane_seq=['xy', 'yz'])
         RWRIST_angles.get_rot(RRS, RUS, RLE, RME)
+        # RWRIST_angles.get_rot(RMCP2, RMCP5, RLE, RME)
         return RWRIST_angles
 
     def left_wrist_angles(self):  # not checked
@@ -1108,9 +1180,11 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         LWrist_coord = CoordinateSystem3D()
         LWrist_coord.set_by_plane(LWrist_plane, LWrist, LHand, sequence='yxz', axis_positive=True)
         LWrist_angles = JointAngles()
+        LWrist_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'deviation ', 'rotation': 'pronation'}
         LWrist_angles.set_zero(zero_frame, by_frame=False)
         LWrist_angles.get_flex_abd(LWrist_coord, Point.vector(LWrist, LELBOW), plane_seq=['xy', 'yz'])
         LWrist_angles.get_rot(LRS, LUS, LLE, LME)
+        # LWrist_angles.get_rot(LMCP2, LMCP5, LLE, LME)
         return LWrist_angles
 
     def back_angles(self, up_axis=[0, 1000, 0]):
@@ -1118,6 +1192,8 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         C7 = self.point_poses['C7']
         RPSIS = self.point_poses['RPSIS']
         LPSIS = self.point_poses['LPSIS']
+        RHIP = self.point_poses['RHIP']
+        LHIP = self.point_poses['LHIP']
         RSHOULDER = self.point_poses['RSHOULDER']
         LSHOULDER = self.point_poses['LSHOULDER']
         PELVIS_b = Point.mid_point(RPSIS, LPSIS)
@@ -1125,12 +1201,15 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         BACK_plane = Plane()
         BACK_plane.set_by_vector(PELVIS_b, Point.create_const_vector(*up_axis, examplePt=PELVIS_b), direction=1)
         BACK_coord = CoordinateSystem3D()
-        BACK_RPSIS_PROJECT = BACK_plane.project_point(RPSIS)
-        BACK_coord.set_by_plane(BACK_plane, PELVIS_b, BACK_RPSIS_PROJECT, sequence='zyx', axis_positive=True)
+        # BACK_RPSIS_PROJECT = BACK_plane.project_point(RPSIS)
+        BACK_RHIP_PROJECT = BACK_plane.project_point(RHIP)
+        BACK_coord.set_by_plane(BACK_plane, PELVIS_b, BACK_RHIP_PROJECT, sequence='zyx', axis_positive=True)
         BACK_angles = JointAngles()
+        BACK_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'L-flexion', 'rotation': 'rotation'}  #lateral flexion
         BACK_angles.set_zero(zero_frame)
         BACK_angles.get_flex_abd(BACK_coord, Point.vector(PELVIS_b, C7), plane_seq=['xy', 'yz'])
-        BACK_angles.get_rot(RSHOULDER, LSHOULDER, RPSIS, LPSIS, flip_sign=1)
+        # BACK_angles.get_rot(RSHOULDER, LSHOULDER, RPSIS, LPSIS, flip_sign=1)
+        BACK_angles.get_rot(RSHOULDER, LSHOULDER, RHIP, LHIP, flip_sign=1)
 
         return BACK_angles
 
@@ -1141,6 +1220,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         RANKLE = self.point_poses['RANKLE']
 
         RKNEE_angles = JointAngles()
+        RKNEE_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'na', 'rotation': 'na'}
         RKNEE_angles.set_zero(zero_frame, by_frame=False)
         RKNEE_angles.flexion = -Point.angle(Point.vector(RKNEE, RHIP).xyz, Point.vector(RKNEE, RANKLE).xyz)
         RKNEE_angles.flexion = RKNEE_angles.zero_by_idx(0)  # zero by zero frame
@@ -1156,6 +1236,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         LANKLE = self.point_poses['LANKLE']
 
         LKNEE_angles = JointAngles()
+        LKNEE_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'na', 'rotation': 'na'}
         LKNEE_angles.set_zero(zero_frame, by_frame=False)
         LKNEE_angles.flexion = -Point.angle(Point.vector(LKNEE, LHIP).xyz, Point.vector(LKNEE, LANKLE).xyz)
         LKNEE_angles.flexion = LKNEE_angles.zero_by_idx(0)
@@ -1166,6 +1247,20 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
 
 
 
+
+
+# RMCP2,RMCP5, RWRIST
+# marker_height = 9  # mm
+# R_wrist_plane = Plane()
+# R_wrist_plane.set_by_pts(RMCP5, RWRIST, RMCP2)
+# RMCP2 = Point.translate_point(RMCP2, R_wrist_plane.normal_vector, marker_height)
+# RMCP5 = Point.translate_point(RMCP5, R_wrist_plane.normal_vector, marker_height)
+#
+# LMCP2,LMCP5, LWRIST
+# L_wrist_plane = Plane()
+# L_wrist_plane.set_by_pts(LMCP2, LWRIST, LMCP5)
+# LMCP2 = Point.translate_point(LMCP2, L_wrist_plane.normal_vector, marker_height)
+# LMCP5 = Point.translate_point(LMCP5, L_wrist_plane.normal_vector, marker_height)
 
 
 
