@@ -1,4 +1,4 @@
-from ergo3d.ergo3d import *
+from ergo3d import *
 from Skeleton import *
 import pickle
 import yaml

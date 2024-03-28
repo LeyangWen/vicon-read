@@ -5,7 +5,7 @@ import numpy as np
 import csv
 import pickle
 from utility import *
-from Point import *
+from ergo3d import *
 import yaml
 import datetime
 

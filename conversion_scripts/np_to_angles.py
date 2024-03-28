@@ -1,7 +1,7 @@
 import argparse
 import pickle
 from Skeleton import *
-from ergo3d.ergo3d import *
+from ergo3d import *
 
 
 def parse_args():
