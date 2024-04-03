@@ -79,70 +79,47 @@ if __name__ == '__main__':
                 #         break
 
                 print(f'{count}: Starting on {c3d_file} as {train_val_test} set')
-                this_skeleton = VEHSErgoSkeleton(skeleton_file)
+                this_skeleton = VEHSErgoSkeleton_angles(skeleton_file)
                 this_skeleton.load_c3d(c3d_file, analog_read=False)
                 this_frame_number = this_skeleton.frame_number
                 dataset_statistics[c3d_file] = this_frame_number
                 total_frame_number += this_frame_number
 
                 this_skeleton.calculate_joint_center()
-                camera_xcp_file = c3d_file.replace('.c3d', '.xcp')
+                ergo_angles = {}
+                for angle_name in this_skeleton.angle_names:  # calling the angle calculation methods in skeleton class
+                    class_method_name = f'{angle_name}_angles'
+                    ergo_angles[angle_name] = getattr(this_skeleton, class_method_name)()
 
-                if args.output_type[0]:  # calculate 3D pose first
-                    this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=h36m_joint_names)
-                    output3D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep)
-                    output_3D_dataset = append_output_xD_dataset(output_3D_dataset, train_val_test, output3D)
-                if args.output_type[1]:  # calculate 6D pose
-                    this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=custom_6D_joint_names)
-                    output6D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep)
-                    output_6D_dataset = append_output_xD_dataset(output_6D_dataset, train_val_test, output6D)
-                if args.output_type[2]:  # todo: calculate SMPL pose
-                    pass
-                    # output_smpl_dataset =
-                if args.output_type[3]:  # GT 3DSSPP output
-                    batch_3DSSPP_batch_filename = c3d_file.replace('.c3d', '-3DSSPP.txt')
-                    this_skeleton.output_3DSSPP_loc(frame_range=[0,1500,10], loc_file=batch_3DSSPP_batch_filename)
-                # break  # self = this_skeleton
-                del this_skeleton
+                frame_range = [0, 3000]
+                angle_index = 6
+                this_angle_name = this_skeleton.angle_names[angle_index]
+                print(f'Visualizing {c3d_file} - {this_angle_name}')
+                ergo_angles[this_angle_name].plot_angles(joint_name=this_angle_name, frame_range=frame_range)
 
-                if args.split_output:
-                    if 'activity08' in root or 'Activity08' in file:  # save intermediate results
-                        print(f'Saving intermediate results for {c3d_file}')
-                        if args.output_type[0]:  # 3D pose
-                            with open(f'{output_3d_filename}_segment{count}.pkl', 'wb') as f:
-                                pickle.dump(output_3D_dataset, f)
-                            pkl_filenames['3D'].append(f'{output_3d_filename}_segment{count}.pkl')
-                        if args.output_type[1]:  # 6D pose
-                            with open(f'{output_6d_filename}_segment{count}.pkl', 'wb') as f:
-                                pickle.dump(output_6D_dataset, f)
-                            pkl_filenames['6D'].append(f'{output_6d_filename}_segment{count}.pkl')
-                        if args.output_type[2]:  # SMPL pose
-                            with open(f'{output_smpl_filename}_segment{count}.pkl', 'wb') as f:
-                                pickle.dump(output_smpl_dataset, f)
-                            pkl_filenames['SMPL'].append(f'{output_smpl_filename}_segment{count}.pkl')
-                        # empty the dataset, else it is too big for memory and make it slow
-                        output_3D_dataset = empty_MotionBert_dataset_dict(len(h36m_joint_names))  # 17
-                        output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names))  # 66
-                        # output_smpl_dataset =
+                raise NotImplementedError  # break for testing
+                # del this_skeleton
+                # del ergo_angles
 
-    # # export: h36M 17 joint center, 6D pose 49 keypoints, SMPL-related, GT-Vicon to 3DSSPP
-    if args.split_output:  #read and merge
-        raise NotImplementedError  # need to merge the multilayer dict in the pkl files
-    else:  # one output, for smaller dataset
-        print(f'Saving final results in {output_3d_filename}, {output_6d_filename}, {output_smpl_filename}')
-        if args.output_type[0]:  # 3D pose
-            with open(f'{output_3d_filename}', 'wb') as f:
-                pickle.dump(output_3D_dataset, f)
-        if args.output_type[1]:  # 6D pose
-            with open(f'{output_6d_filename}', 'wb') as f:
-                pickle.dump(output_6D_dataset, f)
-        if args.output_type[2]:  # SMPL pose
-            with open(output_smpl_filename, 'wb') as f:
-                pickle.dump(output_smpl_dataset, f)
 
-    # output statistics to json
-    with open(f'{output_3d_filename}_dataset_statistics_total_{total_frame_number}.json', 'w') as f:
-        json.dump(dataset_statistics, f)
+    # # # export: h36M 17 joint center, 6D pose 49 keypoints, SMPL-related, GT-Vicon to 3DSSPP
+    # if args.split_output:  #read and merge
+    #     raise NotImplementedError  # need to merge the multilayer dict in the pkl files
+    # else:  # one output, for smaller dataset
+    #     print(f'Saving final results in {output_3d_filename}, {output_6d_filename}, {output_smpl_filename}')
+    #     if args.output_type[0]:  # 3D pose
+    #         with open(f'{output_3d_filename}', 'wb') as f:
+    #             pickle.dump(output_3D_dataset, f)
+    #     if args.output_type[1]:  # 6D pose
+    #         with open(f'{output_6d_filename}', 'wb') as f:
+    #             pickle.dump(output_6D_dataset, f)
+    #     if args.output_type[2]:  # SMPL pose
+    #         with open(output_smpl_filename, 'wb') as f:
+    #             pickle.dump(output_smpl_dataset, f)
+    #
+    # # output statistics to json
+    # with open(f'{output_3d_filename}_dataset_statistics_total_{total_frame_number}.json', 'w') as f:
+    #     json.dump(dataset_statistics, f)
 
     # dt_file -- .pkl
     # trainset = self.dt_dataset['train']['joint_2d'][::self.sample_stride, :, :2].astype(np.float32)  # [N, 17, 2]

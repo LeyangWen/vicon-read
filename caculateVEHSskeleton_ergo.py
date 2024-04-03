@@ -1,3 +1,5 @@
+# Nexus_to_cdf_angles_plot.py
+
 from viconnexusapi import ViconNexus
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D

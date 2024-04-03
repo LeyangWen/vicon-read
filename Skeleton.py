@@ -9,7 +9,7 @@ import yaml
 from utility import *
 from spacepy import pycdf
 import cv2
-from Point import *
+from ergo3d import *
 from Camera import *
 
 # todo: self.frame_no vs self.frame_number be consistent
@@ -408,7 +408,6 @@ class VEHSErgoSkeleton(Skeleton):
         tl_br_joint = np.concatenate([tl_joint, br_joint], axis=0)
         tl_br = camera._weak_project(tl_br_joint).flatten()
         return tl_br
-
 
     def output_MotionBert_SMPL(self):
         '''
