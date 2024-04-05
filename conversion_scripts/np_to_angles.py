@@ -1,7 +1,7 @@
 import argparse
 import pickle
 from Skeleton import *
-from ergo3d import *
+
 
 
 def parse_args():
@@ -80,6 +80,8 @@ if __name__ == '__main__':
         estimate_ergo_angles[angle_name] = getattr(estimate_skeleton, class_method_name)()
 
     # Step 3: visualize
+    
+    # Hi Veeru, I used this to visualize the 3D pose frame by frame
     frame = 10210
     frame = 10180
     GT_skeleton.plot_3d_pose_frame(frame)

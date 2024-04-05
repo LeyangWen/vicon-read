@@ -3,15 +3,41 @@ from Skeleton import *
 import pickle
 # import smplx
 
-smpl_dir = r"/W/VEHS/VEHS-7M/SMPL/"
 
 # Step 1: read SMPL pkl inputs
-file = r"/home/leyang/Downloads/Activity03_stageii.pkl"
-file = r"/home/leyang/Downloads/mesh_det_h36m.pkl"
-# file = r"C:\Users\Public\Documents\Vicon\vicon_coding_projects\MotionBERT\data\motion3d\MB3D_VEHS_R3_small\3DPose\VEHS_3D_downsample_4.pkl_small.pkl"
-# file = r"C:\Users\Public\Documents\Vicon\vicon_coding_projects\MotionBERT\data\motion3d\h36m_sh_conf_cam_source_final.pkl\h36m_sh_conf_cam_source_final.pkl"
+file = r"W:/VEHS/VEHS-7M/SMPL/S01/Activity03_stageii.pkl"
 with open(file, "rb") as f:
     data = pickle.load(f)
+
+file = r"C:\Users\Public\Documents\Vicon\vicon_coding_projects\MotionBERT\data\mesh\mesh_det_h36m.pkl"
+with open(file, "rb") as f:
+    data_MB = pickle.load(f)
+
+data_MB['test'].keys()  # dict_keys(['joint_2d', 'confidence', 'joint_cam', 'smpl_pose', 'smpl_shape', 'camera_name', 'action', 'source'])
+data_MB['test']['joint_2d'].shape  # (102280, 17, 2)
+data_MB['test']['confidence'].shape  # (102280, 17, 1)
+data_MB['test']['joint_cam'].shape  # (102280, 17, 3)
+data_MB['test']['smpl_pose'].shape  # (102280, 72)
+data_MB['test']['smpl_shape'].shape  # (102280, 10)
+data_MB['test']['camera_name']  # [102280]
+data_MB['test']['action']  # [102280]
+data_MB['test']['source']  # [102280]
+
+data_MB['train'].keys()
+
+store_cam_name = ""
+for frame_id, camera_name in enumerate(data_MB['test']['camera_name']):
+    if camera_name != store_cam_name:
+        store_cam_name = camera_name
+        activity = data_MB['test']['action'][frame_id]
+        print(f"frame_id: {frame_id}, camera_name: {camera_name}, activity: {activity}")
+
+frame_ids = [97858, 98764, 99667]
+for frame_id in frame_ids:
+    # print(f"frame_id: {frame_id}, camera_name: {data_MB['test']['camera_name'][frame_id]}, activity: {data_MB['test']['action'][frame_id]} #, SMPL_pose: {data_MB['test']['smpl_pose'][frame_id][0:3]}")
+    print(f"joint_cam: {data_MB['test']['joint_cam'][frame_id]}")
+
+
 
 data.keys()
 pose = data['fullpose']

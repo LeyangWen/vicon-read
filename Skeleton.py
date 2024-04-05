@@ -10,7 +10,6 @@ from utility import *
 from spacepy import pycdf
 import cv2
 from ergo3d import *
-from Camera import *
 
 # todo: self.frame_no vs self.frame_number be consistent
 
