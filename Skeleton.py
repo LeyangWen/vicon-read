@@ -10,7 +10,7 @@ from utility import *
 from spacepy import pycdf
 import cv2
 from ergo3d import *
-
+from ergo3d.camera.FLIR_camera import batch_load_from_xcp
 # todo: self.frame_no vs self.frame_number be consistent
 
 class Skeleton:
@@ -153,7 +153,7 @@ class Skeleton:
             point_size = size[1]
         return point_type, point_size
 
-    def plot_3d_pose_frame(self, frame=0, filename=False, range=1000, coord_system="world"):
+    def plot_3d_pose_frame(self, frame=0, filename=False, plot_range=1800, coord_system="world"):
         """
         plot 3d pose in 3d space
         coord_system: camera-px or world
@@ -187,26 +187,36 @@ class Skeleton:
         # ax.legend(bbox_to_anchor=(0.95, 1), loc=2, borderaxespad=0.)
         # uniform scale based on pelvis location and 1800mm
 
+        # azimuth 135 elev 0 - side view
+        ax.view_init(elev=0, azim=135)
+
+        # camera view in px
+        # ax.view_init(elev=0, azim=270)
+
+        # camera side view in px
+        # ax.view_init(elev=0, azim=0)
+
         pelvis_loc = self.poses['PELVIS'][frame, :]
-        ax.set_xlim(pelvis_loc[pose_sequence[0]] - range / 2, pelvis_loc[pose_sequence[0]] + range / 2)
-        ax.set_ylim(pelvis_loc[pose_sequence[1]] - range / 2, pelvis_loc[pose_sequence[1]] + range / 2)
-        ax.set_zlim(pelvis_loc[pose_sequence[2]] - range / 2, pelvis_loc[pose_sequence[2]] + range / 2)
+        ax.set_xlim(pelvis_loc[pose_sequence[0]] - plot_range / 2, pelvis_loc[pose_sequence[0]] + plot_range / 2)
+        ax.set_ylim(pelvis_loc[pose_sequence[1]] - plot_range / 2, pelvis_loc[pose_sequence[1]] + plot_range / 2)
+        ax.set_zlim(pelvis_loc[pose_sequence[2]] - plot_range / 2, pelvis_loc[pose_sequence[2]] + plot_range / 2)
         if coord_system[:6] == "camera":  # invert y axis in camera coord
             ax.invert_zaxis()
         ax.set_xlabel(xyz_label[pose_sequence[0]])
         ax.set_ylabel(xyz_label[pose_sequence[1]])
         ax.set_zlabel(xyz_label[pose_sequence[2]])
         fig.tight_layout()
-        if True:  # legends
+        if True:  # no legend
             pass
-            # fig.subplots_adjust(right=0.65)
-            # ax.legend(loc='center left', bbox_to_anchor=(1.08, 0.5), fontsize=7, ncol=2)
+        elif False:  # normal legends
+            fig.subplots_adjust(right=0.65)
+            ax.legend(loc='center left', bbox_to_anchor=(1.08, 0.5), fontsize=7, ncol=2)
         else:  # use this to get a legend screenshot
             # also set range to big value
-            ax.legend(loc='upper center', fontsize=7, ncol=5)
+            ax.legend(loc='upper center', fontsize=5, ncol=6)
             plt.gca().set_axis_off()
-            plt.savefig(r'C:\Users\Public\Downloads\legend.png', dpi=250)
-            raise NameError  # break here
+            plt.savefig(r'C:\Users\wenleyan1\Downloads\legend.png', dpi=250)
+            raise NameError(r"Intentional break: legend.png saved to C:\Users\wenleyan1\Downloads")  # break here
         if filename:
             plt.savefig(filename, dpi=250)
             plt.close(fig)
@@ -247,13 +257,13 @@ class Skeleton:
                 plt.show()
                 return fig, ax
 
-    def plot_3d_pose(self, foldername=False):
+    def plot_3d_pose(self, foldername=False, coord_system="world", plot_range=1800):
         if foldername:
             create_dir(foldername)
         for i in range(self.frame_number):
             print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
-            self.plot_3d_pose_frame(frame=i, filename=filename)
+            self.plot_3d_pose_frame(frame=i, filename=filename, coord_system=coord_system, plot_range=plot_range)
             # break
 
     def plot_2d_pose(self, foldername=False):
@@ -275,8 +285,8 @@ class VEHSErgoSkeleton(Skeleton):
     def calculate_joint_center(self):
         self.point_poses['HEAD'] = Point.mid_point(self.point_poses['LEAR'], self.point_poses['REAR'])
 
-        ear_vector = Point.vector(self.point_poses['REAR'], self.point_poses['LEAR'])
-        self.point_poses['REAR'] = Point.translate_point(self.point_poses['REAR'], ear_vector, direction=9)
+        ear_vector = Point.vector(self.point_poses['REAR'], self.point_poses['LEAR'], normalize=1)
+        self.point_poses['REAR'] = Point.translate_point(self.point_poses['REAR'], ear_vector, direction=9)  # todo: need to define unit, this is in meters now
         self.point_poses['LEAR'] = Point.translate_point(self.point_poses['LEAR'], ear_vector, direction=-9)
 
         head_plane = Plane()
@@ -322,10 +332,12 @@ class VEHSErgoSkeleton(Skeleton):
         self.point_poses['LKNEE'] = Point.mid_point(self.point_poses['LLFC'], self.point_poses['LMFC'])
         self.point_poses['LANKLE'] = Point.mid_point(self.point_poses['LMM'], self.point_poses['LLM'])
         self.point_poses['LFOOT'] = Point.mid_point(self.point_poses['LMTP1'], self.point_poses['LMTP5'])
+        self.point_poses['HIP_c'] = Point.mid_point(self.point_poses['RHIP'], self.point_poses['LHIP'])
+        self.point_poses['SHOULDER_c'] = Point.mid_point(self.point_poses['RSHOULDER'], self.point_poses['LSHOULDER'])
 
         self.update_pose_from_point_pose()
 
-    def calculate_camera_projection(self, args, camera_xcp_file, kpts_of_interest_name='all'):
+    def calculate_camera_projection(self, args, camera_xcp_file, kpts_of_interest_name='all', rootIdx=0):
         # todo: currently real world only, pelvis center option
         if kpts_of_interest_name == 'all':  # get all points
             kpts_of_interest = self.point_poses.values()
@@ -364,7 +376,7 @@ class VEHSErgoSkeleton(Skeleton):
                 if args.distort:
                     points_2d = camera.distort(points_2d)
                 points_3d_camera = camera.project_w_depth(points_3d)  # (n_joints, 3)
-                points_depth_px, ratio = self.get_norm_depth_ratio(points_3d_camera, camera, rootIdx=0)
+                points_depth_px, ratio = self.get_norm_depth_ratio(points_3d_camera, camera, rootIdx=rootIdx)
                 bbox_top_left, bbox_bottom_right = points_2d.min(axis=0) - 20, points_2d.max(axis=0) + 20
 
                 points_2d_list.append(points_2d)

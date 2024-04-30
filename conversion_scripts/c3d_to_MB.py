@@ -9,25 +9,17 @@ import yaml
 import argparse
 
 
-def append_output_xD_dataset(output_xD_dataset, this_train_val_test, append_outputxD_dict):
-    for key in output_xD_dataset[this_train_val_test].keys():
-        if key == 'source' or key == 'c3d_frame':
-            output_xD_dataset[this_train_val_test][key] = output_xD_dataset[this_train_val_test][key] + append_outputxD_dict[key]
-        else:
-            output_xD_dataset[this_train_val_test][key] = np.append(output_xD_dataset[this_train_val_test][key], append_outputxD_dict[key], axis=0)
-    return output_xD_dataset
-
 
 if __name__ == '__main__':
     # read arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/VEHS-R3-721-MotionBert.yaml')
-    parser.add_argument('--skeleton_file', type=str, default=r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml')
+    parser.add_argument('--skeleton_file', type=str, default=r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton_rick_test_6.yaml')
     parser.add_argument('--downsample', type=int, default=5)
     parser.add_argument('--downsample_keep', type=int, default=1)
     parser.add_argument('--split_output', action='store_true')  # not implemented yet
-    parser.add_argument('--output_type', type=list, default=[False, False, False, True], help='3D, 6D, SMPL, 3DSSPP')
-
+    parser.add_argument('--output_type', type=list, default=[False, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
+    parser.add_argument('--output_file_name_end', type=str, default='_config6')
     parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
     args = parser.parse_args()
 
@@ -48,9 +40,9 @@ if __name__ == '__main__':
     skeleton_file = args.skeleton_file
     downsample = args.downsample
     downsample_keep = args.downsample_keep
-    output_3d_filename = os.path.join(base_folder, f'VEHS_3D_downsample{downsample}_keep{downsample_keep}.pkl')
-    output_6d_filename = os.path.join(base_folder, f'VEHS_6D_downsample{downsample}_keep{downsample_keep}.pkl')
-    output_smpl_filename = os.path.join(base_folder, f'VEHS_smpl_downsample{downsample}_keep{downsample_keep}.pkl')
+    output_3d_filename = os.path.join(base_folder, f'VEHS_3D_downsample{downsample}_keep{downsample_keep}{args.output_file_name_end}.pkl')
+    output_6d_filename = os.path.join(base_folder, f'VEHS_6D_downsample{downsample}_keep{downsample_keep}{args.output_file_name_end}.pkl')
+    output_smpl_filename = os.path.join(base_folder, f'VEHS_smpl_downsample{downsample}_keep{downsample_keep}{args.output_file_name_end}.pkl')
 
     # iterate through the folder to find all c3d
     # h36m_joint_names = ['Hip', 'RHip', 'RKnee', 'RFoot', 'LHip', 'LKnee', 'LFoot', 'Spine', 'Thorax', 'Neck/Nose', 'Head', 'LShoulder', 'LElbow', 'LWrist', 'RShoulder', 'RElbow', 'RWrist']  # h36m original names
@@ -62,9 +54,13 @@ if __name__ == '__main__':
                              'RMTP1', 'RMTP5', 'RHEEL', 'HEAD', 'RSHOULDER', 'LSHOULDER', 'THORAX', 'LELBOW', 'RELBOW', 'RWRIST', 'LWRIST', 'RHAND', 'LHAND', 'PELVIS', 'RHIP', 'RKNEE',
                              'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']
 
-    rtm_pose_keypoints_vicon_dataset = ['NOSE', 'LEAR', 'REAR', 'LSHOULDER', 'RSHOULDER', 'LELBOW', 'RELBOW', 'LWRIST', 'RWRIST', 'LHIP', 'RHIP',
-                                        'LKNEE', 'RKNEE', 'LANKLE', 'RANKLE', 'LMCP2', 'LHAND', 'LMCP5', 'RMCP2', 'RHAND', 'RMCP5', 'PELVIS', 'THORAX', 'HEAD'] # RTMPose output (selected)
-    custom_6D_joint_names = rtm_pose_keypoints_vicon_dataset
+    rtm_pose_keypoints_vicon_dataset_config6 = ['NOSE', 'LEAR', 'REAR', 'LSHOULDER', 'RSHOULDER', 'LELBOW', 'RELBOW', 'LWRIST', 'RWRIST', 'LHIP', 'RHIP',
+                                        'LKNEE', 'RKNEE', 'LANKLE', 'RANKLE', 'LMCP2', 'LHAND', 'LMCP5', 'RMCP2', 'RHAND', 'RMCP5', 'HIP_c', 'SHOULDER_c', 'HEAD'] # RTMPose output (selected)
+    rtm_pose_keypoints_vicon_dataset_config5 = ['NOSE', 'LEAR', 'REAR', 'LSHOULDER', 'RSHOULDER', 'LELBOW', 'RELBOW', 'LWRIST', 'RWRIST', 'LHIP', 'RHIP',
+                                        'LKNEE', 'RKNEE', 'LANKLE', 'RANKLE', 'LMCP2', 'LHAND', 'LMCP5', 'RMCP2', 'RHAND', 'RMCP5', 'HIP_c', 'THORAX', 'HEAD']  # RTMPose output (selected)
+    rtm_pose_keypoints_vicon_dataset_config2 = ['NOSE', 'LEAR', 'REAR', 'LSHOULDER', 'RSHOULDER', 'LELBOW', 'RELBOW', 'LWRIST', 'RWRIST', 'LHIP', 'RHIP',
+                                                'LKNEE', 'RKNEE', 'LANKLE', 'RANKLE', 'LMCP2', 'LHAND', 'LMCP5', 'RMCP2', 'RHAND', 'RMCP5', 'PELVIS_b', 'SHOULDER_c', 'HEAD']
+    custom_6D_joint_names = rtm_pose_keypoints_vicon_dataset_config6
 
     output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names))  # 66
     # todo: drop c7_m, add MDFH!!!
@@ -74,6 +70,8 @@ if __name__ == '__main__':
     dataset_statistics = {}
     total_frame_number = 0
     for root, dirs, files in os.walk(base_folder):
+        dirs.sort()  # Sort directories in-place
+        files.sort(key=str.lower)  # Sort files in-place
         for file in files:
             if file.endswith('.c3d') and root[-6:] != 'backup' and (not file.startswith('ROM')) and (not file.endswith('_bad.c3d')):
                 # val_keyword is a list of string, if any of them is in the root, then it is val set
@@ -83,6 +81,8 @@ if __name__ == '__main__':
                     train_val_test = 'test'
                 else:
                     train_val_test = 'train'
+
+                print(f"file: {file}, root: {root}, train_val_test: {train_val_test}")
 
                 c3d_file = os.path.join(root, file)
                 count += 1
@@ -103,12 +103,14 @@ if __name__ == '__main__':
                 this_skeleton.calculate_joint_center()
                 camera_xcp_file = c3d_file.replace('.c3d', '.xcp')
 
+                # this_skeleton.plot_3d_pose_frame(frame=0, coord_system="world")
+
                 if args.output_type[0]:  # calculate 3D pose first
-                    this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=h36m_joint_names)
+                    this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=h36m_joint_names, rootIdx=0)
                     output3D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep)
                     output_3D_dataset = append_output_xD_dataset(output_3D_dataset, train_val_test, output3D)
                 if args.output_type[1]:  # calculate 6D pose
-                    this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=custom_6D_joint_names)
+                    this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=custom_6D_joint_names, rootIdx=21)  # Pelvis index
                     output6D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep)
                     output_6D_dataset = append_output_xD_dataset(output_6D_dataset, train_val_test, output6D)
                 if args.output_type[2]:

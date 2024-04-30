@@ -135,3 +135,13 @@ def empty_MotionBert_dataset_dict(joint_number):
             'c3d_frame': []
         }
     }
+
+
+def append_output_xD_dataset(output_xD_dataset, this_train_val_test, append_outputxD_dict):
+    for key in output_xD_dataset[this_train_val_test].keys():
+        if key == 'source' or key == 'c3d_frame':
+            output_xD_dataset[this_train_val_test][key] = output_xD_dataset[this_train_val_test][key] + append_outputxD_dict[key]
+        else:
+            output_xD_dataset[this_train_val_test][key] = np.append(output_xD_dataset[this_train_val_test][key], append_outputxD_dict[key], axis=0)
+    return output_xD_dataset
+

@@ -41,6 +41,7 @@ for frame_id in frame_ids:
 
 data.keys()
 pose = data['fullpose']
+trans = data['trans']
 #pose is the SMPL fullpose in axis angle representation
 global_orient = pose[:, :3]
 body_pose = pose[:, 3:66]

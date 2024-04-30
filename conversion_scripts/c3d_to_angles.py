@@ -132,14 +132,23 @@ if __name__ == '__main__':
     # file_name = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_3D_downsample2_keep1.pkl'
     # with open(file_name, 'rb') as f:
     #     data = pickle.load(f)
-    # data['train']['confidence']
+    # confidence = data['train']['confidence']
+    # id = np.argmin(confidence)
+    # print(confidence.flatten()[id])
+    #
+    # joint_2d = data['train']['joint_2d']
+    # joint_2d_x = joint_2d[:, :, 0]
+    # joint_2d_y = joint_2d[:, :, 1]
+    # print(joint_2d_x.flatten()[id])
+    # print(joint_2d_y.flatten()[id])
+    #
     # data['test']['joints_2.5d_image'][0]/data['test']['joint3d_image'][0] == 2.5factor
     # data['test']['joints_2.5d_image'][0]
     # data['test']['joint3d_image'][-1]
     # data['test']['2.5d_factor'][0]
-        # >>> data.keys()
-        # dict_keys(['train', 'test'])
-        # >>> data['train'].keys()
-        # dict_keys(['joint_2d', 'confidence', 'joint3d_image', 'camera_name', 'source'])
-        # >>> data['test'].keys()
-        # dict_keys(['joint_2d', 'confidence', 'joint3d_image', 'joints_2.5d_image', '2.5d_factor', 'camera_name', 'action', 'source'])
+    #     >>> data.keys()
+    #     dict_keys(['train', 'test'])
+    #     >>> data['train'].keys()
+    #     dict_keys(['joint_2d', 'confidence', 'joint3d_image', 'camera_name', 'source'])
+    #     >>> data['test'].keys()
+    #     dict_keys(['joint_2d', 'confidence', 'joint3d_image', 'joints_2.5d_image', '2.5d_factor', 'camera_name', 'action', 'source'])

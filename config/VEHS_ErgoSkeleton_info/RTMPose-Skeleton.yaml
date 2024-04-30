@@ -1,0 +1,15 @@
+joints:
+  mid: ['head', 'thorax', 'PELVIS', 'nose', 'right_ear', 'left_ear']
+  topR: ['right_shoulder', 'right_elbow', 'right_wrist', 'right_middle_mcp', 'right_pinky', 'right_index']
+  topL: ['left_shoulder', 'left_elbow', 'left_wrist', 'left_middle_mcp', 'left_pinky', 'left_index']
+  botR: ['right_hip', 'right_knee', 'right_ankle']
+  botL: ['left_hip', 'left_knee', 'left_ankle']
+
+parent:
+  mid: ['thorax', 'PELVIS', None, 'head', 'head', 'head']
+  topR: ['thorax', 'right_shoulder', 'right_elbow', 'right_wrist', 'right_middle_mcp', 'right_middle_mcp']
+  topL: ['thorax', 'left_shoulder', 'left_elbow', 'left_wrist', 'left_middle_mcp', 'left_middle_mcp']
+  botR: ['PELVIS', 'right_hip', 'right_knee']
+  botL: ['PELVIS', 'left_hip', 'left_knee']
+
+

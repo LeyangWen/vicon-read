@@ -9,7 +9,7 @@ def parse_args():
     parser.add_argument('--config_file', type=str, default=r'config\experiment_config\VEHS-6D-MB.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton-66.yaml')
     parser.add_argument('--MB_data_stride', type=int, default=243)
-    parser.add_argument('--debug_mode', action='store_true')
+    parser.add_argument('--debug_mode', action='store_false')
 
     # parser.add_argument('--name_list', type=list, default=[])
     args = parser.parse_args()
@@ -92,39 +92,40 @@ if __name__ == '__main__':
     target_angles = GT_skeleton.angle_names
     # target_angles = ['right_shoulder']
     for angle_index, this_angle_name in enumerate(target_angles):
+        pass
         # plot angles
         # GT_fig, GT_ax = GT_ergo_angles[this_angle_name].plot_angles(joint_name=f"GT-{this_angle_name}", frame_range=frame_range, alpha=0.75, colors=['g', 'g', 'g'])
         # estimate_fig, _ = estimate_ergo_angles[this_angle_name].plot_angles(joint_name=f"Est-{this_angle_name}", frame_range=frame_range, alpha=0.75, colors=['r', 'r', 'r'], overlay=[GT_fig, GT_ax])
         # plt.show()
         # GT_fig.savefig(f'frames/MB_angles/GT-{this_angle_name}.png')
         # estimate_fig.savefig(f'frames/MB_angles/Est-{this_angle_name}.png')
-
-        ergo_angle_name = ['flexion', 'abduction', 'rotation']
-        print_ergo_names = getattr(estimate_ergo_angles[this_angle_name], 'ergo_name')
-        print_angle_name = this_angle_name.replace('_', '').replace('right', 'R-').replace('left', 'L-').capitalize()
-        for this_ergo_angle in ergo_angle_name:
-            ja1 = getattr(estimate_ergo_angles[this_angle_name], this_ergo_angle)
-            ja2 = getattr(GT_ergo_angles[this_angle_name], this_ergo_angle)
-            print_ergo_name = print_ergo_names[this_ergo_angle].capitalize()
-            if ja1 is not None:
-                print("=====================================")
-                print(f'{this_angle_name} - {this_ergo_angle}')
-                # bland-Altman plot
-                md, sd = bland_altman_plot(ja1, ja2, title=f'{print_angle_name}: {print_ergo_name}', save_path=f'frames/MB_angles/BA_plots/{angle_index}-{this_angle_name}-{this_ergo_angle}.png')
-                print(f'Bland Altman: md: {md:.2f}, sd: {sd:.2f}')
-
-                RMSE = root_mean_squared_error(ja1, ja2)
-                MAE = mean_absolute_error(ja1, ja2)
-                print(f'MAE: {MAE:.2f}, RMSE: {RMSE:.2f}')
-                this_log = [this_angle_name, this_ergo_angle, md, sd, MAE, RMSE]
-                log.append(this_log)
-    print(f"Store location: {'frames/MB_angles/BA_plots/'}")
-    # print log as csv in console
-    print("angle_name,ergo_angle,diff_md,dif_sd,MAE,RMSE")
-    for i in log:
-        for j in i:
-            print(j, end=",")
-        print()
+    #
+    #     ergo_angle_name = ['flexion', 'abduction', 'rotation']
+    #     print_ergo_names = getattr(estimate_ergo_angles[this_angle_name], 'ergo_name')
+    #     print_angle_name = this_angle_name.replace('_', '').replace('right', 'R-').replace('left', 'L-').capitalize()
+    #     for this_ergo_angle in ergo_angle_name:
+    #         ja1 = getattr(estimate_ergo_angles[this_angle_name], this_ergo_angle)
+    #         ja2 = getattr(GT_ergo_angles[this_angle_name], this_ergo_angle)
+    #         print_ergo_name = print_ergo_names[this_ergo_angle].capitalize()
+    #         if ja1 is not None:
+    #             print("=====================================")
+    #             print(f'{this_angle_name} - {this_ergo_angle}')
+    #             # bland-Altman plot
+    #             md, sd = bland_altman_plot(ja1, ja2, title=f'{print_angle_name}: {print_ergo_name}', save_path=f'frames/MB_angles/BA_plots/{angle_index}-{this_angle_name}-{this_ergo_angle}.png')
+    #             print(f'Bland Altman: md: {md:.2f}, sd: {sd:.2f}')
+    #
+    #             RMSE = root_mean_squared_error(ja1, ja2)
+    #             MAE = mean_absolute_error(ja1, ja2)
+    #             print(f'MAE: {MAE:.2f}, RMSE: {RMSE:.2f}')
+    #             this_log = [this_angle_name, this_ergo_angle, md, sd, MAE, RMSE]
+    #             log.append(this_log)
+    # print(f"Store location: {'frames/MB_angles/BA_plots/'}")
+    # # print log as csv in console
+    # print("angle_name,ergo_angle,diff_md,dif_sd,MAE,RMSE")
+    # for i in log:
+    #     for j in i:
+    #         print(j, end=",")
+    #     print()
 
 
     # generate merged bland-altman plot for left and right

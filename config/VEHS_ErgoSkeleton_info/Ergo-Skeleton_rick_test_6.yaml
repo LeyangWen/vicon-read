@@ -1,0 +1,13 @@
+joints:
+  mid: ['HDTP', 'REAR', 'LEAR', 'HEAD', 'SHOULDER_c', 'HIP_c']
+  topR: ['RSHOULDER', 'RLE', 'RME', 'RELBOW', 'RWRIST', 'RMCP2', 'RMCP5', 'RHAND']
+  topL: ['LSHOULDER', 'LLE', 'LME', 'LELBOW', 'LWRIST', 'LMCP2', 'LMCP5', 'LHAND']
+  botR: ['RHIP', 'RKNEE', 'RANKLE', 'RFOOT']
+  botL: ['LHIP', 'LKNEE', 'LANKLE', 'LFOOT']
+
+parent:
+  mid: ['HEAD', 'HEAD', 'HEAD', 'SHOULDER_c', 'HIP_c', None]
+  topR: ['SHOULDER_c', 'RELBOW', 'RELBOW', 'RSHOULDER', 'RELBOW', 'RHAND', 'RHAND', 'RWRIST']
+  topL: ['SHOULDER_c', 'LELBOW', 'LELBOW', 'LSHOULDER', 'LELBOW', 'LHAND', 'LHAND', 'LWRIST']
+  botR: ['HIP_c', 'RHIP', 'RKNEE', 'RANKLE']
+  botL: ['HIP_c', 'LHIP', 'LKNEE', 'LANKLE']
