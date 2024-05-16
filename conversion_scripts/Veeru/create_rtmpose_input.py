@@ -18,8 +18,8 @@ def read_input(json_path):
     all_keyps_rtm = rtm_pose_read_kps.filter_subject_using_center_of_joints_with_disqualify(all_keyps_bef,window=4) # Filter subject using the center of the joints
     angle_joint_order = [ref.rtm_pose_keypoints.index(joint) for joint in ref.rtm_pose_keypoints_vicon_dataset] # Get the order of the joints in the Vicon dataset
     all_keyps_rtm = all_keyps_rtm[:,angle_joint_order]
-    all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('left_middle_mcp')] = (all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('left_pinky')]+all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('left_index')])/2
-    all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('right_middle_mcp')] = (all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('right_pinky')]+all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('right_index')])/2
+    all_keyps_rtm[:, ref.rtm_pose_keypoints_vicon_dataset.index('left_middle_mcp')] = (all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('left_pinky')]+all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('left_index')])/2
+    all_keyps_rtm[:, ref.rtm_pose_keypoints_vicon_dataset.index('right_middle_mcp')] = (all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('right_pinky')]+all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('right_index')])/2
     print('RTMPOse keypoints shape:',all_keyps_rtm.shape)
     return all_keyps_rtm
 

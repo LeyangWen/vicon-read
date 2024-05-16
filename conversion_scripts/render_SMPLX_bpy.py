@@ -13,7 +13,7 @@ import time
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_file', type=str, default=r"W:/VEHS/VEHS-7M/SMPL/S01/Activity00_stageii.pkl")
+    parser.add_argument('--input_file', type=str, default=r"W:/VEHS/VEHS-7M/Mesh/S01/Activity00_stageii.pkl")
     parser.add_argument('--camera_xcp', type=str, default=r"W:\VEHS\VEHS data collection round 3\processed\S01\FullCollection\Activity00.xcp")
     parser.add_argument('--output_file', type=str, default=r"C:\Users\wenleyan1\Downloads\SMPL_bpy.pkl")
     parser.add_argument('--file_type', type=str, default='mosh_pkl')
@@ -34,19 +34,6 @@ def get_expression(args):
         "angry": [0, 0, -2.074, 1.185, 1.63, -1.78, 1.63, .444, .89, .74, -4, 1.63, -1.93, -2.37, -4],
     }
     return presets[args.expression]
-
-def batch_load_from_xcp(xcp_filename):
-    # Read the xcp file as xml
-    with open(xcp_filename, 'r') as f:
-        xml_string = f.read()
-    root = ET.fromstring(xml_string)
-    cameras = []
-    for child in root:
-        if child.attrib['DISPLAY_TYPE'] == 'VideoInputDevice:Blackfly S BFS-U3-23S3C':
-            camera = eg.FLIR_Camera()
-            camera.load_vicon_xcp(child)
-            cameras.append(camera)
-    return cameras
 
 def blender_axis_angle(axis_angle):
     return np.array([axis_angle[0], axis_angle[2], -axis_angle[1]])
@@ -72,7 +59,7 @@ if __name__ == '__main__':
                                 '66920731': "1: -x, 0y, +++z, right side view",
                                 '66920734': "2: 0x, -y, 0z, frontal view",
                                 '66920758': "3: -x, -y, ++z, front angle view"}
-        cameras = batch_load_from_xcp(args.camera_xcp)
+        cameras = eg.batch_load_from_xcp(args.camera_xcp)
 
         camera = cameras[args.camera_id]
         print(f"Camera id: {camera.DEVICEID}, Camera position: {vicon_camera_pos_map[camera.DEVICEID]}")

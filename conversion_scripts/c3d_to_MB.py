@@ -13,13 +13,13 @@ import argparse
 if __name__ == '__main__':
     # read arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/VEHS-R3-721-MotionBert.yaml')
-    parser.add_argument('--skeleton_file', type=str, default=r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton_rick_test_6.yaml')
+    parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/VEHS-R3-622-MotionBert.yaml')
+    parser.add_argument('--skeleton_file', type=str, default=r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton-66.yaml')
     parser.add_argument('--downsample', type=int, default=5)
     parser.add_argument('--downsample_keep', type=int, default=1)
     parser.add_argument('--split_output', action='store_true')  # not implemented yet
-    parser.add_argument('--output_type', type=list, default=[False, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
-    parser.add_argument('--output_file_name_end', type=str, default='_config6')
+    parser.add_argument('--output_type', type=list, default=[True, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
+    parser.add_argument('--output_file_name_end', type=str, default='_66')
     parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
     args = parser.parse_args()
 
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     paper_custom_6D_joint_names = ['RPSIS', 'RASIS', 'LPSIS', 'LASIS', 'C7_d', 'SS', 'T8', 'XP', 'C7', 'HDTP', 'MDFH', 'REAR', 'LEAR', 'RAP', 'RAP_f', 'RLE', 'RAP_b', 'RME', 'LAP', 'LAP_f', 'LLE', 'LAP_b', 'LME',
                              'LUS', 'LRS', 'RUS', 'RRS', 'RMCP5', 'RMCP2', 'LMCP5', 'LMCP2', 'LGT', 'LMFC', 'LLFC', 'RGT', 'RMFC', 'RLFC', 'RMM', 'RLM', 'LMM', 'LLM', 'LMTP1', 'LMTP5', 'LHEEL',
                              'RMTP1', 'RMTP5', 'RHEEL', 'HEAD', 'RSHOULDER', 'LSHOULDER', 'THORAX', 'LELBOW', 'RELBOW', 'RWRIST', 'LWRIST', 'RHAND', 'LHAND', 'PELVIS', 'RHIP', 'RKNEE',
-                             'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']
+                             'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']  # 66: drop c7_m, add MDFH
 
     rtm_pose_keypoints_vicon_dataset_config6 = ['NOSE', 'LEAR', 'REAR', 'LSHOULDER', 'RSHOULDER', 'LELBOW', 'RELBOW', 'LWRIST', 'RWRIST', 'LHIP', 'RHIP',
                                         'LKNEE', 'RKNEE', 'LANKLE', 'RANKLE', 'LMCP2', 'LHAND', 'LMCP5', 'RMCP2', 'RHAND', 'RMCP5', 'HIP_c', 'SHOULDER_c', 'HEAD'] # RTMPose output (selected)
@@ -60,17 +60,18 @@ if __name__ == '__main__':
                                         'LKNEE', 'RKNEE', 'LANKLE', 'RANKLE', 'LMCP2', 'LHAND', 'LMCP5', 'RMCP2', 'RHAND', 'RMCP5', 'HIP_c', 'THORAX', 'HEAD']  # RTMPose output (selected)
     rtm_pose_keypoints_vicon_dataset_config2 = ['NOSE', 'LEAR', 'REAR', 'LSHOULDER', 'RSHOULDER', 'LELBOW', 'RELBOW', 'LWRIST', 'RWRIST', 'LHIP', 'RHIP',
                                                 'LKNEE', 'RKNEE', 'LANKLE', 'RANKLE', 'LMCP2', 'LHAND', 'LMCP5', 'RMCP2', 'RHAND', 'RMCP5', 'PELVIS_b', 'SHOULDER_c', 'HEAD']
-    custom_6D_joint_names = rtm_pose_keypoints_vicon_dataset_config6
+
+    ####### change output keypoints here
+    custom_6D_joint_names = paper_custom_6D_joint_names
 
     output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names))  # 66
-    # todo: drop c7_m, add MDFH!!!
     output_smpl_dataset = {}
     count = 0
     pkl_filenames = {'3D': [], '6D': [], 'SMPL': []}  # if split_output, save intermediate results
     dataset_statistics = {}
     total_frame_number = 0
     for root, dirs, files in os.walk(base_folder):
-        dirs.sort()  # Sort directories in-place
+        dirs.sort()  # Sort directories in-place --> important, will change walk sequence
         files.sort(key=str.lower)  # Sort files in-place
         for file in files:
             if file.endswith('.c3d') and root[-6:] != 'backup' and (not file.startswith('ROM')) and (not file.endswith('_bad.c3d')):

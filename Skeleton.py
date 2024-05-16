@@ -187,14 +187,21 @@ class Skeleton:
         # ax.legend(bbox_to_anchor=(0.95, 1), loc=2, borderaxespad=0.)
         # uniform scale based on pelvis location and 1800mm
 
-        # azimuth 135 elev 0 - side view
-        ax.view_init(elev=0, azim=135)
-
-        # camera view in px
-        # ax.view_init(elev=0, azim=270)
-
-        # camera side view in px
-        # ax.view_init(elev=0, azim=0)
+        # mode = 'frames_camera_view'
+        # mode = 'frames_camera_side_view'
+        mode = 'frames_0_135_view'
+        # mode = 'frames_normal_view'
+        if mode == 'frames_camera_view':
+            # camera view in px
+            ax.view_init(elev=0, azim=270)
+        elif mode == 'frames_camera_side_view':
+            # camera side view in px
+            ax.view_init(elev=0, azim=0)
+        elif mode == 'frames_0_135_view':
+            # azimuth 135 elev 0 - side view
+            ax.view_init(elev=0, azim=135)
+        elif mode == 'frames_normal_view':
+            pass
 
         pelvis_loc = self.poses['PELVIS'][frame, :]
         ax.set_xlim(pelvis_loc[pose_sequence[0]] - plot_range / 2, pelvis_loc[pose_sequence[0]] + plot_range / 2)
@@ -338,7 +345,6 @@ class VEHSErgoSkeleton(Skeleton):
         self.update_pose_from_point_pose()
 
     def calculate_camera_projection(self, args, camera_xcp_file, kpts_of_interest_name='all', rootIdx=0):
-        # todo: currently real world only, pelvis center option
         if kpts_of_interest_name == 'all':  # get all points
             kpts_of_interest = self.point_poses.values()
         else:
