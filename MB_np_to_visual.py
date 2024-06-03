@@ -5,9 +5,9 @@ from Skeleton import *
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, default=r'config\experiment_config\Inference-RTMPose-MB.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config\experiment_config\Inference-Veeru-RTMPose-MB.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config\VEHS_ErgoSkeleton_info\RTMPose-Skeleton.yaml')
-    parser.add_argument('--output_frame_folder', type=str, default=r"W:\VEHS\Testing_Videos_and_rtmpose_results\Testing_Videos_and_rtmpose_results\kps_133_fps_20\congif6\frames_0_135_view")
+    parser.add_argument('--output_frame_folder', type=str, default=r"W:\VEHS\Testing_Videos_and_rtmpose_results\Testing_Videos_and_rtmpose_results\kps_133_fps_20\Veeru-05-17-24\camera_view_8")
     # r'W:\VEHS\VEHS data collection round 3\processed\S01\FullCollection\render\RTM_MB_est_24')
     parser.add_argument('--MB_data_stride', type=int, default=243)
     parser.add_argument('--debug_mode', action='store_false')
@@ -73,7 +73,7 @@ if __name__ == '__main__':
 
     estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
     estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
-    estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1750)
+    estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1200)
     # estimate_skeleton.plot_3d_pose_frame(frame=0, coord_system="camera-px")
 
     # GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)

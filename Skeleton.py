@@ -187,9 +187,9 @@ class Skeleton:
         # ax.legend(bbox_to_anchor=(0.95, 1), loc=2, borderaxespad=0.)
         # uniform scale based on pelvis location and 1800mm
 
-        # mode = 'frames_camera_view'
+        mode = 'frames_camera_view'
         # mode = 'frames_camera_side_view'
-        mode = 'frames_0_135_view'
+        # mode = 'frames_0_135_view'
         # mode = 'frames_normal_view'
         if mode == 'frames_camera_view':
             # camera view in px
