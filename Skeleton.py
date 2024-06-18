@@ -129,21 +129,18 @@ class Skeleton:
         except IndexError:
             return None
 
-    def get_plot_property(self, joint_name):
+    def get_plot_property(self, joint_name, size=[4,8]):
         '''
         return point_type and point_size for plot
         '''
-        size_2d = [3, 6]
-        size_3d = [8, 20]
-        size = size_2d
         if joint_name in self.joint_name_mid:
             point_type = 's'
             point_size = size[0]
         elif joint_name in self.joint_name_botL or joint_name in self.joint_name_topL:
-            point_type = '>'
+            point_type = '<'
             point_size = size[0]
         elif joint_name in self.joint_name_botR or joint_name in self.joint_name_topR:
-            point_type = '<'
+            point_type = '>'
             point_size = size[0]
         else:
             point_type = 'o'
@@ -153,10 +150,11 @@ class Skeleton:
             point_size = size[1]
         return point_type, point_size
 
-    def plot_3d_pose_frame(self, frame=0, filename=False, plot_range=1800, coord_system="world"):
+    def plot_3d_pose_frame(self, frame=0, filename=False, plot_range=1800, coord_system="world", center_key='PELVIS', mode='normal_view'):
         """
         plot 3d pose in 3d space
         coord_system: camera-px or world
+        mode: camera_view, camera_side_view, 0_135_view, normal_view
         """
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
@@ -173,37 +171,39 @@ class Skeleton:
             raise ValueError(f"coord_system {coord_system} not recognized, set to camera or world")
 
         for joint_name in self.key_joint_name:
-            point_type, point_size = self.get_plot_property(joint_name)
-            ax.scatter(self.poses[joint_name][frame, pose_sequence[0]],
-                       self.poses[joint_name][frame, pose_sequence[1]],
-                       self.poses[joint_name][frame, pose_sequence[2]], label=joint_name, marker=point_type, s=point_size)
-        # connect points to parent
-        for joint_name in self.key_joint_name:
-            parent_name = self.get_parent(joint_name)
-            if parent_name is not None and parent_name != 'None':
-                ax.plot([self.poses[joint_name][frame, pose_sequence[0]], self.poses[parent_name][frame, pose_sequence[0]]],
-                        [self.poses[joint_name][frame, pose_sequence[1]], self.poses[parent_name][frame, pose_sequence[1]]],
-                        [self.poses[joint_name][frame, pose_sequence[2]], self.poses[parent_name][frame, pose_sequence[2]]], 'k-')
+            if joint_name in self.poses:
+                point_type, point_size = self.get_plot_property(joint_name, size=[30, 40])
+                ax.scatter(self.poses[joint_name][frame, pose_sequence[0]],
+                           self.poses[joint_name][frame, pose_sequence[1]],
+                           self.poses[joint_name][frame, pose_sequence[2]], label=joint_name, marker=point_type, s=point_size)
+                # connect points to parent
+                parent_name = self.get_parent(joint_name)
+                if parent_name is not None and parent_name != 'None' and parent_name in self.poses:
+                    ax.plot([self.poses[joint_name][frame, pose_sequence[0]], self.poses[parent_name][frame, pose_sequence[0]]],
+                            [self.poses[joint_name][frame, pose_sequence[1]], self.poses[parent_name][frame, pose_sequence[1]]],
+                            [self.poses[joint_name][frame, pose_sequence[2]], self.poses[parent_name][frame, pose_sequence[2]]], 'k-')
         # ax.legend(bbox_to_anchor=(0.95, 1), loc=2, borderaxespad=0.)
         # uniform scale based on pelvis location and 1800mm
 
-        mode = 'frames_camera_view'
-        # mode = 'frames_camera_side_view'
-        # mode = 'frames_0_135_view'
-        # mode = 'frames_normal_view'
-        if mode == 'frames_camera_view':
+        # mode = 'camera_view'
+        # mode = 'camera_side_view'
+        # mode = '0_135_view'
+        # mode = 'normal_view'
+        if mode == 'camera_view':
             # camera view in px
             ax.view_init(elev=0, azim=270)
-        elif mode == 'frames_camera_side_view':
+        elif mode == 'camera_side_view':
             # camera side view in px
             ax.view_init(elev=0, azim=0)
-        elif mode == 'frames_0_135_view':
+        elif mode == '0_135_view':
             # azimuth 135 elev 0 - side view
             ax.view_init(elev=0, azim=135)
-        elif mode == 'frames_normal_view':
+        elif mode == 'normal_view':
             pass
+        else:
+            raise ValueError(f"mode {mode} not recognized, set to camera_view, camera_side_view, 0_135_view, normal_view")
 
-        pelvis_loc = self.poses['PELVIS'][frame, :]
+        pelvis_loc = self.poses[center_key][frame, :]
         ax.set_xlim(pelvis_loc[pose_sequence[0]] - plot_range / 2, pelvis_loc[pose_sequence[0]] + plot_range / 2)
         ax.set_ylim(pelvis_loc[pose_sequence[1]] - plot_range / 2, pelvis_loc[pose_sequence[1]] + plot_range / 2)
         ax.set_zlim(pelvis_loc[pose_sequence[2]] - plot_range / 2, pelvis_loc[pose_sequence[2]] + plot_range / 2)
@@ -232,55 +232,63 @@ class Skeleton:
             plt.show()
             return fig, ax
 
-    def plot_2d_pose_frame(self, frame=0, baseimage=False, filename=False):
+    def plot_2d_pose_frame(self, frame=0, baseimage=False, filename=False, resolution=(1920, 1200), dpi=100):
+        # return a transparent image
+        img_width, img_height = resolution
+        inches_width, inches_height = img_width / dpi, img_height / dpi
+        fig = plt.figure(figsize=(inches_width, inches_height), dpi=dpi)  # not quite working
+        ax = fig.add_subplot(111)
         if baseimage:
-            raise NotImplementedError
-        else:  # return a transparent image
-            img_width = 1920
-            img_height = 1200
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-            for joint_name in self.key_joint_name:
+            import matplotlib.image as mpimg
+            img = mpimg.imread(baseimage)
+            plt.imshow(img)
+            # raise NotImplementedError
+        for joint_name in self.key_joint_name:
+            if joint_name in self.poses:
                 point_type, point_size = self.get_plot_property(joint_name)
                 ax.scatter(self.poses[joint_name][frame, 0],
                            self.poses[joint_name][frame, 1], label=joint_name, marker=point_type, s=point_size, zorder=2)
-            # connect points to parent
-            for joint_name in self.key_joint_name:
+        # connect points to parent
                 parent_name = self.get_parent(joint_name)
-                if parent_name is not None and parent_name != 'None':
+                if parent_name in self.poses and parent_name is not None and parent_name != 'None':
                     ax.plot([self.poses[joint_name][frame, 0], self.poses[parent_name][frame, 0]],
-                            [self.poses[joint_name][frame, 1], self.poses[parent_name][frame, 1]], 'k-', zorder=1)
-            ax.set_xlim(0, img_width)
-            ax.set_ylim(0, img_height)
-            ax.set_aspect('equal', adjustable='box')
-            ax.invert_yaxis()  # flip y axis
-            fig.tight_layout()
-            ax.set_axis_off()
-            if filename:
-                plt.savefig(filename, dpi=300, transparent=True, bbox_inches='tight')
-                plt.close(fig)
-                return None
-            else:
-                plt.show()
-                return fig, ax
+                            [self.poses[joint_name][frame, 1], self.poses[parent_name][frame, 1]], 'gray', zorder=1, linewidth=2)
+        # ax.set_xlim(0, img_width)
+        # ax.set_ylim(0, img_height)
+        # plot edge lines
+        ax.plot([0, img_width], [0, 0], 'gray', zorder=0)
+        ax.plot([0, 0], [0, img_height], 'gray', zorder=0)
+        ax.plot([img_width, img_width], [0, img_height], 'gray', zorder=0)
+        ax.plot([0, img_width], [img_height, img_height], 'gray', zorder=0)
 
-    def plot_3d_pose(self, foldername=False, coord_system="world", plot_range=1800):
+        ax.set_aspect('equal', adjustable='box')
+        ax.invert_yaxis()  # flip y axis
+        fig.tight_layout()
+        # ax.axis('off')  # Hide axis
+        if filename:
+            plt.savefig(filename, transparent=True, bbox_inches='tight')
+            plt.close(fig)
+            return None
+        else:
+            plt.show()
+            return fig, ax
+
+    def plot_3d_pose(self, foldername=False, **kwargs):
         if foldername:
             create_dir(foldername)
         for i in range(self.frame_number):
             print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
-            self.plot_3d_pose_frame(frame=i, filename=filename, coord_system=coord_system, plot_range=plot_range)
+            self.plot_3d_pose_frame(frame=i, filename=filename, **kwargs)
             # break
 
-    def plot_2d_pose(self, foldername=False):
+    def plot_2d_pose(self, foldername=False, **kwargs):
         if foldername:
             create_dir(foldername)
         for i in range(self.frame_number):
             print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
-            self.plot_2d_pose_frame(frame=i, filename=filename)
-            # break
+            self.plot_2d_pose_frame(frame=i, filename=filename, **kwargs)
 
 
 class VEHSErgoSkeleton(Skeleton):
@@ -360,7 +368,6 @@ class VEHSErgoSkeleton(Skeleton):
         rgb_frame_rate = 100
         fps_ratio = 100 / rgb_frame_rate
         frames = np.linspace(start_frame / fps_ratio, end_frame / fps_ratio, int((end_frame - start_frame) / fps_ratio), dtype=int)
-        self.cameras = cameras
         self.pose_3d_camera = {}
         self.pose_2d_camera = {}
         self.pose_2d_bbox = {}
@@ -368,7 +375,6 @@ class VEHSErgoSkeleton(Skeleton):
         self.pose_depth_ratio = {}
         for cam_idx, camera in enumerate(cameras):
             print(f'Processing camera {cam_idx}: {camera.DEVICEID}')
-
             points_2d_list = []
             points_3d_camera_list = []
             points_2d_bbox_list = []
@@ -397,6 +403,21 @@ class VEHSErgoSkeleton(Skeleton):
             self.pose_2d_bbox[camera.DEVICEID] = np.array(points_2d_bbox_list)
             self.pose_depth_px[camera.DEVICEID] = np.array(points_depth_px_list)
             self.pose_depth_ratio[camera.DEVICEID] = np.array(depth_ratio_list)
+        self.cameras = cameras
+
+    def zero_frame_pitch(self, points, angle):
+        """
+        zero camera pitch angle, rotate camera around x axis for angle
+        :param points: JX3 np array
+        :param angle: in radians
+        """
+        # angle = -angle  # negate angle
+        rotated_points = points.copy()
+        rot_M = np.array([[1, 0, 0],
+                            [0, np.cos(angle), -np.sin(angle)],
+                            [0, np.sin(angle), np.cos(angle)]])
+        rotated_points = np.dot(rotated_points, rot_M)
+        return rotated_points
 
     def get_norm_depth_ratio(self, pose3d, camera, rootIdx=0):
         """
@@ -432,7 +453,7 @@ class VEHSErgoSkeleton(Skeleton):
         '''
         raise NotImplementedError
 
-    def output_MotionBert_pose(self, downsample=5, downsample_keep=1):
+    def output_MotionBert_pose(self, downsample=5, downsample_keep=1, pitch_correction=False):
         # append data at end
         output = {}
         joint_2d = []
@@ -445,6 +466,8 @@ class VEHSErgoSkeleton(Skeleton):
         source = []
         c3d_frame = []
         for this_camera in self.cameras:
+            camera_pitch_angle = this_camera.get_camera_pitch()
+            print(f"correcting pitch for {this_camera.DEVICEID}, pitch: {camera_pitch_angle / np.pi * 180:.01f} degrees") if pitch_correction else None
             for downsample_idx in range(downsample):
                 if downsample_idx == downsample_keep:
                     break
@@ -459,6 +482,11 @@ class VEHSErgoSkeleton(Skeleton):
                     joint_3d_image_frame = self.pose_3d_camera[this_camera.DEVICEID][real_frame_idx, :, :].copy()  # need the shape
                     joint_3d_image_frame[:, :2] = self.pose_2d_camera[this_camera.DEVICEID][real_frame_idx, :, :]  # overwrite xy
                     joint_3d_image_frame[:, 2] = self.pose_depth_px[this_camera.DEVICEID][real_frame_idx, :]  # overwrite z
+
+                    if pitch_correction:  # use root_rel = True when training MotionBert, or do additional correction
+                        # rotate joint_3d_image_frame around camera x axis for pitch correction angle
+                        joint_3d_image_frame = self.zero_frame_pitch(joint_3d_image_frame, camera_pitch_angle)
+
                     joint_3d_image.append(joint_3d_image_frame)
                     factor_25d_frame = self.pose_depth_ratio[this_camera.DEVICEID][real_frame_idx]
                     factor_25d_frame = 1000/factor_25d_frame  # in motionbert 2.5d factor, px * factor = mm
