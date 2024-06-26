@@ -150,7 +150,7 @@ class Skeleton:
             point_size = size[1]
         return point_type, point_size
 
-    def plot_3d_pose_frame(self, frame=0, filename=False, plot_range=1800, coord_system="world", center_key='PELVIS', mode='normal_view'):
+    def plot_3d_pose_frame(self, frame=0, filename=False, plot_range=1800, coord_system="world", center_key='PELVIS', mode='normal_view', get_legend=False):
         """
         plot 3d pose in 3d space
         coord_system: camera-px or world
@@ -213,17 +213,20 @@ class Skeleton:
         ax.set_ylabel(xyz_label[pose_sequence[1]])
         ax.set_zlabel(xyz_label[pose_sequence[2]])
         fig.tight_layout()
+
+        if get_legend:  # use this to get a legend screenshot
+            # also set range to big value
+            ax.legend(loc='upper center', fontsize=5, ncol=6)
+            plt.gca().set_axis_off()
+            plt.savefig(r'C:\Users\wenleyan1\Downloads\legend_new.png', dpi=250)
+            raise NameError(r"Intentional break: legend.png saved to C:\Users\wenleyan1\Downloads")  # break here
+
         if True:  # no legend
             pass
         elif False:  # normal legends
             fig.subplots_adjust(right=0.65)
             ax.legend(loc='center left', bbox_to_anchor=(1.08, 0.5), fontsize=7, ncol=2)
-        else:  # use this to get a legend screenshot
-            # also set range to big value
-            ax.legend(loc='upper center', fontsize=5, ncol=6)
-            plt.gca().set_axis_off()
-            plt.savefig(r'C:\Users\wenleyan1\Downloads\legend.png', dpi=250)
-            raise NameError(r"Intentional break: legend.png saved to C:\Users\wenleyan1\Downloads")  # break here
+
         if filename:
             plt.savefig(filename, dpi=250)
             plt.close(fig)

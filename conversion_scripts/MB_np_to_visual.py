@@ -6,21 +6,23 @@ from Skeleton import *
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, default=r'config\experiment_config\Inference-RTMPose-MB-pitch-corrected.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config\experiment_config\Inference-RTMPose-MB.yaml')
     # parser.add_argument('--config_file', type=str, default=r'config\experiment_config\VEHS-RTMPose-MB.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config\VEHS_ErgoSkeleton_info\RTMPose-Skeleton.yaml')
-    parser.add_argument('--output_frame_folder', type=str,
-                        default=r"W:\VEHS\Testing_Videos_and_rtmpose_results\Testing_Videos_and_rtmpose_results\kps_133_fps_20\pitch_corrected")
-    # r'W:\VEHS\VEHS data collection round 3\processed\S01\FullCollection\render\RTM_MB_est_24')
+    parser.add_argument('--output_frame_folder', type=str, default=
+                        r"W:\VEHS\Testing_Videos_and_rtmpose_results\Testing_Videos_and_rtmpose_results\kps_133_fps_20\config6")
+                        # r'W:\VEHS\VEHS data collection round 3\processed\S01\FullCollection\render\RTM_MB_est_24')
+
     parser.add_argument('--output_GT_frame_folder', type=str,
                         default=r"W:\VEHS\Testing_Videos_and_rtmpose_results\Testing_Videos_and_rtmpose_results\kps_133_fps_20\pitch_corrected")
-
-    parser.add_argument('--plot_mode', type=str, default='normal_view', help='mode: camera_view, camera_side_view, 0_135_view, normal_view')
+    parser.add_argument('--plot_mode', type=str, default='normal_view',
+                        help='mode: camera_view, camera_side_view, 0_135_view, normal_view')
     parser.add_argument('--MB_data_stride', type=int, default=243)
     parser.add_argument('--debug_mode', default=False, type=bool)
 
     # parser.add_argument('--name_list', type=list, default=[])
     args = parser.parse_args()
+    print(args.plot_mode)
     args.output_frame_folder = os.path.join(args.output_frame_folder, args.plot_mode)
     args.output_GT_frame_folder = os.path.join(args.output_GT_frame_folder, args.plot_mode)
     with open(args.config_file, 'r') as stream:
@@ -87,6 +89,7 @@ if __name__ == '__main__':
     frame = 12000
     estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
     estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
+    # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True)
     estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1000, mode=args.plot_mode)
     # estimate_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px")
 

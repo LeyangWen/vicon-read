@@ -188,10 +188,10 @@ if __name__ == '__main__':
     # data['test']['joints_2.5d_image'][0]
     # data['test']['joint3d_image'][-1]
     # data['test']['2.5d_factor'][0]
+    # ['validate']
         # >>> data.keys()
         # dict_keys(['train', 'test'])
         # >>> data['train'].keys()
         # dict_keys(['joint_2d', 'confidence', 'joint3d_image', 'camera_name', 'source'])
         # >>> data['test'].keys()
         # dict_keys(['joint_2d', 'confidence', 'joint3d_image', 'joints_2.5d_image', '2.5d_factor', 'camera_name', 'action', 'source'])
-
