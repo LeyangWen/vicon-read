@@ -7,7 +7,7 @@ import pickle
 import numpy as np
 import copy
 
-motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_config2_modified.pkl'
+motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_config6_tilt_corrected_modified.pkl'
 own_pkl_file = r'W:\VEHS\Training_Folder\Training_Folder\rtmpose_vicon_dataset_j24_f20_s1_with_conf_score.pkl'
 new_pkl_file = motionbert_pkl_file.replace('.pkl', '_RTM2D.pkl')
 

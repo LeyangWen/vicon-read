@@ -3,7 +3,7 @@ import pickle
 import os
 import numpy as np
 
-pkl_file = r"W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_config6.pkl"
+pkl_file = r"W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_config6_tilt_corrected.pkl"
 with open(pkl_file, 'rb') as f:
     data = pickle.load(f)
 
