@@ -4,8 +4,8 @@ name_list: ['Wrist', 'Thumb_0', 'Thumb_1', 'Thumb_2', 'Thumb_3',
             'Ring_0', 'Ring_1', 'Ring_2', 'Ring_3',
             'Pinky_0', 'Pinky_1', 'Pinky_2', 'Pinky_3']
 
-GT_file: 'W:\VEHS\hand_pose\MB_input\Rokoko_1\motionbert_dict.pkl'
+GT_file: '/Users/leyangwen/Documents/Hand/motionbert_dict.pkl'
 eval_key: 'test'
 
-estimate_file: 'W:\VEHS\hand_pose\MB_output\Rokoko_1\X3D.npy'
+estimate_file: None
 

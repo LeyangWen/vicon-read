@@ -115,8 +115,6 @@ class Skeleton:
             except KeyError:
                 pass
 
-
-
     def update_pose_from_point_pose(self):
         for point_key, point_pose in self.point_poses.items():
             self.poses[point_key] = point_pose.xyz.T
@@ -218,8 +216,8 @@ class Skeleton:
             # also set range to big value
             ax.legend(loc='upper center', fontsize=5, ncol=6)
             plt.gca().set_axis_off()
-            plt.savefig(r'C:\Users\wenleyan1\Downloads\legend_new.png', dpi=250)
-            raise NameError(r"Intentional break: legend.png saved to C:\Users\wenleyan1\Downloads")  # break here
+            plt.savefig(r'legend_new.png', dpi=250)
+            raise NameError(r"Intentional break: legend.png saved to legend_new.png")  # break here
 
         if True:  # no legend
             pass

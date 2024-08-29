@@ -7,7 +7,7 @@ from Skeleton import *
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file', type=str, default=r'config/experiment_config/VEHS-Hand-21-MB.yaml')
-    parser.add_argument('--skeleton_file', type=str, default=r'config\VEHS_ErgoSkeleton_info/Ergo-Hand-21.yaml')
+    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Hand-21.yaml')
     parser.add_argument('--output_frame_folder', type=str, default=None)
 
     parser.add_argument('--output_GT_frame_folder', type=str, default=None)
@@ -49,6 +49,8 @@ def MB_input_pose_file_loader(args):
         return None
     with open(args.GT_file, "rb") as f:
         data = pickle.load(f)
+
+    print(f'2.5d_factor: {data[args.eval_key]["2.5d_factor"]}')
 
     clip_fill = False
     if not clip_fill:
@@ -92,11 +94,11 @@ if __name__ == '__main__':
         # GT_pose = GT_pose[:small_sample]
 
     frame = 100
-    estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
-    estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
-    # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='Wrist')
-    # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1000, mode=args.plot_mode)
-    estimate_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", center_key='Wrist', plot_range=4000)
+    # estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
+    # estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
+    # # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='Wrist')
+    # # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1000, mode=args.plot_mode)
+    # estimate_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", center_key='Wrist', plot_range=4000)
 
     GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
     GT_skeleton.load_name_list_and_np_points(args.name_list, GT_pose)
