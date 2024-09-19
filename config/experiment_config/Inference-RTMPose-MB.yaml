@@ -3,4 +3,4 @@ name_list: ['nose','left_ear','right_ear','left_shoulder','right_shoulder','left
 GT_file: None
 eval_key: 'validate'
 
-estimate_file: 'W:\VEHS\Testing_Videos_and_rtmpose_results\Testing_Videos_and_rtmpose_results\kps_133_fps_20\config6\X3D.npy'
+estimate_file: 'W:\VEHS\Testing_Videos_and_rtmpose_results\industry_3_OneDrive_2_9-4-2024\kps_133_fps_20\config6\industry_3_RTM2d.npy'

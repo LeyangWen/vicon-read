@@ -1,3 +1,5 @@
+# for creating RTMPose inference file from json files
+
 import argparse
 import pickle
 import os
@@ -26,8 +28,8 @@ def read_input(json_path):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--json_folder', type=str, default=r'W:\VEHS\Testing_Videos_and_rtmpose_results\Testing_Videos_and_rtmpose_results\kps_133_fps_20')
-    parser.add_argument('--output_file', type=str, default=r'rtmpose_industry_no3d_j24_f20_s1_RTM2D.pkl')
+    parser.add_argument('--json_folder', type=str, default=r'W:\VEHS\Testing_Videos_and_rtmpose_results\OneDrive_2_9-4-2024\kps_133_fps_20')
+    parser.add_argument('--output_file', type=str, default=r'rtmpose_industry_3_no3d_j24_f20_s1_RTM2D.pkl')
     parser.add_argument('--joint_num', type=int, default=24)
 
     args = parser.parse_args()
