@@ -95,9 +95,9 @@ if __name__ == '__main__':
         # estimate_pose = estimate_pose[:small_sample]
         # GT_pose = GT_pose[:small_sample]
 
-    frame = int(12263/5)
-    estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
-    estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
+    frame = 1
+    # estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
+    # estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
     # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='Wrist')
     # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1000, mode=args.plot_mode, center_key='PELVIS')
     # estimate_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="normal_view", center_key='PELVIS', plot_range=2000)
@@ -106,9 +106,56 @@ if __name__ == '__main__':
     GT_skeleton.load_name_list_and_np_points(args.name_list, GT_pose)
     # GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, coord_system="camera-px", plot_range=1000, mode=args.plot_mode)
     #
+    frame = 293108
     GT_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", plot_range=2000, mode='normal_view', center_key='Wrist')
     # GT_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="normal_view", center_key='PELVIS', plot_range=1000)
 
 
+    # check for hands
+    frame = 0
+    print(f"Dist to middle base {np.linalg.norm(GT_pose[frame,5] - GT_pose[frame,0])} px")
+    print(f"approx {(np.linalg.norm(GT_pose[frame, 5] - GT_pose[frame, 0]))/5.9} mm")
+
+def check_GT_file(args):
+    with open(args.GT_file, "rb") as f:
+        data = pickle.load(f)
+    GT_pose = data[args.eval_key]['joint3d_image']
+
+    for frame in range(1, len(GT_pose)-1):
+        frame_source = data[args.eval_key]['source'][frame]
+        next_source = data[args.eval_key]['source'][frame+1]
+
+        ## check 1: middle finger dist
+        px_dist = np.linalg.norm(GT_pose[frame, 5] - GT_pose[frame, 0])
+        mm_dist = px_dist / data[args.eval_key]['2.5d_factor'][frame]
+        next_px_dist = np.linalg.norm(GT_pose[frame+1, 5] - GT_pose[frame+1, 0])
+        next_mm_dist = next_px_dist / data[args.eval_key]['2.5d_factor'][frame+1]
+        # if mm_dist-next_mm_dist  > 1 and frame_source == next_source:
+        #     print(f"Dist to middle base in frame {frame} &+1: {px_dist} - {next_px_dist} = {px_dist-next_px_dist} px")
+        #     print(f"Dist to middle base in frame {frame} &+1: {mm_dist} - {next_mm_dist} = {mm_dist-next_mm_dist} mm")
+
+        ## check 2.5
+        # if data[args.eval_key]['2.5d_factor'][frame]-data[args.eval_key]['2.5d_factor'][frame+1] > 3 and frame_source == next_source:
+        #     print(f"2.5d factor in frame {frame} &+1: {data[args.eval_key]['2.5d_factor'][frame]} - {data[args.eval_key]['2.5d_factor'][frame+1]} = {data[args.eval_key]['2.5d_factor'][frame]-data[args.eval_key]['2.5d_factor'][frame+1]}")
+
+        ## check 2: travel between frames
+        travel = np.linalg.norm(GT_pose[frame,5] - GT_pose[frame + 1,5])
+        if travel > 1000 and frame_source == next_source:
+            print(f"ave travel between frame {frame} &+1: {travel}")
+
+
+    frame = 273739
+    # frame = 39747
+    # frame = 0
+    GT_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", plot_range=2000, mode='normal_view',
+                                   center_key='Wrist')
+    GT_skeleton.plot_3d_pose_frame(frame=frame+1, coord_system="camera-px", plot_range=2000, mode='normal_view',
+                                   center_key='Wrist')
+    print(data[args.eval_key]['source'][frame])
+    print(data[args.eval_key]['source'][frame+1])
+
+    # todo: joint 2.5d need to be fliped, ~1/6
+    # todo: not consequent frame between frame 0 and 1
+    # todo: a lot of 2.5d factor changes, too much
 
 
