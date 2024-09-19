@@ -11,6 +11,7 @@ from spacepy import pycdf
 import cv2
 from ergo3d import *
 from ergo3d.camera.FLIR_camera import batch_load_from_xcp
+from scipy.spatial.transform import Rotation as R
 # todo: self.frame_no vs self.frame_number be consistent
 
 class Skeleton:
@@ -424,6 +425,7 @@ class VEHSErgoSkeleton(Skeleton):
         """
         LCN style, convert to px, center by pelvis
         in here meters * ratio = px
+        ratio px/meters
         """
         rectangle_3d_size = 2.0  # 2000mm
         box = self._infer_box(pose3d, camera, rootIdx, size=rectangle_3d_size)
@@ -1291,7 +1293,167 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         return LKNEE_angles
 
 
+class RokokoHandSkeleton(Skeleton):
+    def __init__(self, skeleton_file=r"config/VEHS_ErgoSkeleton_info/Ergo-Hand-21.yaml"):
+        super().__init__(skeleton_file)
 
+    def load_rokoko_csv(self, csv_file=r"/Users/leyangwen/Documents/Hand/blender_joints_take1.csv",
+                        handiness='LeftHand', random_rotation=False):
+        """
+        load rokoko csv file
+        :param handiness: 'l' or 'r'
+        """
+        if handiness[0].lower() == 'l':
+            handiness = 'LeftHand'
+        elif handiness[0].lower() == 'r':
+            handiness = 'RightHand'
+        else:
+            raise ValueError(f"handiness should be 'LeftHand' or 'RightHand', got {handiness}")
+
+        # csv_file = r"/Users/leyangwen/Documents/Hand/blender_joints_take1.csv"
+        df = pd.read_csv(csv_file)
+        name_list = ['Wrist', 'Middle_0', 'Middle_1', 'Middle_2', 'Middle_3',
+                     'Ring_0', 'Ring_1', 'Ring_2', 'Ring_3',
+                     'Index_0', 'Index_1', 'Index_2', 'Index_3',
+                     'Pinky_0', 'Pinky_1', 'Pinky_2', 'Pinky_3',
+                     'Thumb_0', 'Thumb_1', 'Thumb_2', 'Thumb_3']
+        # get all hand columns
+        hand_columns = [col for col in df.columns if handiness in col]
+        hand_columns = [col for col in hand_columns if ('1_tail' not in col and '2_tail' not in col)]
+        hand_21_columns = hand_columns[3:]
+        assert len(hand_21_columns) == 21*3
+        # rearrange
+        start_idx = [3+12*4, 3, 3+12*1, 3+12*3, 3+12*2]  # order to wrist, thumb, index, middle, ring, pinky
+        hand_21_columns_order = hand_21_columns[0:3] + hand_21_columns[start_idx[0]:start_idx[0]+12] + hand_21_columns[start_idx[1]:start_idx[1]+12] + hand_21_columns[start_idx[2]:start_idx[2]+12] + hand_21_columns[start_idx[3]:start_idx[3]+12] + hand_21_columns[start_idx[4]:start_idx[4]+12]
+        hand_pose = np.array(df[hand_21_columns_order]).reshape((-1, 21, 3))*1000 # convert to mm
+        if random_rotation:
+            hand_pose = self.random_rotation(hand_pose)
+        self.load_name_list_and_np_points(name_list, hand_pose)
+
+    def random_rotation(self, pose, seed=1):
+        """
+        Add a random 3D rotation to the hand pose
+        :param pose: nx21x3 np array
+        :return: nx21x3 np array after rotation
+        """
+        # Generate a random rotation using quaternions (random axis-angle representation)
+        random_rotation = R.random()  # Create a random rotation object using scipy
+
+        # Apply the rotation to each 3D point in the pose
+        pose_rotated = random_rotation.apply(pose.reshape(-1, 3)).reshape(pose.shape)
+        return pose_rotated
+
+    def calculate_isometric_projection(self, args, kpts_of_interest_name='all', rootIdx=0, canvas_size=1000, ratio_noise=0.05):
+        if kpts_of_interest_name == 'all':  # get all points
+            kpts_of_interest = self.point_poses.values()
+        else:
+            kpts_of_interest = [self.point_poses[kpt] for kpt in kpts_of_interest_name]
+        self.current_kpts_of_interest_name = kpts_of_interest_name
+        self.current_kpts_of_interest = kpts_of_interest
+        world3D = Point.batch_export_to_nparray(kpts_of_interest)
+        self.pose_3d_world = world3D
+        start_frame = 0
+        end_frame = self.frame_number
+        rgb_frame_rate = 100
+        fps_ratio = 100 / rgb_frame_rate
+        frames = np.linspace(start_frame / fps_ratio, end_frame / fps_ratio, int((end_frame - start_frame) / fps_ratio), dtype=int)
+        self.pose_3d_camera = {}
+        self.pose_2d_camera = {}
+        self.pose_2d_bbox = {}
+        self.pose_depth_px = {}
+        self.pose_depth_ratio = {}
+        cameras = ['XY']
+        for cam_idx, camera in enumerate(cameras):
+            print(f'Processing camera {cam_idx}')
+            points_2d_list = []
+            points_3d_camera_list = []
+            points_2d_bbox_list = []
+            points_depth_px_list = []
+            depth_ratio_list = []
+            world3D_centered = world3D - world3D[:, rootIdx, :]  # center around root joint
+            # find max and min to fit within canvas
+            max_xyz = world3D_centered.max(axis=0).max(axis=0)
+            min_xyz = world3D_centered.min(axis=0).min(axis=0)
+            max_range = max(max_xyz - min_xyz)
+            ratio = canvas_size / max_range  # px/m
+            for frame_idx, frame_no in enumerate(frames):
+                frame_idx = int(frame_idx * fps_ratio)  # todo: bug if fps_ratio is not an 1
+                points_3d = world3D_centered[frame_idx, :, :].reshape(-1, 3) / 1000  # convert to meters, (n_joints, 3)
+                if ratio_noise:
+                    ratio = ratio * np.random.uniform(1 - ratio_noise, 1 + ratio_noise)  # random walk to simulate zoom/moving camera
+                points_3d_camera = points_3d  # in mm, but in camera coordinate (assume projected, since we performed random rotation before, it does not matter)
+                points_3d_image = points_3d_camera * ratio  # in px
+                points_2d = points_3d_camera[:, :2] + canvas_size / 2  # xy
+                points_depth_px = points_3d_camera[:, 2]  # z
+                bbox_top_left, bbox_bottom_right = points_2d.min(axis=0) - 20, points_2d.max(axis=0) + 20
+
+                points_2d_list.append(points_2d)
+                points_3d_camera_list.append(points_3d_camera)
+                points_2d_bbox_list.append([bbox_top_left, bbox_bottom_right])
+                points_depth_px_list.append(points_depth_px)
+                depth_ratio_list.append(ratio)
+
+            self.pose_3d_camera[camera] = np.array(points_3d_camera_list)
+            self.pose_2d_camera[camera] = np.array(points_2d_list)
+            self.pose_2d_bbox[camera] = np.array(points_2d_bbox_list)
+            self.pose_depth_px[camera] = np.array(points_depth_px_list)
+            self.pose_depth_ratio[camera] = np.array(depth_ratio_list)
+        self.cameras = cameras
+
+    def output_MotionBert_pose(self, downsample=5, downsample_keep=1, pitch_correction=False):
+        # append data at end
+        output = {}
+        joint_2d = []
+        confidence = []
+        joint_3d_image = []  # px coordinate, px
+        joint_3d_camera = []  # camera coordinate, mm
+        joint_25d_image = []  # px coordinate, mm
+        factor_25d = []  # ratio, ~4.xx, 2.5d_image/3d_image
+        camera_name = []
+        source = []
+        c3d_frame = []
+        for this_camera in self.cameras:
+            for downsample_idx in range(downsample):
+                if downsample_idx == downsample_keep:
+                    break
+                for frame_idx in range(0, self.frame_number, downsample):
+                    real_frame_idx = frame_idx + downsample_idx
+                    if real_frame_idx >= self.frame_number:
+                        break
+                    joint_2d.append(self.pose_2d_camera[this_camera.DEVICEID][real_frame_idx, :, :])
+                    confidence.append(np.ones((len(self.current_kpts_of_interest_name), 1)))
+                    joint_3d_camera.append(self.pose_3d_camera[this_camera.DEVICEID][real_frame_idx, :, :])
+
+                    joint_3d_image_frame = self.pose_3d_camera[this_camera.DEVICEID][real_frame_idx, :, :].copy()  # need the shape
+                    joint_3d_image_frame[:, :2] = self.pose_2d_camera[this_camera.DEVICEID][real_frame_idx, :, :]  # overwrite xy
+                    joint_3d_image_frame[:, 2] = self.pose_depth_px[this_camera.DEVICEID][real_frame_idx, :]  # overwrite z
+
+                    joint_3d_image.append(joint_3d_image_frame)
+                    factor_25d_frame = self.pose_depth_ratio[this_camera.DEVICEID][real_frame_idx]
+                    factor_25d_frame = 1000/factor_25d_frame  # in motionbert 2.5d factor, px * factor = mm
+                    factor_25d.append(factor_25d_frame)
+                    joint_25d_image_frame = joint_3d_image_frame.copy() * factor_25d_frame
+                    joint_25d_image.append(joint_25d_image_frame)
+
+                    camera_name.append(this_camera.DEVICEID)
+                    source.append(self.c3d_file)
+                    c3d_frame.append(real_frame_idx)
+
+        output['joint_2d'] = np.array(joint_2d)  # this is gt, but should be detection
+        output['confidence'] = np.array(confidence)
+        output['joint3d_image'] = np.array(joint_3d_image)  # px coordinate, px
+        output['camera_name'] = np.array(camera_name)
+        output['source'] = source
+        output['2.5d_factor'] = np.array(factor_25d)
+        output['joints_2.5d_image'] = np.array(joint_25d_image)  # mm
+        output['action'] = [self.c3d_file[-14:-4]] * len(source)
+
+        ################## additional ##################
+        # LCN format https://github.com/CHUNYUWANG/lcn-pose/blob/master/tools/gendb.py#L85
+        output['joint_3d_camera'] = np.array(joint_3d_camera) * 1000  # convert to mm
+        # c3d info
+        output['c3d_frame'] = c3d_frame
+        return output
 
 
 # RMCP2,RMCP5, RWRIST
