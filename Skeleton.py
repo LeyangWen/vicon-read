@@ -1410,7 +1410,7 @@ class RokokoHandSkeleton(Skeleton):
             max_range = max(max_xyz - min_xyz)
             ratio_base = canvas_size * 0.9 / max_range * 1000 # px/m
             ratio = ratio_base
-            print(f'ratio_base: {ratio_base}')
+            print(f'Processing camera {cam_idx} - {camera.DEVICEID} - ratio_base: {ratio_base:.2f}')
             for frame_idx, frame_no in enumerate(frames):
                 frame_idx = int(frame_idx * fps_ratio)  # todo: bug if fps_ratio is not an 1
                 points_3d = world3D_centered[frame_idx, :, :].reshape(-1, 3)/1000 # m

@@ -2,8 +2,8 @@ train_ratio: 0.7
 val_ratio: 0.15
 test_ratio: 0.15
 
-base_folder: /Users/leyangwen/Documents/Hand/
-val_keyword: ['S01', 'S05']  # 3.1, 3.5
-test_keyword: ['']  # 3.9
-#val_keyword: ['LeyangWen', 'DanLi']  # 3.1, 3.5
-#test_keyword: ['RuiNie']  # 3.9
+base_folder: W:\VEHS\
+val_keyword: ['Rokoko\E', 'Rokoko\G', 'round 2\L']
+test_keyword: ['Rokoko\A', 'Rokoko\F', 'round 2\K']
+
+

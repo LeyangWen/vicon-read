@@ -7,7 +7,7 @@ import pickle
 import yaml
 import argparse
 import matplotlib
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
 
 # /W/VEHS/VEHS data collection Round 2/round 2/M-2022-09-26/Rokoko/scene-1/
 
@@ -16,7 +16,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/Rokoko-Hand-21-1433-MotionBert.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r"config/VEHS_ErgoSkeleton_info/Ergo-Hand-21.yaml")
-    parser.add_argument('--downsample', type=int, default=5)
+    parser.add_argument('--downsample', type=int, default=1)
     parser.add_argument('--downsample_keep', type=int, default=1)
     parser.add_argument('--output_file_name_end', type=str, default='')
     args = parser.parse_args()
@@ -51,6 +51,8 @@ if __name__ == '__main__':
         for file in files:
             if not file.endswith('.csv'):
                 continue
+            if 'Rokoko' not in root or "VEHS_Rokoko_dataset_K_Q" in root or "prelim" in root or "old" in root or "DEFAULT_WF5" in file:
+                continue
             # val_keyword is a list of string, if any of them is in the root, then it is val set
             if any(keyword in root for keyword in val_keyword):
                 train_val_test = 'validate'
@@ -61,8 +63,7 @@ if __name__ == '__main__':
             csv_file = os.path.join(root, file)
             count += 1
             print(f'{count}: Starting on {csv_file} as {train_val_test} set')
-            if True:  # print out all found files first to debug
-                continue
+            # continue  # print out all found files first to debug
             for handiness in ['left', 'right']:
                 this_skeleton = RokokoHandSkeleton(skeleton_file)
                 this_skeleton.load_rokoko_csv(csv_file=csv_file, handiness=handiness, random_rotation=True, flip_left=True)
@@ -82,7 +83,7 @@ if __name__ == '__main__':
                     this_skeleton.load_name_list_and_np_points(this_skeleton.point_labels, this_skeleton.pose_3d_image['XY'])
                     this_skeleton.plot_3d_pose_frame(frame, plot_range=1000, coord_system="world", center_key='Wrist', mode='normal_view')
 
-                # del this_skeleton
+                del this_skeleton
 
 
     print(f'Saving final results in {output_3d_filename}')
