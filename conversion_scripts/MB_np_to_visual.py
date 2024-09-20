@@ -2,11 +2,12 @@ import argparse
 import os.path
 import pickle
 from Skeleton import *
-
+import matplotlib
+matplotlib.use('Qt5Agg')
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/VEHS-Hand-21-MB.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/Rokoko-Hand-21-MB.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Hand-21.yaml')
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/Inference-RTMPose-MB.yaml')  #-pitch-corrected.yaml')
     # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/RTMPose-Skeleton.yaml')
@@ -106,10 +107,11 @@ if __name__ == '__main__':
     GT_skeleton.load_name_list_and_np_points(args.name_list, GT_pose)
     # GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, coord_system="camera-px", plot_range=1000, mode=args.plot_mode)
     #
-    frame = 293108
-    GT_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", plot_range=2000, mode='normal_view', center_key='Wrist')
-    # GT_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="normal_view", center_key='PELVIS', plot_range=1000)
-
+    frame = 0
+    GT_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", plot_range=1000, mode='normal_view', center_key='Wrist')
+    GT_skeleton.plot_3d_pose_frame(frame=frame+1, coord_system="camera-px", mode="normal_view", center_key='Wrist', plot_range=1000)
+    GT_skeleton.plot_3d_pose_frame(frame=frame + 2, coord_system="camera-px", mode="normal_view", center_key='Wrist',
+                                   plot_range=1000)
 
     # check for hands
     frame = 0
@@ -130,13 +132,13 @@ def check_GT_file(args):
         mm_dist = px_dist / data[args.eval_key]['2.5d_factor'][frame]
         next_px_dist = np.linalg.norm(GT_pose[frame+1, 5] - GT_pose[frame+1, 0])
         next_mm_dist = next_px_dist / data[args.eval_key]['2.5d_factor'][frame+1]
-        # if mm_dist-next_mm_dist  > 1 and frame_source == next_source:
-        #     print(f"Dist to middle base in frame {frame} &+1: {px_dist} - {next_px_dist} = {px_dist-next_px_dist} px")
-        #     print(f"Dist to middle base in frame {frame} &+1: {mm_dist} - {next_mm_dist} = {mm_dist-next_mm_dist} mm")
+        if mm_dist-next_mm_dist  > 11.18*1000/100 and frame_source == next_source:  # 11.18 m/s boxer punch speed, 100 fps
+            print(f"Dist to middle base in frame {frame} &+1: {px_dist} - {next_px_dist} = {px_dist-next_px_dist} px")
+            print(f"Dist to middle base in frame {frame} &+1: {mm_dist} - {next_mm_dist} = {mm_dist-next_mm_dist} mm")
 
         ## check 2.5
-        # if data[args.eval_key]['2.5d_factor'][frame]-data[args.eval_key]['2.5d_factor'][frame+1] > 3 and frame_source == next_source:
-        #     print(f"2.5d factor in frame {frame} &+1: {data[args.eval_key]['2.5d_factor'][frame]} - {data[args.eval_key]['2.5d_factor'][frame+1]} = {data[args.eval_key]['2.5d_factor'][frame]-data[args.eval_key]['2.5d_factor'][frame+1]}")
+        if data[args.eval_key]['2.5d_factor'][frame]-data[args.eval_key]['2.5d_factor'][frame+1] > 3 and frame_source == next_source:
+            print(f"2.5d factor in frame {frame} &+1: {data[args.eval_key]['2.5d_factor'][frame]} - {data[args.eval_key]['2.5d_factor'][frame+1]} = {data[args.eval_key]['2.5d_factor'][frame]-data[args.eval_key]['2.5d_factor'][frame+1]}")
 
         ## check 2: travel between frames
         travel = np.linalg.norm(GT_pose[frame,5] - GT_pose[frame + 1,5])

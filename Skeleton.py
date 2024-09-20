@@ -1298,7 +1298,7 @@ class RokokoHandSkeleton(Skeleton):
         super().__init__(skeleton_file)
 
     def load_rokoko_csv(self, csv_file=r"/Users/leyangwen/Documents/Hand/blender_joints_take1.csv",
-                        handiness='LeftHand', random_rotation=False):
+                        handiness='LeftHand', random_rotation=False, flip_left=False, ignore_first_n_frame=5):
         """
         load rokoko csv file
         :param handiness: 'l' or 'r'
@@ -1309,28 +1309,32 @@ class RokokoHandSkeleton(Skeleton):
             handiness = 'RightHand'
         else:
             raise ValueError(f"handiness should be 'LeftHand' or 'RightHand', got {handiness}")
-
+        self.c3d_file = csv_file
         # csv_file = r"/Users/leyangwen/Documents/Hand/blender_joints_take1.csv"
         df = pd.read_csv(csv_file)
-        name_list = ['Wrist', 'Middle_0', 'Middle_1', 'Middle_2', 'Middle_3',
-                     'Ring_0', 'Ring_1', 'Ring_2', 'Ring_3',
-                     'Index_0', 'Index_1', 'Index_2', 'Index_3',
-                     'Pinky_0', 'Pinky_1', 'Pinky_2', 'Pinky_3',
-                     'Thumb_0', 'Thumb_1', 'Thumb_2', 'Thumb_3']
+        name_list = ['Wrist', 'Thumb_0', 'Thumb_1', 'Thumb_2', 'Thumb_3',
+                    'Index_0', 'Index_1', 'Index_2', 'Index_3',
+                    'Middle_0', 'Middle_1', 'Middle_2', 'Middle_3',
+                    'Ring_0', 'Ring_1', 'Ring_2', 'Ring_3',
+                    'Pinky_0', 'Pinky_1', 'Pinky_2', 'Pinky_3']
         # get all hand columns
         hand_columns = [col for col in df.columns if handiness in col]
         hand_columns = [col for col in hand_columns if ('1_tail' not in col and '2_tail' not in col)]
-        hand_21_columns = hand_columns[3:]
+        hand_21_columns = hand_columns[:3]+hand_columns[6:]
         assert len(hand_21_columns) == 21*3
         # rearrange
         start_idx = [3+12*4, 3, 3+12*1, 3+12*3, 3+12*2]  # order to wrist, thumb, index, middle, ring, pinky
         hand_21_columns_order = hand_21_columns[0:3] + hand_21_columns[start_idx[0]:start_idx[0]+12] + hand_21_columns[start_idx[1]:start_idx[1]+12] + hand_21_columns[start_idx[2]:start_idx[2]+12] + hand_21_columns[start_idx[3]:start_idx[3]+12] + hand_21_columns[start_idx[4]:start_idx[4]+12]
+        # print(hand_21_columns_order)
         hand_pose = np.array(df[hand_21_columns_order]).reshape((-1, 21, 3))*1000 # convert to mm
+        hand_pose = hand_pose[ignore_first_n_frame:]  # first few (2 at least) frame is bad sometimes
         if random_rotation:
             hand_pose = self.random_rotation(hand_pose)
+        if flip_left and handiness == 'LeftHand':
+            hand_pose = self.flip_hand(hand_pose)
         self.load_name_list_and_np_points(name_list, hand_pose)
 
-    def random_rotation(self, pose, seed=1):
+    def random_rotation(self, pose):
         """
         Add a random 3D rotation to the hand pose
         :param pose: nx21x3 np array
@@ -1343,12 +1347,38 @@ class RokokoHandSkeleton(Skeleton):
         pose_rotated = random_rotation.apply(pose.reshape(-1, 3)).reshape(pose.shape)
         return pose_rotated
 
+    import numpy as np
+
+    def flip_hand(self, pose, ref_idx=[0, 9]):
+        """
+        Flip the hand pose along the ref vector.
+        :param pose: nx21x3 np array
+        :param ref_idx: list of two indices to define the reference vector
+        :return: nx21x3 np array after flipping
+        """
+        # Calculate the reference vector
+        ref_vector = pose[:, ref_idx[1], :] - pose[:, ref_idx[0], :]
+
+        # Normalize the reference vector
+        ref_vector = ref_vector / np.linalg.norm(ref_vector, axis=1, keepdims=True)
+
+        # Flip each point in the pose by reflecting across the reference vector plane
+        pose_flipped = pose.copy()
+        for i in range(pose.shape[1]):
+            vec_to_flip = pose[:, i, :] - pose[:, ref_idx[0], :]  # Vector from ref point to each point in the pose
+            projection_on_ref = np.sum(vec_to_flip * ref_vector, axis=1, keepdims=True) * ref_vector  # Projection onto ref_vector
+            reflected_vec = vec_to_flip - 2 * projection_on_ref  # Reflection formula
+            pose_flipped[:, i, :] = reflected_vec + pose[:, ref_idx[0], :]  # Update the flipped position
+
+        return pose_flipped
+
     def calculate_isometric_projection(self, args, kpts_of_interest_name='all', rootIdx=0, canvas_size=1000, ratio_noise=0.05):
         if kpts_of_interest_name == 'all':  # get all points
             kpts_of_interest = self.point_poses.values()
+            self.current_kpts_of_interest_name = self.point_poses.keys()
         else:
             kpts_of_interest = [self.point_poses[kpt] for kpt in kpts_of_interest_name]
-        self.current_kpts_of_interest_name = kpts_of_interest_name
+            self.current_kpts_of_interest_name = kpts_of_interest_name
         self.current_kpts_of_interest = kpts_of_interest
         world3D = Point.batch_export_to_nparray(kpts_of_interest)
         self.pose_3d_world = world3D
@@ -1362,29 +1392,36 @@ class RokokoHandSkeleton(Skeleton):
         self.pose_2d_bbox = {}
         self.pose_depth_px = {}
         self.pose_depth_ratio = {}
-        cameras = ['XY']
+        self.pose_3d_image = {}
+        cameras = [Camera()]
+        cameras[0].DEVICEID = 'XY'
         for cam_idx, camera in enumerate(cameras):
-            print(f'Processing camera {cam_idx}')
+            print(f'Processing camera {cam_idx} - {camera.DEVICEID}')
             points_2d_list = []
             points_3d_camera_list = []
             points_2d_bbox_list = []
             points_depth_px_list = []
             depth_ratio_list = []
-            world3D_centered = world3D - world3D[:, rootIdx, :]  # center around root joint
+            points_3d_image_list = []
+            world3D_centered = world3D - world3D[:, [rootIdx], :]  # center around root joint
             # find max and min to fit within canvas
             max_xyz = world3D_centered.max(axis=0).max(axis=0)
             min_xyz = world3D_centered.min(axis=0).min(axis=0)
             max_range = max(max_xyz - min_xyz)
-            ratio = canvas_size / max_range  # px/m
+            ratio_base = canvas_size * 0.9 / max_range * 1000 # px/m
+            ratio = ratio_base
+            print(f'ratio_base: {ratio_base}')
             for frame_idx, frame_no in enumerate(frames):
                 frame_idx = int(frame_idx * fps_ratio)  # todo: bug if fps_ratio is not an 1
-                points_3d = world3D_centered[frame_idx, :, :].reshape(-1, 3) / 1000  # convert to meters, (n_joints, 3)
+                points_3d = world3D_centered[frame_idx, :, :].reshape(-1, 3)/1000 # m
                 if ratio_noise:
-                    ratio = ratio * np.random.uniform(1 - ratio_noise, 1 + ratio_noise)  # random walk to simulate zoom/moving camera
-                points_3d_camera = points_3d  # in mm, but in camera coordinate (assume projected, since we performed random rotation before, it does not matter)
+                    ratio = ratio_base * np.random.uniform(1 - ratio_noise, 1 + ratio_noise)  # random noise to simulate zoom/moving camera
+                points_3d_camera = points_3d # in m, but should be in camera coordinate (assume it is already projected into camera coord, since we performed random rotation before, it does not matter)
                 points_3d_image = points_3d_camera * ratio  # in px
-                points_2d = points_3d_camera[:, :2] + canvas_size / 2  # xy
-                points_depth_px = points_3d_camera[:, 2]  # z
+                points_2d = points_3d_image[:, :2] + canvas_size / 2  # xy
+                points_3d_image[:, :2] = points_2d
+
+                points_depth_px = points_3d_image[:, 2]  # z
                 bbox_top_left, bbox_bottom_right = points_2d.min(axis=0) - 20, points_2d.max(axis=0) + 20
 
                 points_2d_list.append(points_2d)
@@ -1392,12 +1429,16 @@ class RokokoHandSkeleton(Skeleton):
                 points_2d_bbox_list.append([bbox_top_left, bbox_bottom_right])
                 points_depth_px_list.append(points_depth_px)
                 depth_ratio_list.append(ratio)
+                points_3d_image_list.append(points_3d_image)
 
-            self.pose_3d_camera[camera] = np.array(points_3d_camera_list)
-            self.pose_2d_camera[camera] = np.array(points_2d_list)
-            self.pose_2d_bbox[camera] = np.array(points_2d_bbox_list)
-            self.pose_depth_px[camera] = np.array(points_depth_px_list)
-            self.pose_depth_ratio[camera] = np.array(depth_ratio_list)
+
+            self.pose_3d_camera[camera.DEVICEID] = np.array(points_3d_camera_list)
+            self.pose_2d_camera[camera.DEVICEID] = np.array(points_2d_list)
+            self.pose_2d_bbox[camera.DEVICEID] = np.array(points_2d_bbox_list)
+            self.pose_depth_px[camera.DEVICEID] = np.array(points_depth_px_list)
+            self.pose_depth_ratio[camera.DEVICEID] = np.array(depth_ratio_list)
+            self.pose_3d_image[camera.DEVICEID] = np.array(points_3d_image_list)
+
         self.cameras = cameras
 
     def output_MotionBert_pose(self, downsample=5, downsample_keep=1, pitch_correction=False):

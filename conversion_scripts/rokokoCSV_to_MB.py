@@ -1,12 +1,13 @@
 # c3d_to_MB.py
 
 import c3d
-from utility import *
 
 from Skeleton import *
 import pickle
 import yaml
 import argparse
+import matplotlib
+matplotlib.use('Qt5Agg')
 
 # /W/VEHS/VEHS data collection Round 2/round 2/M-2022-09-26/Rokoko/scene-1/
 
@@ -40,7 +41,7 @@ if __name__ == '__main__':
     output_3d_filename = os.path.join(base_folder, f'Rokoko_hand_3D_downsample{downsample}_keep{downsample_keep}{args.output_file_name_end}.pkl')
     # iterate through the folder to find all c3d
 
-    output_smpl_dataset = {}
+    output_3D_dataset = empty_MotionBert_dataset_dict(21)
     count = 0
     dataset_statistics = {}
     total_frame_number = 0
@@ -57,32 +58,31 @@ if __name__ == '__main__':
                 train_val_test = 'test'
             else:
                 train_val_test = 'train'
-
-            print(f"file: {file}, root: {root}, train_val_test: {train_val_test}")
-
             csv_file = os.path.join(root, file)
             count += 1
-            # if count > 1:  # give a very small file for testing
-            #     if train_val_test == 'train':
-            #         train_val_test = 'test'
-            #         count = 0
-            #     else:
-            #         break
-
             print(f'{count}: Starting on {csv_file} as {train_val_test} set')
+            if True:  # print out all found files first to debug
+                continue
             for handiness in ['left', 'right']:
                 this_skeleton = RokokoHandSkeleton(skeleton_file)
-                this_skeleton.load_rokoko_csv(csv_file=csv_file, handiness=handiness, random_rotation=True)
+                this_skeleton.load_rokoko_csv(csv_file=csv_file, handiness=handiness, random_rotation=True, flip_left=True)
                 this_frame_number = this_skeleton.frame_number
                 dataset_statistics[csv_file] = this_frame_number
                 total_frame_number += this_frame_number
 
-                this_skeleton.calculate_iso_camera_projection(args, camera_xcp_file, kpts_of_interest_name=h36m_joint_names, rootIdx=0)
+                this_skeleton.calculate_isometric_projection(args, rootIdx=0)
                 output3D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep)
-
-                # todo: plot check here
                 output_3D_dataset = append_output_xD_dataset(output_3D_dataset, train_val_test, output3D)
-                del this_skeleton
+
+                if False:  # vis debug
+                    frame = 1
+                    this_skeleton.plot_3d_pose_frame(frame, plot_range=300, coord_system="world", center_key='Wrist', mode='normal_view')
+                    this_skeleton.load_name_list_and_np_points(this_skeleton.point_labels, this_skeleton.pose_3d_camera['XY'])
+                    this_skeleton.plot_3d_pose_frame(frame, plot_range=0.3, coord_system="world", center_key='Wrist', mode='normal_view')
+                    this_skeleton.load_name_list_and_np_points(this_skeleton.point_labels, this_skeleton.pose_3d_image['XY'])
+                    this_skeleton.plot_3d_pose_frame(frame, plot_range=1000, coord_system="world", center_key='Wrist', mode='normal_view')
+
+                # del this_skeleton
 
 
     print(f'Saving final results in {output_3d_filename}')
