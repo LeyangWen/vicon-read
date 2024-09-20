@@ -47,7 +47,7 @@ def MB_output_pose_file_loader(args):
     return output_np_pose
 
 
-def MB_input_pose_file_loader(args):
+def MB_input_pose_file_loader(args, clip_fill=False):
     if args.GT_file=='None':
         return None
     with open(args.GT_file, "rb") as f:
@@ -55,7 +55,6 @@ def MB_input_pose_file_loader(args):
 
     print(f'2.5d_factor: {data[args.eval_key]["2.5d_factor"]}')
 
-    clip_fill = False
     if not clip_fill:
         return data[args.eval_key]['joint3d_image']
     else:
@@ -108,51 +107,53 @@ if __name__ == '__main__':
     # GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, coord_system="camera-px", plot_range=1000, mode=args.plot_mode)
     #
     frame = 0
-    GT_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", plot_range=1000, mode='normal_view', center_key='Wrist')
-    GT_skeleton.plot_3d_pose_frame(frame=frame+1, coord_system="camera-px", mode="normal_view", center_key='Wrist', plot_range=1000)
-    GT_skeleton.plot_3d_pose_frame(frame=frame + 2, coord_system="camera-px", mode="normal_view", center_key='Wrist',
-                                   plot_range=1000)
-
-    # check for hands
-    frame = 0
-    print(f"Dist to middle base {np.linalg.norm(GT_pose[frame,5] - GT_pose[frame,0])} px")
-    print(f"approx {(np.linalg.norm(GT_pose[frame, 5] - GT_pose[frame, 0]))/5.9} mm")
+    plot_range = 2000
+    GT_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", plot_range=plot_range, mode='normal_view', center_key='Wrist')
+    GT_skeleton.plot_3d_pose_frame(frame=frame+1, coord_system="camera-px", mode="normal_view", center_key='Wrist', plot_range=plot_range)
+    GT_skeleton.plot_3d_pose_frame(frame=frame + 2, coord_system="camera-px", mode="normal_view", center_key='Wrist', plot_range=plot_range)
 
 def check_GT_file(args):
     with open(args.GT_file, "rb") as f:
         data = pickle.load(f)
     GT_pose = data[args.eval_key]['joint3d_image']
 
+    # check for hands
+    frame = 0
+    print(f"Dist to middle base {np.linalg.norm(GT_pose[frame,5] - GT_pose[frame,0])} px")
+    print(f"{(np.linalg.norm(GT_pose[frame, 5] - GT_pose[frame, 0])) * data[args.eval_key]['2.5d_factor'][frame]} mm")
+
+    i = 0
+    j = 0
     for frame in range(1, len(GT_pose)-1):
         frame_source = data[args.eval_key]['source'][frame]
         next_source = data[args.eval_key]['source'][frame+1]
 
         ## check 1: middle finger dist
         px_dist = np.linalg.norm(GT_pose[frame, 5] - GT_pose[frame, 0])
-        mm_dist = px_dist / data[args.eval_key]['2.5d_factor'][frame]
+        mm_dist = px_dist * data[args.eval_key]['2.5d_factor'][frame]
         next_px_dist = np.linalg.norm(GT_pose[frame+1, 5] - GT_pose[frame+1, 0])
-        next_mm_dist = next_px_dist / data[args.eval_key]['2.5d_factor'][frame+1]
-        if mm_dist-next_mm_dist  > 11.18*1000/100 and frame_source == next_source:  # 11.18 m/s boxer punch speed, 100 fps
-            print(f"Dist to middle base in frame {frame} &+1: {px_dist} - {next_px_dist} = {px_dist-next_px_dist} px")
+        next_mm_dist = next_px_dist * data[args.eval_key]['2.5d_factor'][frame+1]
+        if abs(mm_dist-next_mm_dist)  > next_mm_dist*0.2 and frame_source == next_source:
+            # print(f"Dist to middle base in frame {frame} &+1: {px_dist} - {next_px_dist} = {px_dist-next_px_dist} px")
             print(f"Dist to middle base in frame {frame} &+1: {mm_dist} - {next_mm_dist} = {mm_dist-next_mm_dist} mm")
 
         ## check 2.5
         if data[args.eval_key]['2.5d_factor'][frame]-data[args.eval_key]['2.5d_factor'][frame+1] > 3 and frame_source == next_source:
-            print(f"2.5d factor in frame {frame} &+1: {data[args.eval_key]['2.5d_factor'][frame]} - {data[args.eval_key]['2.5d_factor'][frame+1]} = {data[args.eval_key]['2.5d_factor'][frame]-data[args.eval_key]['2.5d_factor'][frame+1]}")
+            i+=1
+            print(f"i-{i} - 2.5d factor in frame {frame} &+1: {data[args.eval_key]['2.5d_factor'][frame]} - {data[args.eval_key]['2.5d_factor'][frame+1]} = {data[args.eval_key]['2.5d_factor'][frame]-data[args.eval_key]['2.5d_factor'][frame+1]}")
 
         ## check 2: travel between frames
         travel = np.linalg.norm(GT_pose[frame,5] - GT_pose[frame + 1,5])
-        if travel > 1000 and frame_source == next_source:
-            print(f"ave travel between frame {frame} &+1: {travel}")
+        if travel > 11.18*1000/20 and frame_source == next_source:  # 11.18 m/s boxer punch speed, 100 fps
+            j += 1
+            print(f"j-{j} - ave travel between frame {frame} &+1: {travel}")
 
 
-    frame = 273739
+    frame = 120
     # frame = 39747
     # frame = 0
-    GT_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", plot_range=2000, mode='normal_view',
-                                   center_key='Wrist')
-    GT_skeleton.plot_3d_pose_frame(frame=frame+1, coord_system="camera-px", plot_range=2000, mode='normal_view',
-                                   center_key='Wrist')
+    GT_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", plot_range=2000, mode='normal_view', center_key='Wrist')
+    GT_skeleton.plot_3d_pose_frame(frame=frame+1, coord_system="camera-px", plot_range=2000, mode='normal_view', center_key='Wrist')
     print(data[args.eval_key]['source'][frame])
     print(data[args.eval_key]['source'][frame+1])
 

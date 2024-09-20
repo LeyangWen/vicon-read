@@ -71,7 +71,7 @@ if __name__ == '__main__':
                 total_frame_number += this_frame_number
 
                 this_skeleton.calculate_isometric_projection(args, rootIdx=0)
-                output3D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep)
+                output3D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep, handiness=handiness)
                 output_3D_dataset = append_output_xD_dataset(output_3D_dataset, train_val_test, output3D)
 
                 if False:  # vis debug

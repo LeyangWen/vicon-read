@@ -1441,7 +1441,7 @@ class RokokoHandSkeleton(Skeleton):
 
         self.cameras = cameras
 
-    def output_MotionBert_pose(self, downsample=5, downsample_keep=1, pitch_correction=False):
+    def output_MotionBert_pose(self, downsample=5, downsample_keep=1, handiness='left'):
         # append data at end
         output = {}
         joint_2d = []
@@ -1477,7 +1477,7 @@ class RokokoHandSkeleton(Skeleton):
                     joint_25d_image.append(joint_25d_image_frame)
 
                     camera_name.append(this_camera.DEVICEID)
-                    source.append(self.c3d_file)
+                    source.append(self.c3d_file + handiness)
                     c3d_frame.append(real_frame_idx)
 
         output['joint_2d'] = np.array(joint_2d)  # this is gt, but should be detection
