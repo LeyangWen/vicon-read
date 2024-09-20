@@ -3,7 +3,7 @@ import os.path
 import pickle
 from Skeleton import *
 import matplotlib
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -115,6 +115,8 @@ if __name__ == '__main__':
 def check_GT_file(args):
     with open(args.GT_file, "rb") as f:
         data = pickle.load(f)
+    eval_keys = ['train', 'test', 'validate']
+    args.eval_key = eval_keys[1]
     GT_pose = data[args.eval_key]['joint3d_image']
 
     # check for hands
@@ -127,6 +129,12 @@ def check_GT_file(args):
     for frame in range(1, len(GT_pose)-1):
         frame_source = data[args.eval_key]['source'][frame]
         next_source = data[args.eval_key]['source'][frame+1]
+
+        ## check 2: travel between frames
+        travel = np.linalg.norm(GT_pose[frame,5] - GT_pose[frame + 1,5])
+        if travel > 11.18*1000/20 and frame_source == next_source:  # 11.18 m/s boxer punch speed, 100 fps
+            j += 1
+            print(f"j-{j} - ave travel between frame {frame} &+1: {travel}")
 
         ## check 1: middle finger dist
         px_dist = np.linalg.norm(GT_pose[frame, 5] - GT_pose[frame, 0])
@@ -142,11 +150,7 @@ def check_GT_file(args):
             i+=1
             print(f"i-{i} - 2.5d factor in frame {frame} &+1: {data[args.eval_key]['2.5d_factor'][frame]} - {data[args.eval_key]['2.5d_factor'][frame+1]} = {data[args.eval_key]['2.5d_factor'][frame]-data[args.eval_key]['2.5d_factor'][frame+1]}")
 
-        ## check 2: travel between frames
-        travel = np.linalg.norm(GT_pose[frame,5] - GT_pose[frame + 1,5])
-        if travel > 11.18*1000/20 and frame_source == next_source:  # 11.18 m/s boxer punch speed, 100 fps
-            j += 1
-            print(f"j-{j} - ave travel between frame {frame} &+1: {travel}")
+
 
 
     frame = 120
