@@ -10,6 +10,7 @@ name_list: ['Wrist', 'Thumb_0', 'Thumb_1', 'Thumb_2', 'Thumb_3',
 GT_file: 'W:\VEHS\hand_pose\MB_input\Rokoko_2\Rokoko_hand_3D_downsample1_keep1.pkl'
 estimate_file: 'W:\VEHS\hand_pose\MB_output\Rokoko_2\test_X3D.npy'
 
+
 eval_key: 'test'
 
 
