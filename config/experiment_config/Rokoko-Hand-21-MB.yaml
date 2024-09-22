@@ -4,12 +4,13 @@ name_list: ['Wrist', 'Thumb_0', 'Thumb_1', 'Thumb_2', 'Thumb_3',
             'Ring_0', 'Ring_1', 'Ring_2', 'Ring_3',
             'Pinky_0', 'Pinky_1', 'Pinky_2', 'Pinky_3']
 
-#GT_file: '/Users/leyangwen/Documents/Hand/motionbert_dict_20240618.pkl'
-#GT_file: '/Users/leyangwen/Documents/Hand/motionbert_dict_20240826.pkl'
-#GT_file: '/Users/leyangwen/Documents/Hand/Rokoko_hand_3D_downsample5_keep1.pkl'
-GT_file: 'W:\VEHS\Rokoko_hand_3D_downsample1_keep1.pkl'
+#GT_file: '/Users/leyangwen/Documents/Hand/Rokoko_hand_3D_downsample1_keep1.pkl'
+#estimate_file: '/Users/leyangwen/Documents/Hand/X3D.npy'
+
+GT_file: 'W:\VEHS\hand_pose\MB_input\Rokoko_2\Rokoko_hand_3D_downsample1_keep1.pkl'
+estimate_file: 'W:\VEHS\hand_pose\MB_output\Rokoko_2\test_X3D.npy'
 
 eval_key: 'test'
 
-estimate_file: None
+
 
