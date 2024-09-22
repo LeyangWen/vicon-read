@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument('--type', type=str, default='hand')
 
     parser.add_argument('--output_GT_frame_folder', type=str, default=None)
-    parser.add_argument('--plot_mode', type=str, default='normal_view', help='mode: camera_view, camera_side_view, 0_135_view, normal_view')
+    parser.add_argument('--plot_mode', type=str, default='0_135_view', help='mode: camera_view, camera_side_view, 0_135_view, normal_view')
     parser.add_argument('--MB_data_stride', type=int, default=243)
     parser.add_argument('--debug_mode', default=False, type=bool)
 
@@ -106,10 +106,10 @@ if __name__ == '__main__':
     if args.type == 'hand':
         # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='Wrist')  # get legend
 
-        estimate_skeleton.plot_3d_pose(frame=frame, coord_system="camera-px", mode=args.plot_mode, center_key='Middle_0', plot_range=150)
+        estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", mode=args.plot_mode, center_key='Middle_0', plot_range=150)
         # estimate_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=150)
 
-        GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, coord_system="camera-px",mode=args.plot_mode, center_key='Middle_0', plot_range=1000)
+        GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, coord_system="camera-px", mode=args.plot_mode, center_key='Middle_0', plot_range=1000)
         #
         # frame = 2000
         # plot_range = 1000
