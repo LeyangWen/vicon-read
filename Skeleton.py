@@ -247,7 +247,7 @@ class Skeleton:
             # raise NotImplementedError
         for joint_name in self.key_joint_name:
             if joint_name in self.poses:
-                point_type, point_size = self.get_plot_property(joint_name)
+                point_type, point_size = self.get_plot_property(joint_name, size=[50, 60])
                 ax.scatter(self.poses[joint_name][frame, 0],
                            self.poses[joint_name][frame, 1], label=joint_name, marker=point_type, s=point_size, zorder=2)
         # connect points to parent
@@ -257,11 +257,13 @@ class Skeleton:
                             [self.poses[joint_name][frame, 1], self.poses[parent_name][frame, 1]], 'gray', zorder=1, linewidth=2)
         # ax.set_xlim(0, img_width)
         # ax.set_ylim(0, img_height)
+        ax.set_xlim(-500, 1500)
+        ax.set_ylim(-500, 1500)
         # plot edge lines
-        ax.plot([0, img_width], [0, 0], 'gray', zorder=0)
-        ax.plot([0, 0], [0, img_height], 'gray', zorder=0)
-        ax.plot([img_width, img_width], [0, img_height], 'gray', zorder=0)
-        ax.plot([0, img_width], [img_height, img_height], 'gray', zorder=0)
+        # ax.plot([0, img_width], [0, 0], 'gray', zorder=0)
+        # ax.plot([0, 0], [0, img_height], 'gray', zorder=0)
+        # ax.plot([img_width, img_width], [0, img_height], 'gray', zorder=0)
+        # ax.plot([0, img_width], [img_height, img_height], 'gray', zorder=0)
 
         ax.set_aspect('equal', adjustable='box')
         ax.invert_yaxis()  # flip y axis

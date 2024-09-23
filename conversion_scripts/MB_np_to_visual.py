@@ -160,10 +160,11 @@ if __name__ == '__main__':
     if args.type == 'hand':
         # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='Wrist')  # get legend
 
-        estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", mode=args.plot_mode, center_key='Middle_0', plot_range=150)
+        # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", mode=args.plot_mode, center_key='Middle_0', plot_range=150)
         # estimate_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=150)
 
-        GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, coord_system="camera-px", mode=args.plot_mode, center_key='Middle_0', plot_range=1000)
+        GT_skeleton.plot_2d_pose(args.output_2D_frame_folder, resolution=(1500, 1500), dpi=100)
+        # GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, coord_system="camera-px", mode=args.plot_mode, center_key='Middle_0', plot_range=1000)
         #
         # frame = 2000
         # plot_range = 1000
