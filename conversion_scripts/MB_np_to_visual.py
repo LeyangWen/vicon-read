@@ -15,9 +15,9 @@ def parse_args():
     parser.add_argument('--type', type=str, default='hand')
 
     parser.add_argument('--output_GT_frame_folder', type=str, default=None)
-    parser.add_argument('--plot_mode', type=str, default='0_135_view', help='mode: camera_view, camera_side_view, 0_135_view, normal_view')
+    parser.add_argument('--plot_mode', type=str, default='normal_view', help='mode: camera_view, camera_side_view, 0_135_view, normal_view')
     parser.add_argument('--MB_data_stride', type=int, default=243)
-    parser.add_argument('--debug_mode', default=False, type=bool)
+    parser.add_argument('--debug_mode', default=True, type=bool)
 
 
     # parser.add_argument('--name_list', type=list, default=[])
@@ -85,44 +85,6 @@ def MB_input_pose_file_loader(args, clip_fill=True):
         return np_pose
 
 
-if __name__ == '__main__':
-    # read arguments
-    args = parse_args()
-    estimate_pose = MB_output_pose_file_loader(args)
-    GT_pose = MB_input_pose_file_loader(args)
-
-    if args.debug_mode:
-        small_sample = 7252
-        # estimate_pose = estimate_pose[:small_sample]
-        # GT_pose = GT_pose[:small_sample]
-
-    frame = 100
-    estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
-    estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
-
-    GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
-    GT_skeleton.load_name_list_and_np_points(args.name_list, GT_pose)
-
-    if args.type == 'hand':
-        # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='Wrist')  # get legend
-
-        estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", mode=args.plot_mode, center_key='Middle_0', plot_range=150)
-        # estimate_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=150)
-
-        GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, coord_system="camera-px", mode=args.plot_mode, center_key='Middle_0', plot_range=1000)
-        #
-        # frame = 2000
-        # plot_range = 1000
-        # estimate_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=150)
-        # GT_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=plot_range)
-        # GT_skeleton.plot_3d_pose_frame(frame=frame+1, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=plot_range)
-        # GT_skeleton.plot_3d_pose_frame(frame=frame + 2, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=plot_range)
-    elif args.type == 'body':
-        estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1000, mode=args.plot_mode, center_key='PELVIS')
-
-
-
-
 def check_GT_file(args):
     with open(args.GT_file, "rb") as f:
         data = pickle.load(f)
@@ -175,5 +137,46 @@ def check_GT_file(args):
     # todo: joint 2.5d need to be fliped, ~1/6
     # todo: not consequent frame between frame 0 and 1
     # todo: a lot of 2.5d factor changes, too much
+
+
+if __name__ == '__main__':
+    # read arguments
+    args = parse_args()
+    estimate_pose = MB_output_pose_file_loader(args)
+    GT_pose = MB_input_pose_file_loader(args)
+
+    if args.debug_mode:
+        small_sample = 7252
+        estimate_pose = estimate_pose[:small_sample]
+        GT_pose = GT_pose[:small_sample]
+
+    frame = 100
+    estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
+    estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
+
+    GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
+    GT_skeleton.load_name_list_and_np_points(args.name_list, GT_pose)
+
+    if args.type == 'hand':
+        # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='Wrist')  # get legend
+
+        estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", mode=args.plot_mode, center_key='Middle_0', plot_range=150)
+        # estimate_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=150)
+
+        GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, coord_system="camera-px", mode=args.plot_mode, center_key='Middle_0', plot_range=1000)
+        #
+        # frame = 2000
+        # plot_range = 1000
+        # estimate_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=150)
+        # GT_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=plot_range)
+        # GT_skeleton.plot_3d_pose_frame(frame=frame+1, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=plot_range)
+        # GT_skeleton.plot_3d_pose_frame(frame=frame + 2, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=plot_range)
+    elif args.type == 'body':
+        estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1000, mode=args.plot_mode, center_key='PELVIS')
+
+
+
+
+
 
 
