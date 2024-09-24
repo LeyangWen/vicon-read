@@ -56,11 +56,12 @@ if __name__ == '__main__':
                     train_val_test = 'validate'
                 elif any(keyword in root for keyword in test_keyword):
                     train_val_test = 'test'
+                    continue
                 else:
                     train_val_test = 'train'
                     continue
                 c3d_file = os.path.join(root, file)
-
+                count += 1
                 print(f"file: {file}, root: {root}, train_val_test: {train_val_test}")
                 print(f'{count}: Starting on {c3d_file} as {train_val_test} set')
                 this_skeleton = VEHSErgoSkeleton(skeleton_file)
@@ -81,12 +82,12 @@ if __name__ == '__main__':
                 break
                 del this_skeleton
 
-    if False:
+    if True:
         import subprocess
         import shutil
         ########################### Step 2: Run 3DSSPP ###########################
         # Get the initial modification time of the output file
-        SSPP_CLI_folder = 'H:\\3DSSPP_all\Compiled\\3DSSPP 7.1.2 CLI'
+        SSPP_CLI_folder = r'W:\3DSSPP_all\Compiled\\3DSSPP 7.1.2 CLI'
         loc_file = batch_3DSSPP_batch_filename
         # export_file = os.path.join(SSPP_CLI_folder, 'export', 'batchinput_export.txt')  # constant if using wrapper
         # initial_mtime = os.stat(export_file).st_mtime
