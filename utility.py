@@ -136,6 +136,91 @@ def empty_MotionBert_dataset_dict(joint_number):
         }
     }
 
+def empty_COCO_dataset_dict(joint_number):
+    """
+    {"info" : info, "images" : [image], "annotations" : [annotation], "licenses" : [license] }
+
+    info{
+    "year" : int, "version" : str, "description" : str, "contributor" : str, "url" : str, "date_created" : datetime,
+    }
+
+    image{
+    "id" : int, "width" : int, "height" : int, "file_name" : str, "license" : int, "flickr_url" : str, "coco_url" : str, "date_captured" : datetime,
+    }
+
+    license{
+    "id" : int, "name" : str, "url" : str,
+    }
+
+    annotation[0]{
+    "keypoints" : [x1,y1,v1,...], "num_keypoints" : int, "[cloned]" : ...,
+    }
+
+    categories[{
+    "keypoints" : [str], "skeleton" : [edge], "[cloned]" : ...,
+    }]
+
+    "[cloned]": denotes fields copied from object detection annotations defined above.
+    """
+    output = {}
+    for this_train_val_test in ['train', 'validate', 'test']:
+        empty_dict = {}
+        empty_dict['info'] = {
+            "year": 2023,
+            "version": "1.0",
+            "description": "VEHS-7M-5fps-Ergo37kpts",
+            "contributor": "Leyang Wen",
+            "url": ""}
+        empty_dict['licenses'] = [
+            {"url": "", "id": 99, "name": "VEHS-internal-use-only"}
+        ]
+        empty_dict['images'] = []
+        empty_dict['annotations'] = []
+        empty_dict['categories'] = [{
+            "supercategory": "person",
+            "id": 1,
+            "name": "person",
+            "keypoints": ['PELVIS', 'RWRIST', 'LWRIST', 'RHIP', 'LHIP',
+                          'RKNEE', 'LKNEE', 'RANKLE', 'LANKLE', 'RFOOT',
+                          'LFOOT', 'RHAND', 'LHAND', 'RELBOW', 'LELBOW',
+                          'RSHOULDER', 'LSHOULDER', 'HEAD', 'THORAX', 'HDTP',
+                          'REAR', 'LEAR', 'C7', 'C7_d', 'SS',
+                          'RAP_b', 'RAP_f', 'LAP_b', 'LAP_f', 'RLE',
+                          'RME', 'LLE', 'LME', 'RMCP2', 'RMCP5',
+                          'LMCP2', 'LMCP5'],
+            "skeleton": [
+                        [1, 4],   # PELVIS to RHIP
+                        [1, 5],   # PELVIS to LHIP
+                        [4, 6],   # RHIP to RKNEE
+                        [5, 7],   # LHIP to LKNEE
+                        [6, 8],   # RKNEE to RANKLE
+                        [7, 9],   # LKNEE to LANKLE
+                        [8, 10],  # RANKLE to RFOOT
+                        [9, 11],  # LANKLE to LFOOT
+                        [2, 13],  # RWRIST to RELBOW
+                        [3, 15],  # LWRIST to LELBOW
+                        [13, 17], # RELBOW to RSHOULDER
+                        [15, 18], # LELBOW to LSHOULDER
+                        [12, 13], # RHAND to RELBOW
+                        [14, 15], # LHAND to LELBOW
+                        [17, 18], # RSHOULDER to LSHOULDER
+                        [18, 19], # LSHOULDER to THORAX
+                        [19, 20], # THORAX to HDTP
+                        [20, 21], # HDTP to REAR
+                        [20, 22], # HDTP to LEAR
+                        [23, 24], # C7 to C7_d
+                        [25, 26], # SS to RAP_b
+                        [27, 28], # LAP_b to LAP_f
+                        [29, 30], # RLE to RME
+                        [31, 32], # LLE to LME
+                        [33, 34], # RMCP2 to RMCP5
+                        [35, 36]  # LMCP2 to LMCP5
+                    ]
+                }]
+        output[this_train_val_test] = empty_dict
+    return output
+
+
 
 def append_output_xD_dataset(output_xD_dataset, this_train_val_test, append_outputxD_dict):
     for key in output_xD_dataset[this_train_val_test].keys():
@@ -144,5 +229,11 @@ def append_output_xD_dataset(output_xD_dataset, this_train_val_test, append_outp
             output_xD_dataset[this_train_val_test][key] = output_xD_dataset[this_train_val_test][key] + append_outputxD_dict[key]
         else:
             output_xD_dataset[this_train_val_test][key] = np.append(output_xD_dataset[this_train_val_test][key], append_outputxD_dict[key], axis=0)
+    return output_xD_dataset
+
+
+def append_COCO_xD_dataset(output_xD_dataset, this_train_val_test, append_outputxD_dict):
+    for key in append_outputxD_dict.keys():  # images, annotations
+        output_xD_dataset[this_train_val_test][key] = output_xD_dataset[this_train_val_test][key] + append_outputxD_dict[key]
     return output_xD_dataset
 

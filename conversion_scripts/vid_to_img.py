@@ -60,11 +60,11 @@ if __name__ == '__main__':
             if 'activity' not in activity or 'bad' in activity or 'S' not in subject:
                 continue
             if any(keyword in root for keyword in args.val_keyword):
-                train_val_test = 'Validate'
+                train_val_test = 'validate'
             elif any(keyword in root for keyword in args.test_keyword):
-                train_val_test = 'Test'
+                train_val_test = 'test'
             else:
-                train_val_test = 'Train'
+                train_val_test = 'train'
 
             print(f"Extracted elements: {train_val_test} - sub: {subject}, act: {activity}, cam: {camera_id}")
             output_file_base = os.path.join(args.output_folder, train_val_test, f"{subject}-{activity}-{camera_id}")

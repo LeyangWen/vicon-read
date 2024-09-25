@@ -1,11 +1,18 @@
 # a class for vicon skeleton
+from unicodedata import category
+
 import c3d
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 import xml.etree.ElementTree as ET
+
+from PyQt5.QtWidgets.QWidget import width
 from scipy.io import savemat
 import yaml
+from spacepy.data_assimilation import output
+
+from backup_c3d import file_name
 from utility import *
 from spacepy import pycdf
 import cv2
@@ -457,6 +464,70 @@ class VEHSErgoSkeleton(Skeleton):
         MotionBert Style
         '''
         raise NotImplementedError
+
+    def output_COCO_2dPose(self, downsample=5, downsample_keep=1, image_id_cum=0, pose_id_cum=0, image_folder='train'):
+        # append data at end
+        annotations = []
+        images = []
+
+        ################ Preset Params
+        set_vis = 2
+        set_crowd = 0
+        set_category_id = 1
+        set_license = 99
+        frame_count = 0
+        res_w = 1920
+        res_h = 1200
+        file_elements = self.c3d_file.split('\\')
+        ### subject to change based on your filename structure
+        subject = file_elements[-3]
+        activity = file_elements[-1].split('.')[0].lower()
+        ################
+        # print(f"Check: subject: {subject}, activity: {activity}")
+        assert subject[0] == "S"
+        assert int(subject[1:]) < 11
+        assert activity[:8] == "activity"
+        for this_camera in self.cameras:
+            # camera_pitch_angle = this_camera.get_camera_pitch()
+            for downsample_idx in range(downsample):
+                if downsample_idx == downsample_keep:
+                    break
+                for frame_idx in range(0, self.frame_number, downsample):
+                    real_frame_idx = frame_idx + downsample_idx
+                    if real_frame_idx >= self.frame_number:
+                        break
+                    frame_count += 1
+                    image_id_cum += 1
+                    pose_id_cum += 1  # since we only have one pose per image
+                    this_joint_2d = self.pose_2d_camera[this_camera.DEVICEID][real_frame_idx, :, :]
+                    this_joint_vis = np.ones(this_joint_2d.shape[0]) * set_vis
+                    this_joint_2d_vis = np.concatenate([this_joint_2d, this_joint_vis[:, None]], axis=1)
+
+                    annotation_dict = {}
+                    annotation_dict['joint_2d'] = this_joint_2d_vis
+                    annotation_dict['num_keypoints'] = this_joint_2d.shape[0]
+                    annotation_dict['iscrowd'] = set_crowd
+                    annotation_dict['bbox'] = self.pose_2d_bbox[this_camera.DEVICEID]
+                    annotation_dict['category_id'] = set_category_id
+                    annotation_dict['id'] = pose_id_cum
+                    annotation_dict['image_id'] = image_id_cum
+
+                    # COCO image name format need to match conversion_scripts/vid_to_img.py
+                    # test/S09-activity00-51470934-000001jpg
+                    image_file = os.path.join(image_folder, f"{subject}-{activity}-{this_camera.DEVICEID}-{frame_count:06d}.jpg")
+
+                    image_dict = {}
+                    image_dict['file_name'] = image_file
+                    image_dict['height'] = res_h
+                    image_dict['width'] = res_w
+                    image_dict['id'] = image_id_cum
+                    image_dict['license'] = set_license
+
+                    annotations.append(annotation_dict)
+                    images.append(image_dict)
+
+        output = {"annotations": annotations, "images": images}
+        return output
 
     def output_MotionBert_pose(self, downsample=5, downsample_keep=1, pitch_correction=False):
         # append data at end
