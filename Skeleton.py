@@ -556,6 +556,7 @@ class VEHSErgoSkeleton(Skeleton):
                     joint_3d_camera.append(self.pose_3d_camera[this_camera.DEVICEID][real_frame_idx, :, :])
 
                     joint_3d_image_frame = self.pose_3d_camera[this_camera.DEVICEID][real_frame_idx, :, :].copy()  # need the shape
+                    # todo: maybe joint_3d_image_frame = ratio * (pose3d[:] - pose3d[rootIdx]) instead of merging the two results
                     joint_3d_image_frame[:, :2] = self.pose_2d_camera[this_camera.DEVICEID][real_frame_idx, :, :]  # overwrite xy
                     joint_3d_image_frame[:, 2] = self.pose_depth_px[this_camera.DEVICEID][real_frame_idx, :]  # overwrite z
 
