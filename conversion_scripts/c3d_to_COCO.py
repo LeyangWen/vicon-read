@@ -19,9 +19,10 @@ if __name__ == '__main__':
     parser.add_argument('--downsample', type=int, default=20)
     parser.add_argument('--downsample_keep', type=int, default=1)
     parser.add_argument('--split_output', action='store_true')  # not implemented yet
-    parser.add_argument('--output_type', type=list, default=[True, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
+    parser.add_argument('--output_type', type=list, default=[False, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
     parser.add_argument('--output_file_name_end', type=str, default='')
     parser.add_argument('--image_folder', default=r"W:\VEHS\VEHS-7M\images\5fps", help="split folder for images")
+    parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
     args = parser.parse_args()
 
 
@@ -69,7 +70,7 @@ if __name__ == '__main__':
     ####### change output keypoints here
     custom_6D_joint_names = VEHS_ergo_37
 
-    output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names))  # 66
+    output_6D_dataset = empty_COCO_dataset_dict(len(custom_6D_joint_names))  # 66
     output_smpl_dataset = {}
     count = 0
     pkl_filenames = {'3D': [], '6D': [], 'SMPL': []}  # if split_output, save intermediate results
@@ -123,60 +124,24 @@ if __name__ == '__main__':
 
 
 
-                    output_6D_dataset = append_output_xD_dataset(output_6D_dataset, train_val_test, output6D)
+                    output_6D_dataset = append_COCO_xD_dataset(output_6D_dataset, train_val_test, output6D)
                 if args.output_type[2]:
                     raise NotImplementedError('Implemented using moshpp+soma in separate repo')
                     pass
                     # output_smpl_dataset =
                 if args.output_type[3]:  # GT 3DSSPP output
-                    batch_3DSSPP_batch_filename = c3d_file.replace('.c3d', '-3DSSPP.txt')
-                    this_skeleton.output_3DSSPP_loc(frame_range=[0, 3000, 10], loc_file=batch_3DSSPP_batch_filename)
-                    break  # self = this_skeleton
+                    pass
                 del this_skeleton
-                if args.split_output:
-                    if 'activity08' in root or 'Activity08' in file:  # save intermediate results
-                        print(f'Saving intermediate results for {c3d_file}')
-                        if args.output_type[0]:  # 3D pose
-                            with open(f'{output_3d_filename}_segment{count}.pkl', 'wb') as f:
-                                pickle.dump(output_3D_dataset, f)
-                            pkl_filenames['3D'].append(f'{output_3d_filename}_segment{count}.pkl')
-                        if args.output_type[1]:  # 6D pose
-                            with open(f'{output_6d_filename}_segment{count}.pkl', 'wb') as f:
-                                pickle.dump(output_6D_dataset, f)
-                            pkl_filenames['6D'].append(f'{output_6d_filename}_segment{count}.pkl')
-                        # empty the dataset, else it is too big for memory and make it slow
-                        output_3D_dataset = empty_MotionBert_dataset_dict(len(h36m_joint_names))  # 17
-                        output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names))  # 66
+
                         # output_smpl_dataset =
-    # # export: h36M 17 joint center, 6D pose 49 keypoints, SMPL-related, GT-Vicon to 3DSSPP
-    if args.split_output:  #read and merge
-        raise NotImplementedError  # need to merge the multilayer dict in the pkl files
-    else:  # one output, for smaller dataset
-        print(f'Saving final results in {output_3d_filename}, {output_6d_filename}, {output_smpl_filename}')
-        if args.output_type[0]:  # 3D pose
-            with open(f'{output_3d_filename}', 'wb') as f:
-                pickle.dump(output_3D_dataset, f)
-        if args.output_type[1]:  # 6D pose
-            with open(f'{output_6d_filename}', 'wb') as f:
-                pickle.dump(output_6D_dataset, f)
-        if args.output_type[3]:
-            import subprocess
-            import shutil
-            ########################### Step 2: Run 3DSSPP ###########################
-            # Get the initial modification time of the output file
-            SSPP_CLI_folder = 'H:\\3DSSPP_all\Compiled\\3DSSPP 7.1.2 CLI'
-            loc_file = batch_3DSSPP_batch_filename
-            # export_file = os.path.join(SSPP_CLI_folder, 'export', 'batchinput_export.txt')  # constant if using wrapper
-            # initial_mtime = os.stat(export_file).st_mtime
-            loc_file = loc_file.replace('\\', '/')
-            # copy the loc file to the 3DSSPP folder
-            shutil.copy(loc_file, SSPP_CLI_folder)
-            print(f"\n{'@' * 30} Subprocess start {'@' * 30}")
-            # loc_file ="example_input_batch.txt"
-            subprocess.call(['bash', '3DSSPP-script.sh', loc_file.split('/')[-1], '--avi', '4'], shell=True, cwd=SSPP_CLI_folder)  # '--autoclose'
-            # careful to look for errors messages in terminal for the subprocess, will not stop code
-            # wait_for_file_update(export_file, initial_mtime)  # Wait for the output file to be updated
-            print(f"\n{'@' * 30} Subprocess end {'@' * 30}\n")
+    print(f'Saving final results in {output_3d_filename}, {output_6d_filename}, {output_smpl_filename}')
+    if args.output_type[0]:  # 3D pose
+        with open(f'{output_3d_filename}', 'wb') as f:
+            pickle.dump(output_3D_dataset, f)
+    if args.output_type[1]:  # 6D pose
+        with open(f'{output_6d_filename}', 'wb') as f:
+            pickle.dump(output_6D_dataset, f)
+
 
     # output statistics to json
     with open(f'{output_3d_filename}_dataset_statistics_total_{total_frame_number}.json', 'w') as f:

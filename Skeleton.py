@@ -7,12 +7,12 @@ import os
 import matplotlib.pyplot as plt
 import xml.etree.ElementTree as ET
 
-from PyQt5.QtWidgets.QWidget import width
+# from PyQt5.QtWidgets.QWidget import width
 from scipy.io import savemat
 import yaml
 from spacepy.data_assimilation import output
 
-from backup_c3d import file_name
+# from backup_c3d import file_name
 from utility import *
 from spacepy import pycdf
 import cv2
