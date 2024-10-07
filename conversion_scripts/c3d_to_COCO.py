@@ -137,7 +137,7 @@ if __name__ == '__main__':
     if args.output_type[1]:  # 6D pose
         with open(f'{output_6d_filename}', 'wb') as f:
             pickle.dump(output_6D_dataset, f)
-        # output_6d_filename = os.path.join(r'C:\Users\wenleyan1\Downloads','VEHS_6DCOCO_downsample20_keep1.pkl')
+        # output_6d_filename = os.path.join(r'C:\Users\wenleyan1\Downloads','VEHS_6DCOCO_downsample20_keep1.json')  # write to ssd instead of hhd for speed
         save_COCO_json(output_6D_dataset, output_6d_filename)
 
 

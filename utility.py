@@ -238,15 +238,66 @@ def append_COCO_xD_dataset(output_xD_dataset, this_train_val_test, append_output
         output_xD_dataset[this_train_val_test][key] = output_xD_dataset[this_train_val_test][key] + append_outputxD_dict[key]
     return output_xD_dataset
 
+
 def save_COCO_json(json_data, name):
     for train_val_test in ['train', 'validate', 'test']:
         # np to list
         this_json_data = json_data[train_val_test]
-        for frame in tqdm(range(len(this_json_data['annotations'])), desc="Serializing np to json"):
+        for frame in tqdm(range(len(this_json_data['annotations'])), desc="Processing Frames"):
             for key2 in ['joint_2d', 'bbox']:
                 this_json_data['annotations'][frame][key2] = this_json_data['annotations'][frame][key2].tolist()
 
         json_filename = name.replace('.pkl', f'_{train_val_test}.json')
         with open(f'{json_filename}', 'w') as f:
             json.dump(json_data[train_val_test], f)
+        print(f"Saved {json_filename}")
+
+
+def save_COCO_json_increment(json_data_ori, name):
+    json_data = json_data_ori.copy()
+    for train_val_test in ['train', 'validate', 'test']:
+        # Prepare the output file path
+        json_filename = name.replace('.json', f'_{train_val_test}.json')
+        with open(json_filename, 'w') as f:
+            this_json_data = json_data[train_val_test]
+
+            # Write the initial metadata fields except annotations
+            f.write('{"info": ')
+            json.dump(this_json_data['info'], f)
+
+            f.write(', "licenses": ')
+            json.dump(this_json_data['licenses'], f)
+
+            f.write(', "images": ')
+            json.dump(this_json_data['images'], f)
+
+            f.write(', "categories": ')
+            json.dump(this_json_data['categories'], f)
+
+            # Start writing annotations field, and write each annotation separately
+            f.write(', "annotations":[')
+
+            for frame in tqdm(range(len(this_json_data['annotations'])), desc=f"Serializing {train_val_test} data to JSON"):
+                annotation = this_json_data['annotations'][frame]
+
+                # Convert specific keys to a list if needed
+                if 'joint_2d' in annotation:
+                    joint_2d_np = annotation['joint_2d'].astype(int)
+                    annotation['joint_2d'] = joint_2d_np.tolist()
+
+                # Ensure bbox values are floats with two decimal places using NumPy
+                if 'bbox' in annotation:
+                    bbox_np = np.round(annotation['bbox'], 2)
+                    annotation['bbox'] = bbox_np.tolist()
+
+                # Serialize the current annotation
+                json.dump(annotation, f)
+
+                # Add a comma if this is not the last annotation
+                if frame != len(this_json_data['annotations']) - 1:
+                    f.write(',')
+
+            # Close the annotations array and the JSON object
+            f.write(']}')
+
         print(f"Saved {json_filename}")

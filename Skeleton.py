@@ -516,7 +516,7 @@ class VEHSErgoSkeleton(Skeleton):
                     annotation_dict['joint_2d'] = this_joint_2d_vis
                     annotation_dict['num_keypoints'] =num_keypoints
                     annotation_dict['iscrowd'] = set_crowd
-                    annotation_dict['bbox'] = self.pose_2d_bbox[this_camera.DEVICEID]
+                    annotation_dict['bbox'] = self.pose_2d_bbox[this_camera.DEVICEID][real_frame_idx]
                     annotation_dict['category_id'] = set_category_id
                     annotation_dict['id'] = pose_id_cum
                     annotation_dict['image_id'] = image_id_cum
