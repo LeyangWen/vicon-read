@@ -137,15 +137,14 @@ if __name__ == '__main__':
     if args.output_type[0]:  # 3D pose
         with open(f'{output_3d_filename}', 'wb') as f:
             pickle.dump(output_3D_dataset, f)
-        json_filename = output_3d_filename.replace('.pkl', '.json')
-        with open(f'{json_filename}', 'w') as f:
-            json.dump(data, f)
+        save_COCO_json(output_3D_dataset, output_3d_filename)
     if args.output_type[1]:  # 6D pose
         with open(f'{output_6d_filename}', 'wb') as f:
             pickle.dump(output_6D_dataset, f)
         json_filename = output_6d_filename.replace('.pkl', '.json')
-        with open(f'{json_filename}', 'w') as f:
-            json.dump(data, f)
+        save_COCO_json(output_6D_dataset, output_6d_filename)
+
+
 
 
     # output statistics to json

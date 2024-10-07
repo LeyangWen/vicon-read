@@ -379,14 +379,17 @@ class VEHSErgoSkeleton(Skeleton):
         rgb_frame_rate = 100
         fps_ratio = 100 / rgb_frame_rate
         frames = np.linspace(start_frame / fps_ratio, end_frame / fps_ratio, int((end_frame - start_frame) / fps_ratio), dtype=int)
+        set_vis = 2
         self.pose_3d_camera = {}
         self.pose_2d_camera = {}
         self.pose_2d_bbox = {}
         self.pose_depth_px = {}
         self.pose_depth_ratio = {}
+        self.pose_2d_vis_camera = {}
         for cam_idx, camera in enumerate(cameras):
             print(f'Processing camera {cam_idx}: {camera.DEVICEID}')
             points_2d_list = []
+            points_2d_vis_list = []
             points_3d_camera_list = []
             points_2d_bbox_list = []
             points_depth_px_list = []
@@ -402,6 +405,9 @@ class VEHSErgoSkeleton(Skeleton):
                 points_depth_px, ratio = self.get_norm_depth_ratio(points_3d_camera, camera, rootIdx=rootIdx)
                 bbox_top_left, bbox_bottom_right = points_2d.min(axis=0) - 20, points_2d.max(axis=0) + 20
 
+                points_2d_vis = np.ones((points_2d.shape[0], 1)) * set_vis
+                points_2d_vis = np.concatenate([points_2d, points_2d_vis], axis=1)
+                points_2d_vis_list.append(points_2d_vis.tolist())
                 points_2d_list.append(points_2d)
                 points_3d_camera_list.append(points_3d_camera)
                 points_2d_bbox_list.append([bbox_top_left, bbox_bottom_right])
@@ -411,7 +417,9 @@ class VEHSErgoSkeleton(Skeleton):
 
             self.pose_3d_camera[camera.DEVICEID] = np.array(points_3d_camera_list)
             self.pose_2d_camera[camera.DEVICEID] = np.array(points_2d_list)
-            self.pose_2d_bbox[camera.DEVICEID] = np.array(points_2d_bbox_list)
+            self.pose_2d_camera[camera.DEVICEID] = np.array(points_2d_list)
+            self.pose_2d_vis_camera[camera.DEVICEID] = points_2d_vis_list  # for coco, need to be list for json, faster here
+            self.pose_2d_bbox[camera.DEVICEID] = points_2d_bbox_list  #np.array(points_2d_bbox_list)
             self.pose_depth_px[camera.DEVICEID] = np.array(points_depth_px_list)
             self.pose_depth_ratio[camera.DEVICEID] = np.array(depth_ratio_list)
         self.cameras = cameras
@@ -499,15 +507,14 @@ class VEHSErgoSkeleton(Skeleton):
                     frame_count += 1
                     image_id_cum += 1
                     pose_id_cum += 1  # since we only have one pose per image
-                    this_joint_2d = self.pose_2d_camera[this_camera.DEVICEID][real_frame_idx, :, :]
-                    this_joint_vis = np.ones(this_joint_2d.shape[0]) * set_vis
-                    this_joint_2d_vis = np.concatenate([this_joint_2d, this_joint_vis[:, None]], axis=1)
+                    this_joint_2d_vis = self.pose_2d_vis_camera[this_camera.DEVICEID][real_frame_idx]
+                    num_keypoints = len(this_joint_2d_vis[0])
 
                     annotation_dict = {}
-                    annotation_dict['joint_2d'] = this_joint_2d_vis.tolist
-                    annotation_dict['num_keypoints'] = this_joint_2d.shape[0]
+                    annotation_dict['joint_2d'] = this_joint_2d_vis
+                    annotation_dict['num_keypoints'] =num_keypoints
                     annotation_dict['iscrowd'] = set_crowd
-                    annotation_dict['bbox'] = self.pose_2d_bbox[this_camera.DEVICEID].tolist
+                    annotation_dict['bbox'] = self.pose_2d_bbox[this_camera.DEVICEID]
                     annotation_dict['category_id'] = set_category_id
                     annotation_dict['id'] = pose_id_cum
                     annotation_dict['image_id'] = image_id_cum

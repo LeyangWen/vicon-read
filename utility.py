@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import datetime
 from mpl_toolkits.mplot3d import Axes3D
-
+import json
 
 def plot_joint_axis(joint_axis_pts,label=None):
     # example
@@ -237,3 +237,8 @@ def append_COCO_xD_dataset(output_xD_dataset, this_train_val_test, append_output
         output_xD_dataset[this_train_val_test][key] = output_xD_dataset[this_train_val_test][key] + append_outputxD_dict[key]
     return output_xD_dataset
 
+def save_COCO_json(json_data, name):
+    for train_val_test in ['train', 'validate', 'test']:
+        json_filename = name.replace('.pkl', f'_{train_val_test}.json')
+        with open(f'{json_filename}', 'w') as f:
+            json.dump(json_data[train_val_test], f)
