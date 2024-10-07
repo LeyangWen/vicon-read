@@ -42,9 +42,8 @@ if __name__ == '__main__':
     skeleton_file = args.skeleton_file
     downsample = args.downsample
     downsample_keep = args.downsample_keep
-    output_3d_filename = os.path.join(base_folder, f'VEHS_3D_downsample{downsample}_keep{downsample_keep}{args.output_file_name_end}.pkl')
-    output_6d_filename = os.path.join(base_folder, f'VEHS_6D_downsample{downsample}_keep{downsample_keep}{args.output_file_name_end}.pkl')
-    output_smpl_filename = os.path.join(base_folder, f'VEHS_smpl_downsample{downsample}_keep{downsample_keep}{args.output_file_name_end}.pkl')
+    output_3d_filename = os.path.join(base_folder, f'VEHS_3DCOCO_downsample{downsample}_keep{downsample_keep}{args.output_file_name_end}.pkl')
+    output_6d_filename = os.path.join(base_folder, f'VEHS_6DCOCO_downsample{downsample}_keep{downsample_keep}{args.output_file_name_end}.pkl')
 
     # iterate through the folder to find all c3d
     # h36m_joint_names = ['Hip', 'RHip', 'RKnee', 'RFoot', 'LHip', 'LKnee', 'LFoot', 'Spine', 'Thorax', 'Neck/Nose', 'Head', 'LShoulder', 'LElbow', 'LWrist', 'RShoulder', 'RElbow', 'RWrist']  # h36m original names
