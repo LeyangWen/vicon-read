@@ -93,11 +93,7 @@ if __name__ == '__main__':
                 c3d_file = os.path.join(root, file)
                 count += 1
                 # if count > 1:  # give a very small file for testing
-                #     if train_val_test == 'train':
-                #         train_val_test = 'test'
-                #         count = 0
-                #     else:
-                #         break
+                #     break
 
                 print(f'{count}: Starting on {c3d_file} as {train_val_test} set')
                 this_skeleton = VEHSErgoSkeleton(skeleton_file)
@@ -137,11 +133,11 @@ if __name__ == '__main__':
     if args.output_type[0]:  # 3D pose
         with open(f'{output_3d_filename}', 'wb') as f:
             pickle.dump(output_3D_dataset, f)
-        save_COCO_json(output_3D_dataset, output_3d_filename)
+        # save_COCO_json(output_3D_dataset, output_3d_filename)
     if args.output_type[1]:  # 6D pose
         with open(f'{output_6d_filename}', 'wb') as f:
             pickle.dump(output_6D_dataset, f)
-        json_filename = output_6d_filename.replace('.pkl', '.json')
+        # output_6d_filename = os.path.join(r'C:\Users\wenleyan1\Downloads','VEHS_6DCOCO_downsample20_keep1.pkl')
         save_COCO_json(output_6D_dataset, output_6d_filename)
 
 

@@ -405,9 +405,9 @@ class VEHSErgoSkeleton(Skeleton):
                 points_depth_px, ratio = self.get_norm_depth_ratio(points_3d_camera, camera, rootIdx=rootIdx)
                 bbox_top_left, bbox_bottom_right = points_2d.min(axis=0) - 20, points_2d.max(axis=0) + 20
 
-                points_2d_vis = np.ones((points_2d.shape[0], 1)) * set_vis
-                points_2d_vis = np.concatenate([points_2d, points_2d_vis], axis=1)
-                points_2d_vis_list.append(points_2d_vis.tolist())
+                # points_2d_vis = np.ones((points_2d.shape[0], 1)) * set_vis
+                # points_2d_vis = np.concatenate([points_2d, points_2d_vis], axis=1)
+                # points_2d_vis_list.append(points_2d_vis.tolist())
                 points_2d_list.append(points_2d)
                 points_3d_camera_list.append(points_3d_camera)
                 points_2d_bbox_list.append([bbox_top_left, bbox_bottom_right])
@@ -418,8 +418,8 @@ class VEHSErgoSkeleton(Skeleton):
             self.pose_3d_camera[camera.DEVICEID] = np.array(points_3d_camera_list)
             self.pose_2d_camera[camera.DEVICEID] = np.array(points_2d_list)
             self.pose_2d_camera[camera.DEVICEID] = np.array(points_2d_list)
-            self.pose_2d_vis_camera[camera.DEVICEID] = points_2d_vis_list  # for coco, need to be list for json, faster here
-            self.pose_2d_bbox[camera.DEVICEID] = points_2d_bbox_list  #np.array(points_2d_bbox_list)
+            # self.pose_2d_vis_camera[camera.DEVICEID] = points_2d_vis_list  # for coco, need to be list for json, --> too slow for memory
+            self.pose_2d_bbox[camera.DEVICEID] = np.array(points_2d_bbox_list)
             self.pose_depth_px[camera.DEVICEID] = np.array(points_depth_px_list)
             self.pose_depth_ratio[camera.DEVICEID] = np.array(depth_ratio_list)
         self.cameras = cameras
@@ -507,7 +507,9 @@ class VEHSErgoSkeleton(Skeleton):
                     frame_count += 1
                     image_id_cum += 1
                     pose_id_cum += 1  # since we only have one pose per image
-                    this_joint_2d_vis = self.pose_2d_vis_camera[this_camera.DEVICEID][real_frame_idx]
+                    this_joint_2d = self.pose_2d_camera[this_camera.DEVICEID][real_frame_idx]
+                    this_joint_vis = np.ones(this_joint_2d.shape[0]) * set_vis
+                    this_joint_2d_vis = np.concatenate([this_joint_2d, this_joint_vis[:, None]], axis=1)
                     num_keypoints = len(this_joint_2d_vis[0])
 
                     annotation_dict = {}

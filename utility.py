@@ -6,6 +6,7 @@ import numpy as np
 import datetime
 from mpl_toolkits.mplot3d import Axes3D
 import json
+from tqdm import tqdm
 
 def plot_joint_axis(joint_axis_pts,label=None):
     # example
@@ -239,6 +240,13 @@ def append_COCO_xD_dataset(output_xD_dataset, this_train_val_test, append_output
 
 def save_COCO_json(json_data, name):
     for train_val_test in ['train', 'validate', 'test']:
+        # np to list
+        this_json_data = json_data[train_val_test]
+        for frame in tqdm(range(len(this_json_data['annotations'])), desc="Serializing np to json"):
+            for key2 in ['joint_2d', 'bbox']:
+                this_json_data['annotations'][frame][key2] = this_json_data['annotations'][frame][key2].tolist()
+
         json_filename = name.replace('.pkl', f'_{train_val_test}.json')
         with open(f'{json_filename}', 'w') as f:
             json.dump(json_data[train_val_test], f)
+        print(f"Saved {json_filename}")
