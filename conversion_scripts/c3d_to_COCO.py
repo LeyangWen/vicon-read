@@ -133,18 +133,27 @@ if __name__ == '__main__':
                 del this_skeleton
 
                         # output_smpl_dataset =
-    print(f'Saving final results in {output_3d_filename}, {output_6d_filename}, {output_smpl_filename}')
+    print(f'Saving final results in {output_3d_filename}, {output_6d_filename}')
     if args.output_type[0]:  # 3D pose
         with open(f'{output_3d_filename}', 'wb') as f:
             pickle.dump(output_3D_dataset, f)
+        json_filename = output_3d_filename.replace('.pkl', '.json')
+        with open(f'{json_filename}', 'w') as f:
+            json.dump(data, f)
     if args.output_type[1]:  # 6D pose
         with open(f'{output_6d_filename}', 'wb') as f:
             pickle.dump(output_6D_dataset, f)
+        json_filename = output_6d_filename.replace('.pkl', '.json')
+        with open(f'{json_filename}', 'w') as f:
+            json.dump(data, f)
 
 
     # output statistics to json
     with open(f'{output_3d_filename}_dataset_statistics_total_{total_frame_number}.json', 'w') as f:
         json.dump(dataset_statistics, f)
+
+
+
 
     # dt_file -- .pkl
     # trainset = self.dt_dataset['train']['joint_2d'][::self.sample_stride, :, :2].astype(np.float32)  # [N, 17, 2]

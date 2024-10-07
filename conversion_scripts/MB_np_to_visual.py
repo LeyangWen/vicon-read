@@ -3,21 +3,24 @@ import os.path
 import pickle
 from Skeleton import *
 import matplotlib
-# matplotlib.use('Qt5Agg')
+matplotlib.use('Qt5Agg')
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/Rokoko-Hand-21-MB.yaml')
-    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Hand-21.yaml')
-    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/Inference-RTMPose-MB.yaml')  #-pitch-corrected.yaml')
-    # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/RTMPose-Skeleton.yaml')
-    parser.add_argument('--output_frame_folder', type=str, default=None)
-    parser.add_argument('--type', type=str, default='hand')
+    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/Rokoko-Hand-21-MB.yaml')
+    # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Hand-21.yaml')
+    # parser.add_argument('--type', type=str, default='hand')
 
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/Inference-RTMPose-MB-pitch-corrected.yaml')
+    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/RTMPose-Skeleton.yaml')
+    parser.add_argument('--type', type=str, default='body')
+
+
+    parser.add_argument('--output_frame_folder', type=str, default=None)
     parser.add_argument('--output_GT_frame_folder', type=str, default=None)
     parser.add_argument('--plot_mode', type=str, default='normal_view', help='mode: camera_view, camera_side_view, 0_135_view, normal_view')
     parser.add_argument('--MB_data_stride', type=int, default=243)
-    parser.add_argument('--debug_mode', default=True, type=bool)
+    parser.add_argument('--debug_mode', default=False, type=bool)
 
 
     # parser.add_argument('--name_list', type=list, default=[])
@@ -154,8 +157,8 @@ if __name__ == '__main__':
     estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
     estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
 
-    GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
-    GT_skeleton.load_name_list_and_np_points(args.name_list, GT_pose)
+    # GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
+    # GT_skeleton.load_name_list_and_np_points(args.name_list, GT_pose)
 
     if args.type == 'hand':
         # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='Wrist')  # get legend
@@ -173,7 +176,13 @@ if __name__ == '__main__':
         # GT_skeleton.plot_3d_pose_frame(frame=frame+1, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=plot_range)
         # GT_skeleton.plot_3d_pose_frame(frame=frame + 2, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=plot_range)
     elif args.type == 'body':
-        estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1000, mode=args.plot_mode, center_key='PELVIS')
+        # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1000, mode=args.plot_mode, center_key='PELVIS')
+
+        frames = np.array([37159, 46428, 34253, 40209, 54143, 47699, 31809, 58317])/5
+        frame = int(frames[7])
+        estimate_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", plot_range=400, mode='normal_view', center_key='PELVIS')
+
+
 
 
 

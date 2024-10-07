@@ -504,10 +504,10 @@ class VEHSErgoSkeleton(Skeleton):
                     this_joint_2d_vis = np.concatenate([this_joint_2d, this_joint_vis[:, None]], axis=1)
 
                     annotation_dict = {}
-                    annotation_dict['joint_2d'] = this_joint_2d_vis
+                    annotation_dict['joint_2d'] = this_joint_2d_vis.tolist
                     annotation_dict['num_keypoints'] = this_joint_2d.shape[0]
                     annotation_dict['iscrowd'] = set_crowd
-                    annotation_dict['bbox'] = self.pose_2d_bbox[this_camera.DEVICEID]
+                    annotation_dict['bbox'] = self.pose_2d_bbox[this_camera.DEVICEID].tolist
                     annotation_dict['category_id'] = set_category_id
                     annotation_dict['id'] = pose_id_cum
                     annotation_dict['image_id'] = image_id_cum

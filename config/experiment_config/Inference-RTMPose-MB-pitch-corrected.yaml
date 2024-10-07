@@ -3,4 +3,6 @@ name_list: ['nose','left_ear','right_ear','left_shoulder','right_shoulder','left
 GT_file: None
 eval_key: 'validate'
 
-estimate_file: 'W:\VEHS\Testing_Videos_and_rtmpose_results\industry_3_OneDrive_2_9-4-2024\kps_133_fps_20\pitch_corrected\industry_3_RTM2d_tilt_corrected.npy'
+#estimate_file: 'W:\VEHS\Testing_Videos_and_rtmpose_results\industry_3_OneDrive_2_9-4-2024\kps_133_fps_20\pitch_corrected\industry_3_RTM2d_tilt_corrected.npy'
+estimate_file: '/Users/leyangwen/Documents/Pose/RTM-MB-24-industry-config6-pitch-corrected/industry_RTM2d_tilt_corrected.npy'
+
