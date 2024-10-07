@@ -514,7 +514,7 @@ class VEHSErgoSkeleton(Skeleton):
 
                     # COCO image name format need to match conversion_scripts/vid_to_img.py
                     # test/S09-activity00-51470934-000001jpg
-                    image_file = os.path.join(image_folder, f"{subject}-{activity}-{this_camera.DEVICEID}-{frame_count:06d}.jpg")
+                    image_file = f"{subject}-{activity}-{this_camera.DEVICEID}-{frame_count:06d}.jpg"
 
                     image_dict = {}
                     image_dict['file_name'] = image_file
