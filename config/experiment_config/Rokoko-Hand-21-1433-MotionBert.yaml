@@ -7,3 +7,25 @@ val_keyword: ['Rokoko\E', 'Rokoko\G', 'round 2\L']
 test_keyword: ['Rokoko\A', 'Rokoko\F', 'round 2\K']
 
 
+#Note to self about estimated dataset size
+#
+#Round 1:
+#
+#	•	10 subjects, 7 tasks, 30 fps
+#	•	609 frames per CSV:  \frac{609}{30} = 20.3 \text{s}
+#	•	 7 \times 10 = 70  CSV files
+#	•	 609 \times 7 = 4,263  frames per subject
+#	•	 4,263 \times 10 = 42,630  total frames
+#
+#Split:
+#
+#	•	6 subjects train, 2 test, 2 validation
+#
+#Round 2:
+#
+#	•	7 subjects, 2 repeats, 10 tasks, 30 fps
+#	•	3,719 frames per CSV:  \frac{3719}{30} = 123.97 \text{s}
+#	•	 7 \times 2 \times 10 = 140  CSV files
+#	•	 3,719 \times 2 \times 10 = 74,380  frames per subject
+#	•	 74,380 \times 7 = 520,660  total frames
+

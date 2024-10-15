@@ -148,7 +148,7 @@ def filter_subject_using_center_of_joints(all_keyps_bef,window = 8):
 #             all_keyps.append([[0,0,0]]*26)
 #     return np.array(all_keyps)
 
-def filter_subject_using_center_of_joints_with_disqualify(all_keyps_bef,window = 4):
+def filter_subject_using_center_of_joints_with_disqualify(all_keyps_bef,window = 4, type='rtm24'):
     # all_keyps_bef = np.array(all_keyps_bef)
     all_keyps = []
     prev_frames = [0]
@@ -162,7 +162,7 @@ def filter_subject_using_center_of_joints_with_disqualify(all_keyps_bef,window =
             if (frame_idx == 0) : # for frame 0, we chose average confidence as we do not have any previous frames
                 for instance_idx, instance in enumerate(frame):
                     instance_expanded = np.expand_dims(instance, axis=0)
-                    rtm_keyps = get_rtm_keyps(instance_expanded)
+                    rtm_keyps = get_rtm_keyps(instance_expanded, type=type)
                     average_conf = np.mean(rtm_keyps[0,:,2])
                     if average_conf > confidence:
                         confidence = average_conf
@@ -172,7 +172,7 @@ def filter_subject_using_center_of_joints_with_disqualify(all_keyps_bef,window =
                 if not np.array(prev_frames).any(): # If all the previous frames are empty, we chose the subject with the highest average confidence
                     for instance_idx, instance in enumerate(frame):
                         instance_expanded = np.expand_dims(instance, axis=0)
-                        rtm_keyps = get_rtm_keyps(instance_expanded)
+                        rtm_keyps = get_rtm_keyps(instance_expanded, type=type)
                         average_conf = np.mean(rtm_keyps[0,:,2])
                         if average_conf > confidence:
                             confidence = average_conf
@@ -183,7 +183,7 @@ def filter_subject_using_center_of_joints_with_disqualify(all_keyps_bef,window =
                 else:
                     for instance_idx, instance in enumerate(frame):
                         instance_expanded = np.expand_dims(instance, axis=0)
-                        rtm_keyps = get_rtm_keyps(instance_expanded)
+                        rtm_keyps = get_rtm_keyps(instance_expanded, type=type)
                         instance_dict[instance_idx] = rtm_keyps[0]
                         frames_matrix = np.concatenate((np.array(prev_frames),rtm_keyps),axis=0)
                         # common_joints = []
@@ -214,6 +214,9 @@ def filter_subject_using_center_of_joints_with_disqualify(all_keyps_bef,window =
     return np.array(all_keyps)
 
 def load_json_arr(json_path):
+    """
+    For RTM-img output, given by Veeru
+    """
 
     lines = []
     with open(json_path, 'r', encoding='Windows-1252') as f:
@@ -228,6 +231,31 @@ def load_json_arr(json_path):
                 bboxes.append(bbox_value)
                 keyp_values = json_data['instance_info'][frame_idx]['instances'][instance]['keypoints']
                 keyp_scores = json_data['instance_info'][frame_idx]['instances'][instance]['keypoint_scores']
+                [keyp_values[i].append(keyp_scores[i]) for i in range(len(keyp_values))]
+                keyps.append(keyp_values)
+            all_bboxes.append(np.array(bboxes))
+            all_keyps.append(np.array(keyps))
+    print('done')
+    return all_bboxes,all_keyps
+
+def load_json_arr_vid(json_path):
+    """
+    for rtm-vid output, given by Francis
+    """
+
+    lines = []
+    with open(json_path, 'r', encoding='Windows-1252') as f:
+        json_data = json.load(f)
+        all_bboxes, all_keyps = [],[]
+        for frame_idx in range(len(json_data)):
+            bboxes = []
+            keyps = []
+            for instance in range(len(json_data[frame_idx]['instances'])):
+                bbox_value = json_data[frame_idx]['instances'][instance]['bbox'][0]
+                bbox_value.append(json_data[frame_idx]['instances'][instance]['bbox_score'])
+                bboxes.append(bbox_value)
+                keyp_values = json_data[frame_idx]['instances'][instance]['keypoints']
+                keyp_scores = json_data[frame_idx]['instances'][instance]['keypoint_scores']
                 [keyp_values[i].append(keyp_scores[i]) for i in range(len(keyp_values))]
                 keyps.append(keyp_values)
             all_bboxes.append(np.array(bboxes))
@@ -251,18 +279,24 @@ def load_json_arr(json_path):
 #     return rtm_keyps
 
 
-def get_rtm_keyps(all_keyps):
-    rtm_keyps = np.zeros((len(all_keyps),26,3))
-    rtm_keyps[:,:17,:3] = all_keyps[:,:17,:3]
-    rtm_keyps[:,17,:3] = all_keyps[:,96,:3]
-    rtm_keyps[:,18,:3] = all_keyps[:,100,:3]
-    rtm_keyps[:,19,:3] = all_keyps[:,108,:3]
-    rtm_keyps[:,20,:3] = all_keyps[:,117,:3]
-    rtm_keyps[:,21,:3] = all_keyps[:,121,:3]
-    rtm_keyps[:,22,:3] = all_keyps[:,129,:3]
-    rtm_keyps[:,23,:3] = (rtm_keyps[:,11,:3] + rtm_keyps[:,12,:3])/2 # Pelvis
-    rtm_keyps[:,24,:3] = (rtm_keyps[:,5,:3] + rtm_keyps[:,6,:3])/2 # Thorax
-    rtm_keyps[:,25,:3] = (rtm_keyps[:,3,:3] + rtm_keyps[:,4,:3])/2 # Head
+def get_rtm_keyps(all_keyps, type='rtm24'):
+    if type == 'rtm24':
+        rtm_keyps = np.zeros((len(all_keyps),26,3))
+        rtm_keyps[:,:17,:3] = all_keyps[:,:17,:3]
+        rtm_keyps[:,17,:3] = all_keyps[:,96,:3]
+        rtm_keyps[:,18,:3] = all_keyps[:,100,:3]
+        rtm_keyps[:,19,:3] = all_keyps[:,108,:3]
+        rtm_keyps[:,20,:3] = all_keyps[:,117,:3]
+        rtm_keyps[:,21,:3] = all_keyps[:,121,:3]
+        rtm_keyps[:,22,:3] = all_keyps[:,129,:3]
+        rtm_keyps[:,23,:3] = (rtm_keyps[:,11,:3] + rtm_keyps[:,12,:3])/2 # Pelvis
+        rtm_keyps[:,24,:3] = (rtm_keyps[:,5,:3] + rtm_keyps[:,6,:3])/2 # Thorax
+        rtm_keyps[:,25,:3] = (rtm_keyps[:,3,:3] + rtm_keyps[:,4,:3])/2 # Head
+
+    elif type == 'Lhand21':
+        rtm_keyps = all_keyps[:, 91:112, :]
+    elif type == 'Rhand21':
+        rtm_keyps = all_keyps[:, 112:, :]
     return rtm_keyps
 
 # experiment_folder = '/Users/vtalreja/Documents/Video_Pose_3D/RTMPose/output/kps_133_fps_15'
