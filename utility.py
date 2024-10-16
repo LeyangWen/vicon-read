@@ -1,5 +1,5 @@
 import c3d
-from spacepy import pycdf
+# from spacepy import pycdf
 import os
 import matplotlib.pyplot as plt
 import numpy as np
@@ -244,9 +244,10 @@ def save_COCO_json(json_data, name):
         # np to list
         this_json_data = json_data[train_val_test]
         for frame in tqdm(range(len(this_json_data['annotations'])), desc="Processing Frames"):
-            for key2 in ['joint_2d', 'bbox']:
-                this_json_data['annotations'][frame][key2] = this_json_data['annotations'][frame][key2].tolist()
-
+            for key2 in this_json_data['annotations'][frame].keys():
+                if type(this_json_data['annotations'][frame][key2]) == np.ndarray:
+                    this_json_data['annotations'][frame][key2] = this_json_data['annotations'][frame][key2].tolist()
+            # this_json_data['annotations'][frame]['keypoints'] = this_json_data['annotations'][frame].pop('keypoint')
         json_filename = name.replace('.pkl', f'_{train_val_test}.json')
         with open(f'{json_filename}', 'w') as f:
             json.dump(json_data[train_val_test], f)
@@ -301,3 +302,13 @@ def save_COCO_json_increment(json_data_ori, name):
             f.write(']}')
 
         print(f"Saved {json_filename}")
+
+
+def bbox_tlbr2tlwh(bbox):
+    """
+    Convert bounding box format from top-left-bottom-right to top-left-width-height
+    """
+    tl, br = bbox
+    x1, y1 = tl
+    x2, y2 = br
+    return [x1, y1, x2 - x1, y2 - y1]

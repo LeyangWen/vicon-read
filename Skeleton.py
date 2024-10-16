@@ -14,7 +14,7 @@ from spacepy.data_assimilation import output
 
 # from backup_c3d import file_name
 from utility import *
-from spacepy import pycdf
+# from spacepy import pycdf
 import cv2
 from ergo3d import *
 from ergo3d.camera.FLIR_camera import batch_load_from_xcp
@@ -262,10 +262,10 @@ class Skeleton:
                 if parent_name in self.poses and parent_name is not None and parent_name != 'None':
                     ax.plot([self.poses[joint_name][frame, 0], self.poses[parent_name][frame, 0]],
                             [self.poses[joint_name][frame, 1], self.poses[parent_name][frame, 1]], 'gray', zorder=1, linewidth=2)
-        # ax.set_xlim(0, img_width)
-        # ax.set_ylim(0, img_height)
-        ax.set_xlim(-500, 1500)
-        ax.set_ylim(-500, 1500)
+        ax.set_xlim(0, img_width)
+        ax.set_ylim(0, img_height)
+        # ax.set_xlim(-500, 1500)
+        # ax.set_ylim(-500, 1500)
         # plot edge lines
         # ax.plot([0, img_width], [0, 0], 'gray', zorder=0)
         # ax.plot([0, 0], [0, img_height], 'gray', zorder=0)
@@ -473,7 +473,7 @@ class VEHSErgoSkeleton(Skeleton):
         '''
         raise NotImplementedError
 
-    def output_COCO_2dPose(self, downsample=5, downsample_keep=1, image_id_cum=0, pose_id_cum=0, image_folder='train'):
+    def output_COCO_2dPose(self, downsample=5, downsample_keep=1, image_id_cum=0, pose_id_cum=0):
         # append data at end
         annotations = []
         images = []
@@ -483,10 +483,9 @@ class VEHSErgoSkeleton(Skeleton):
         set_crowd = 0
         set_category_id = 1
         set_license = 99
-        frame_count = 0
         res_w = 1920
         res_h = 1200
-        file_elements = self.c3d_file.split('\\')
+        file_elements = self.c3d_file.split('/')
         ### subject to change based on your filename structure
         subject = file_elements[-3]
         activity = file_elements[-1].split('.')[0].lower()
@@ -496,12 +495,13 @@ class VEHSErgoSkeleton(Skeleton):
         assert int(subject[1:]) < 11
         assert activity[:8] == "activity"
         for this_camera in self.cameras:
+            frame_count = 0
             # camera_pitch_angle = this_camera.get_camera_pitch()
             for downsample_idx in range(downsample):
                 if downsample_idx == downsample_keep:
                     break
                 for frame_idx in range(0, self.frame_number, downsample):
-                    real_frame_idx = frame_idx + downsample_idx
+                    real_frame_idx = frame_idx + downsample_idx + int(downsample/2)  # middle frame for coco image alignment
                     if real_frame_idx >= self.frame_number:
                         break
                     frame_count += 1
@@ -513,13 +513,14 @@ class VEHSErgoSkeleton(Skeleton):
                     num_keypoints = len(this_joint_2d_vis[0])
 
                     annotation_dict = {}
-                    annotation_dict['joint_2d'] = this_joint_2d_vis
+                    annotation_dict['keypoints'] = this_joint_2d_vis
                     annotation_dict['num_keypoints'] =num_keypoints
                     annotation_dict['iscrowd'] = set_crowd
-                    annotation_dict['bbox'] = self.pose_2d_bbox[this_camera.DEVICEID][real_frame_idx]
+                    annotation_dict['bbox'] = bbox_tlbr2tlwh(self.pose_2d_bbox[this_camera.DEVICEID][real_frame_idx])
                     annotation_dict['category_id'] = set_category_id
                     annotation_dict['id'] = pose_id_cum
                     annotation_dict['image_id'] = image_id_cum
+                    annotation_dict['id_100fps'] = real_frame_idx
 
                     # COCO image name format need to match conversion_scripts/vid_to_img.py
                     # test/S09-activity00-51470934-000001jpg

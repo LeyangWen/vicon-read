@@ -1,7 +1,7 @@
 # c3d_to_MB.py
 import os.path
 
-import c3d
+# import c3d
 from utility import *
 
 from Skeleton import *
@@ -15,13 +15,13 @@ if __name__ == '__main__':
     # read arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/VEHS-R3-721-MotionBert.yaml')
-    parser.add_argument('--skeleton_file', type=str, default=r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton-66.yaml')
+    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
     parser.add_argument('--downsample', type=int, default=20)
     parser.add_argument('--downsample_keep', type=int, default=1)
     parser.add_argument('--split_output', action='store_true')  # not implemented yet
     parser.add_argument('--output_type', type=list, default=[False, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
     parser.add_argument('--output_file_name_end', type=str, default='')
-    parser.add_argument('--image_folder', default=r"W:\VEHS\VEHS-7M\images\5fps", help="split folder for images")
+    parser.add_argument('--image_folder', default=r"/media/leyang/My Book/VEHS/VEHS-7M/img/5fps", help="split folder for images")
     parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
     args = parser.parse_args()
 
@@ -75,6 +75,8 @@ if __name__ == '__main__':
     pkl_filenames = {'3D': [], '6D': [], 'SMPL': []}  # if split_output, save intermediate results
     dataset_statistics = {}
     total_frame_number = 0
+    image_id_cum = 0
+    pose_id_cum = 0
     for root, dirs, files in os.walk(base_folder):
         dirs.sort()  # Sort directories in-place --> important, will change walk sequence
         files.sort(key=str.lower)  # Sort files in-place
@@ -108,24 +110,27 @@ if __name__ == '__main__':
                 # this_skeleton.plot_3d_pose_frame(frame=0, coord_system="world")
 
                 if args.output_type[0]:  # calculate 3D pose first
+                    raise NotImplementedError
                     this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=h36m_joint_names, rootIdx=0)
                     output3D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep)
                     output_3D_dataset = append_output_xD_dataset(output_3D_dataset, train_val_test, output3D)
                 if args.output_type[1]:  # calculate 6D pose
                     this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=custom_6D_joint_names, rootIdx=0)  # Pelvis index
-                    output6D = this_skeleton.output_COCO_2dPose(downsample=downsample, downsample_keep=downsample_keep, image_id_cum=0, pose_id_cum=0,
-                                                                image_folder=os.path.join(args.image_folder, train_val_test))
+                    output6D = this_skeleton.output_COCO_2dPose(downsample=downsample, downsample_keep=downsample_keep, image_id_cum=image_id_cum, pose_id_cum=pose_id_cum)
+                    image_id_cum = output6D["images"][-1]['id']
+                    pose_id_cum = output6D["annotations"][-1]['id']
+
+                    frame = 500
+                    first_filename = output6D["images"][frame]['file_name']
+                    frame_idx = output6D["annotations"][frame]['id_100fps']
+                    skeleton_2d = VEHSErgoSkeleton(skeleton_file)
+                    skeleton_2d.load_name_list_and_np_points(custom_6D_joint_names, this_skeleton.pose_2d_camera['51470934'])
+                    skeleton_2d.plot_2d_pose_frame(frame=frame_idx, baseimage=os.path.join(args.image_folder, train_val_test, first_filename))
 
 
 
 
                     output_6D_dataset = append_COCO_xD_dataset(output_6D_dataset, train_val_test, output6D)
-                if args.output_type[2]:
-                    raise NotImplementedError('Implemented using moshpp+soma in separate repo')
-                    pass
-                    # output_smpl_dataset =
-                if args.output_type[3]:  # GT 3DSSPP output
-                    pass
                 del this_skeleton
 
                         # output_smpl_dataset =
@@ -157,19 +162,10 @@ if __name__ == '__main__':
 
     # snipet to read example pkl file
 
-    # file_name = r'C:\Users\Public\Documents\Vicon\vicon_coding_projects\MotionBERT\data\motion3d\h36m_sh_conf_cam_source_final.pkl\h36m_sh_conf_cam_source_final.pkl'
-    # # file_name = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1.pkl'
-    # with open(file_name, 'rb') as f:
-    #     data = pickle.load(f)
-    # data['train']['camera_name']
-    # data['test']['joints_2.5d_image'][0]/data['test']['joint3d_image'][0] == 2.5factor
-    # data['test']['joints_2.5d_image'][0]
-    # data['test']['joint3d_image'][-1]
-    # data['test']['2.5d_factor'][0]
-    # ['validate']
-        # >>> data.keys()
-        # dict_keys(['train', 'test'])
-        # >>> data['train'].keys()
-        # dict_keys(['joint_2d', 'confidence', 'joint3d_image', 'camera_name', 'source'])
-        # >>> data['test'].keys()
-        # dict_keys(['joint_2d', 'confidence', 'joint3d_image', 'joints_2.5d_image', '2.5d_factor', 'camera_name', 'action', 'source'])
+    # train_data = output_6D_dataset['train']
+    #
+    # train_data['images'][4000]['file_name']
+
+    # cp '/media/leyang/My Book/VEHS/VEHS data collection round 3/processed/VEHS_6DCOCO_downsample20_keep1_train.json' '/media/leyang/My Book/VEHS/VEHS-7M/annotations/2d/VEHS_6DCOCO_downsample20_keep1_train.json'
+    # cp '/media/leyang/My Book/VEHS/VEHS data collection round 3/processed/VEHS_6DCOCO_downsample20_keep1_validate.json' '/media/leyang/My Book/VEHS/VEHS-7M/annotations/2d/VEHS_6DCOCO_downsample20_keep1_validate.json'
+    # cp '/media/leyang/My Book/VEHS/VEHS data collection round 3/processed/VEHS_6DCOCO_downsample20_keep1_test.json' '/media/leyang/My Book/VEHS/VEHS-7M/annotations/2d/VEHS_6DCOCO_downsample20_keep1_test.json'
