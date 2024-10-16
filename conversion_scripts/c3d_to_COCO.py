@@ -23,8 +23,12 @@ if __name__ == '__main__':
     parser.add_argument('--output_file_name_end', type=str, default='')
     parser.add_argument('--image_folder', default=r"/media/leyang/My Book/VEHS/VEHS-7M/img/5fps", help="split folder for images")
     parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
+    parser.add_argument('--small_test', default=False, help='small test for debugging')
     args = parser.parse_args()
 
+    if args.small_test:
+        print("Small test mode: only 3 files will be processed for each set")
+        args.output_file_name_end += '_small'
 
     # base_folder = r'C:\Users\Public\Documents\Vicon\data\Vicon_F\Round3\LeyangWen'
     split_config_file = args.split_config_file
@@ -77,6 +81,7 @@ if __name__ == '__main__':
     total_frame_number = 0
     image_id_cum = 0
     pose_id_cum = 0
+    small_test = {"train": 0, "validate": 0, "test": 0}
     for root, dirs, files in os.walk(base_folder):
         dirs.sort()  # Sort directories in-place --> important, will change walk sequence
         files.sort(key=str.lower)  # Sort files in-place
@@ -89,11 +94,16 @@ if __name__ == '__main__':
                     train_val_test = 'test'
                 else:
                     train_val_test = 'train'
-                # todo: rename image folder Test to test
                 print(f"file: {file}, root: {root}, train_val_test: {train_val_test}")
 
                 c3d_file = os.path.join(root, file)
                 count += 1
+                if args.small_test:
+                    cur_count = small_test[train_val_test]
+                    small_test[train_val_test] += 1
+                    print(f"{train_val_test}: cur_count: {cur_count}")
+                    if cur_count > 1:
+                        continue
                 # if count > 1:  # give a very small file for testing
                 #     break
 
@@ -120,12 +130,13 @@ if __name__ == '__main__':
                     image_id_cum = output6D["images"][-1]['id']
                     pose_id_cum = output6D["annotations"][-1]['id']
 
-                    frame = 500
-                    first_filename = output6D["images"][frame]['file_name']
-                    frame_idx = output6D["annotations"][frame]['id_100fps']
-                    skeleton_2d = VEHSErgoSkeleton(skeleton_file)
-                    skeleton_2d.load_name_list_and_np_points(custom_6D_joint_names, this_skeleton.pose_2d_camera['51470934'])
-                    skeleton_2d.plot_2d_pose_frame(frame=frame_idx, baseimage=os.path.join(args.image_folder, train_val_test, first_filename))
+                    # visualization check
+                    # frame = 500
+                    # first_filename = output6D["images"][frame]['file_name']
+                    # frame_idx = output6D["annotations"][frame]['id_100fps']
+                    # skeleton_2d = VEHSErgoSkeleton(skeleton_file)
+                    # skeleton_2d.load_name_list_and_np_points(custom_6D_joint_names, this_skeleton.pose_2d_camera['51470934'])
+                    # skeleton_2d.plot_2d_pose_frame(frame=frame_idx, baseimage=os.path.join(args.image_folder, train_val_test, first_filename))
 
 
 
