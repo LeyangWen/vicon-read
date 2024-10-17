@@ -473,7 +473,7 @@ class VEHSErgoSkeleton(Skeleton):
         '''
         raise NotImplementedError
 
-    def output_COCO_2dPose(self, downsample=5, downsample_keep=1, image_id_cum=0, pose_id_cum=0):
+    def output_COCO_2dPose(self, downsample=5, downsample_keep=1, image_id_cum=0, pose_id_cum=0, small_test=False):
         # append data at end
         annotations = []
         images = []
@@ -513,7 +513,7 @@ class VEHSErgoSkeleton(Skeleton):
                     num_keypoints = len(this_joint_2d_vis[0])
 
                     annotation_dict = {}
-                    annotation_dict['keypoints'] = this_joint_2d_vis
+                    annotation_dict['keypoints'] = this_joint_2d_vis.reshape(-1)
                     annotation_dict['num_keypoints'] =num_keypoints
                     annotation_dict['iscrowd'] = set_crowd
                     annotation_dict['bbox'] = bbox_tlbr2tlwh(self.pose_2d_bbox[this_camera.DEVICEID][real_frame_idx])
@@ -521,6 +521,7 @@ class VEHSErgoSkeleton(Skeleton):
                     annotation_dict['id'] = pose_id_cum
                     annotation_dict['image_id'] = image_id_cum
                     annotation_dict['id_100fps'] = real_frame_idx
+                    # annotation_dict['area'] = float(annotation_dict['bbox'][2] * annotation_dict['bbox'][3])  # should be segmentation area, just set cocoeval use_area=False
 
                     # COCO image name format need to match conversion_scripts/vid_to_img.py
                     # test/S09-activity00-51470934-000001jpg
@@ -535,6 +536,8 @@ class VEHSErgoSkeleton(Skeleton):
 
                     annotations.append(annotation_dict)
                     images.append(image_dict)
+                    if small_test and real_frame_idx > 80:
+                        break
 
         output = {"annotations": annotations, "images": images}
         return output

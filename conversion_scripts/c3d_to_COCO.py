@@ -23,7 +23,7 @@ if __name__ == '__main__':
     parser.add_argument('--output_file_name_end', type=str, default='')
     parser.add_argument('--image_folder', default=r"/media/leyang/My Book/VEHS/VEHS-7M/img/5fps", help="split folder for images")
     parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
-    parser.add_argument('--small_test', default=False, help='small test for debugging')
+    parser.add_argument('--small_test', default=True, help='small test for debugging')
     args = parser.parse_args()
 
     if args.small_test:
@@ -99,8 +99,8 @@ if __name__ == '__main__':
                 c3d_file = os.path.join(root, file)
                 count += 1
                 if args.small_test:
-                    cur_count = small_test[train_val_test]
                     small_test[train_val_test] += 1
+                    cur_count = small_test[train_val_test]
                     print(f"{train_val_test}: cur_count: {cur_count}")
                     if cur_count > 1:
                         continue
@@ -126,7 +126,7 @@ if __name__ == '__main__':
                     output_3D_dataset = append_output_xD_dataset(output_3D_dataset, train_val_test, output3D)
                 if args.output_type[1]:  # calculate 6D pose
                     this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=custom_6D_joint_names, rootIdx=0)  # Pelvis index
-                    output6D = this_skeleton.output_COCO_2dPose(downsample=downsample, downsample_keep=downsample_keep, image_id_cum=image_id_cum, pose_id_cum=pose_id_cum)
+                    output6D = this_skeleton.output_COCO_2dPose(downsample=downsample, downsample_keep=downsample_keep, image_id_cum=image_id_cum, pose_id_cum=pose_id_cum, small_test=args.small_test)
                     image_id_cum = output6D["images"][-1]['id']
                     pose_id_cum = output6D["annotations"][-1]['id']
 
