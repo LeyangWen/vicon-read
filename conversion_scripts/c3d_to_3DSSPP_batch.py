@@ -77,7 +77,7 @@ if __name__ == '__main__':
                 # correcting pitch for 66920758, pitch: 16.7 degrees
 
                 batch_3DSSPP_batch_filename = c3d_file.replace('.c3d', '-3DSSPP.txt')
-                this_skeleton.output_3DSSPP_loc(frame_range=[0, 3000, 10], loc_file=batch_3DSSPP_batch_filename)
+                this_skeleton.output_3DSSPP_loc(frame_range=[0, 3000, 5], loc_file=batch_3DSSPP_batch_filename)
                 # self = this_skeleton
                 break
                 del this_skeleton

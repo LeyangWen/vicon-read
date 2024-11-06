@@ -7,6 +7,8 @@ import os
 import yaml
 # import smplx
 
+# from mosh SMPL to MotionBERT format in camera projection
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_SMPL_dir', type=str, default=r"W:\VEHS\VEHS-7M\Mesh\SMPL_pkl")
