@@ -24,7 +24,7 @@ def read_input(json_path, type):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--json_folder', type=str, default=r'/Volumes/Extreme SSD/Gloved Hands/')  #'/Volumes/Extreme SSD/Gloved Hands/John/Rick/Sitting/Table - Upper/predictions/predictions/1_short.json'
+    parser.add_argument('--json_folder', type=str, default=r'/Volumes/Extreme SSD/Gloved Hands RTMPose/')  #'/Volumes/Extreme SSD/Gloved Hands/John/Rick/Sitting/Table - Upper/predictions/predictions/1_short.json'
     parser.add_argument('--output_file', type=str, default=r'lab_rtmpose_hand_for_MB.pkl')
     parser.add_argument('--joint_num', type=int, default=21)
     parser.add_argument('--scale', type=bool, default=True)  # goal: img_px * scale --> around 900 px canvas size*0.9
@@ -93,32 +93,32 @@ if __name__ == '__main__':
                     print(f"frame_no: {frame_no}, %243: {frame_no % 243}")
 
                 ## center around wrist
-    #             joint_2d_centered = joint_2d - joint_2d[:, [args.rootIdx], :]
-    #             joint_2d_on_canvas = joint_2d_centered + args.canvas_size / 2
-    #
-    #             # Real data
-    #             output['joint_2d'] = joint_2d_on_canvas
-    #             output['confidence'] = confidence
-    #             # Fake placeholder data
-    #             output['joint3d_image'] = np.zeros_like(all_keyps_rtm)
-    #             output['joint3d_image'][:, :, :2] = joint_2d_on_canvas
-    #             output['camera_name'] = np.ones(len(all_keyps_rtm))
-    #             output['source'] = [source] * len(all_keyps_rtm)
-    #             output['2.5d_factor'] = np.ones(len(all_keyps_rtm))* vid_scale
-    #             output['joints_2.5d_image'] = np.ones_like(all_keyps_rtm)
-    #             output['action'] = ['none'] * len(all_keyps_rtm)
-    #             output['joint_3d_camera'] = np.ones_like(all_keyps_rtm)
-    #             output['c3d_frame'] = ['none'] * len(all_keyps_rtm)
-    #
-    #             print("-" * 50)
-    #
-    #             key_map = {'L': "validate", 'R': "test"}
-    #             output_MB_dataset = append_output_xD_dataset(output_MB_dataset, key_map[LR], output)
-    #
-    # output_MB_dataset = append_output_xD_dataset(output_MB_dataset, "train", output)  # just so it is not empty
-    # output_filename = os.path.join(args.json_folder, args.output_file)
-    # with open(f'{output_filename}', 'wb') as f:
-    #     pickle.dump(output_MB_dataset, f)
+                joint_2d_centered = joint_2d - joint_2d[:, [args.rootIdx], :]
+                joint_2d_on_canvas = joint_2d_centered + args.canvas_size / 2
+
+                # Real data
+                output['joint_2d'] = joint_2d_on_canvas
+                output['confidence'] = confidence
+                # Fake placeholder data
+                output['joint3d_image'] = np.zeros_like(all_keyps_rtm)
+                output['joint3d_image'][:, :, :2] = joint_2d_on_canvas
+                output['camera_name'] = np.ones(len(all_keyps_rtm))
+                output['source'] = [source] * len(all_keyps_rtm)
+                output['2.5d_factor'] = np.ones(len(all_keyps_rtm))* vid_scale
+                output['joints_2.5d_image'] = np.ones_like(all_keyps_rtm)
+                output['action'] = ['none'] * len(all_keyps_rtm)
+                output['joint_3d_camera'] = np.ones_like(all_keyps_rtm)
+                output['c3d_frame'] = ['none'] * len(all_keyps_rtm)
+
+                print("-" * 50)
+
+                key_map = {'L': "validate", 'R': "test"}
+                output_MB_dataset = append_output_xD_dataset(output_MB_dataset, key_map[LR], output)
+
+    output_MB_dataset = append_output_xD_dataset(output_MB_dataset, "train", output)  # just so it is not empty
+    output_filename = os.path.join(args.json_folder, args.output_file)
+    with open(f'{output_filename}', 'wb') as f:
+        pickle.dump(output_MB_dataset, f)
 
     for key, value in cumulative_segments.items():
         value = np.array(value)
