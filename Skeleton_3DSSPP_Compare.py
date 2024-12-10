@@ -263,5 +263,5 @@ class Skeleton6D(VEHSErgoSkeleton):
         return loc
 
 class SkeletonSMPL(VEHSErgoSkeleton):
-    # Use SMPLX repo SMPLPose class instead
+
     pass

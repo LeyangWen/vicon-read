@@ -147,7 +147,7 @@ if __name__ == '__main__':
     # read arguments
     args = parse_args()
     estimate_pose = MB_output_pose_file_loader(args)
-    GT_pose = MB_input_pose_file_loader(args)
+    GT_pose = MB_input_pose_file_loader(args, clip_fill=False)
 
     if args.debug_mode:
         small_sample = 7252
@@ -165,7 +165,7 @@ if __name__ == '__main__':
         # get legend
         # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='Wrist')
 
-        estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", mode=args.plot_mode, center_key='Middle_0', plot_range=1000)
+        # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", mode=args.plot_mode, center_key='Middle_0', plot_range=1000)
 
         # frame = 1000
         # estimate_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=1000)
@@ -173,10 +173,10 @@ if __name__ == '__main__':
         # GT_skeleton.plot_2d_pose(args.output_2D_frame_folder, resolution=(1500, 1500), dpi=100)
         # GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, coord_system="camera-px", mode=args.plot_mode, center_key='Middle_0', plot_range=1000)
         #
-        # frame = 9000
-        # plot_range = 1000
-        # estimate_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=plot_range)
-        # GT_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=plot_range)
+        frame = 100
+        plot_range = 1000
+        estimate_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=plot_range)
+        GT_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", mode="camera_view", center_key='Middle_0', plot_range=plot_range)
         # GT_skeleton.plot_3d_pose_frame(frame=frame+1, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=plot_range)
         # GT_skeleton.plot_3d_pose_frame(frame=frame + 2, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=plot_range)
     elif args.type == 'body':

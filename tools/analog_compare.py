@@ -1,4 +1,4 @@
-from ForceTorqueTransducer import ATIMini45
+from tools.ForceTorqueTransducer import ATIMini45
 from viconnexusapi import ViconNexus
 import numpy as np
 import matplotlib.pyplot as plt

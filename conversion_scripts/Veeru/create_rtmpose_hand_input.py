@@ -24,7 +24,7 @@ def read_input(json_path, type):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--json_folder', type=str, default=r'/Volumes/Extreme SSD/Gloved Hands RTMPose/')  #'/Volumes/Extreme SSD/Gloved Hands/John/Rick/Sitting/Table - Upper/predictions/predictions/1_short.json'
+    parser.add_argument('--json_folder', type=str, default=r'/Users/leyangwen/Documents/Hand/barehand/') #/Volumes/Extreme SSD/Gloved Hands RTMPose/')  #'/Volumes/Extreme SSD/Gloved Hands/John/Rick/Sitting/Table - Upper/predictions/predictions/1_short.json'
     parser.add_argument('--output_file', type=str, default=r'lab_rtmpose_hand_for_MB.pkl')
     parser.add_argument('--joint_num', type=int, default=21)
     parser.add_argument('--scale', type=bool, default=True)  # goal: img_px * scale --> around 900 px canvas size*0.9

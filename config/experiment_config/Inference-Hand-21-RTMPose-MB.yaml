@@ -4,11 +4,16 @@ name_list: ['Wrist', 'Thumb_0', 'Thumb_1', 'Thumb_2', 'Thumb_3',
             'Ring_0', 'Ring_1', 'Ring_2', 'Ring_3',
             'Pinky_0', 'Pinky_1', 'Pinky_2', 'Pinky_3']
 
-GT_file: '/Volumes/Extreme SSD/Gloved Hands/lab_rtmpose_hand_for_MB.pkl'
-
+#GT_file: '/Volumes/Extreme SSD/Gloved Hands/lab_rtmpose_hand_for_MB.pkl'
 #eval_key: 'validate'
 #estimate_file: '/Volumes/Extreme SSD/Gloved Hands/MB Output/left/MB_out_left.npy'
+#eval_key: 'test'
+##estimate_file: '/Volumes/Extreme SSD/Gloved Hands/MB Output/right/MB_out_right.npy'
 
+
+GT_file: '/Users/leyangwen/Documents/Hand/barehand/lab_rtmpose_hand_for_MB.pkl'
+#eval_key: 'validate'
+#estimate_file: '/Users/leyangwen/Documents/Hand/barehand/Lab_RTMin_wRokoko_2/left/X3D.npy'
 eval_key: 'test'
-estimate_file: '/Volumes/Extreme SSD/Gloved Hands/MB Output/right/MB_out_right.npy'
+estimate_file: '/Users/leyangwen/Documents/Hand/barehand/Lab_RTMin_wRokoko_2/right/X3D.npy'
 

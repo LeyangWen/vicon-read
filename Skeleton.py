@@ -67,6 +67,22 @@ class Skeleton:
         self.load_name_list(name_list)
         self.load_np_points(pt_np)
 
+    def load_mesh(self, vertices, format='smpl'):
+        """
+        load vertices from mesh as 49 surface markers using vert ids
+        vertices: np array of vertices (n, 6890, 3) for smpl
+        """
+        try:
+            self.marker_vids
+        except AttributeError:
+            raise AttributeError('marker_vids is empty, need to load marker_vids in skeleton config first')
+        vid = self.marker_vids[format]
+        name_list = list(vid.keys())
+        idx_list = list(vid.values())
+        marker_vertices = vertices[:, idx_list, :]
+        self.load_name_list_and_np_points(name_list, marker_vertices)
+
+
     def load_c3d(self, c3d_file, analog_read=True):
         self.c3d_file = c3d_file
         reader = c3d.Reader(open(c3d_file, 'rb'))
@@ -120,6 +136,10 @@ class Skeleton:
             try:
                 self.surface_marker_list = data['type']['surface_markers']
                 self.joint_center_list = data['type']['joint_centers']
+            except KeyError:
+                pass
+            try:
+                self.marker_vids = data['marker_vids']
             except KeyError:
                 pass
 
@@ -1180,7 +1200,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         C7 = self.point_poses['C7']
         C7_d = self.point_poses['C7_d']
         PELVIS_b = Point.mid_point(self.point_poses['RPSIS'], self.point_poses['LPSIS'])
-        C7_m = self.point_poses['C7_m']
+        # C7_m = self.point_poses['C7_m']
         SS = self.point_poses['SS']
         RELBOW = self.point_poses['RELBOW']
         RAP_b = self.point_poses['RAP_b']
@@ -1190,13 +1210,13 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
 
         RSHOULDER_plane = Plane()
         RSHOULDER_plane.set_by_vector(RSHOULDER, Point.vector(C7_d, PELVIS_b), direction=-1)
-        RSHOULDER_C7_m_project = RSHOULDER_plane.project_point(C7_m)
+        # RSHOULDER_C7_m_project = RSHOULDER_plane.project_point(C7_m)
         RSHOULDER_SS_project = RSHOULDER_plane.project_point(SS)
         RSHOULDER_coord = CoordinateSystem3D()
         RSHOULDER_coord.set_by_plane(RSHOULDER_plane, C7_d, RSHOULDER_SS_project, sequence='xyz', axis_positive=False)  # new: use back to chest vector
         # RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, RSHOULDER_C7_m_project, sequence='zyx', axis_positive=False)  # old: use shoulder to chest vector
         RSHOULDER_angles = JointAngles()
-        RSHOULDER_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'H-abduction', 'rotation': 'rotation'}
+        RSHOULDER_angles.ergo_name = {'flexion': 'elevation', 'abduction': 'H-abduction', 'rotation': 'rotation'}
         RSHOULDER_angles.set_zero(zero_frame, by_frame=False)
         RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, Point.vector(RSHOULDER, RELBOW), plane_seq=['xy', 'xz'])
         RSHOULDER_angles.get_rot(RAP_b, RAP_f, RME, RLE)
@@ -1215,7 +1235,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         C7 = self.point_poses['C7']
         C7_d = self.point_poses['C7_d']
         PELVIS_b = Point.mid_point(self.point_poses['RPSIS'], self.point_poses['LPSIS'])
-        C7_m = self.point_poses['C7_m']
+        # C7_m = self.point_poses['C7_m']
         SS = self.point_poses['SS']
         LELBOW = self.point_poses['LELBOW']
         LAP_b = self.point_poses['LAP_b']
@@ -1225,12 +1245,12 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
 
         LSHOULDER_plane = Plane()
         LSHOULDER_plane.set_by_vector(LSHOULDER, Point.vector(C7_d, PELVIS_b), direction=-1)
-        LSHOULDER_C7_m_project = LSHOULDER_plane.project_point(C7_m)
+        # LSHOULDER_C7_m_project = LSHOULDER_plane.project_point(C7_m)
         LSHOULDER_SS_project = LSHOULDER_plane.project_point(SS)
         LSHOULDER_coord = CoordinateSystem3D()
         LSHOULDER_coord.set_by_plane(LSHOULDER_plane, C7_d, LSHOULDER_SS_project, sequence='zyx', axis_positive=True)
         LSHOULDER_angles = JointAngles()
-        LSHOULDER_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'H-abduction', 'rotation': 'rotation'}  # horizontal abduction
+        LSHOULDER_angles.ergo_name = {'flexion': 'elevation', 'abduction': 'H-abduction', 'rotation': 'rotation'}  # horizontal abduction
         LSHOULDER_angles.set_zero(zero_frame, by_frame=False)
         LSHOULDER_angles.get_flex_abd(LSHOULDER_coord, Point.vector(LSHOULDER, LELBOW), plane_seq=['xy', 'xz'], flip_sign=[1, -1])
         LSHOULDER_angles.get_rot(LAP_b, LAP_f, LME, LLE)
@@ -1321,8 +1341,8 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         # LWrist_angles.get_rot(LMCP2, LMCP5, LLE, LME)
         return LWrist_angles
 
-    def back_angles(self, up_axis=[0, 1000, 0]):
-        zero_frame = [-90, 180, 180]
+    def back_angles(self, up_axis=[0, 1000, 0], zero_frame = [-90, 180, 180]):
+        # todo: back correction
         C7 = self.point_poses['C7']
         RPSIS = self.point_poses['RPSIS']
         LPSIS = self.point_poses['LPSIS']

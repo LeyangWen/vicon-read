@@ -14,9 +14,9 @@ Here is a [YouTube playlist](https://youtube.com/playlist?list=PLjMAlxkYpRr0PwPy
 ## 1. Scripts to use with an open Vicon Nexus session to read and save data in real-time
 ### 1.1. Tools for cleaning up Vicon data
 * [detect_swap.py](nexus_tools/detect_swap.py): Detects if the markers are swapped and mark as Vicon events, also automatically swaps the markers in simpler cases
-* [swap_by_frame.py](swap_by_frame.py): Batch swap markers by frame number, normally between left and right
-* [export_files.py](export_files.py): Export files from Vicon Nexus session
-* [backup_c3d.py](backup_c3d.py): Backup c3d files in the backup folder before irreversible operations like smoothing. 
+* [swap_by_frame.py](tools/swap_by_frame.py): Batch swap markers by frame number, normally between left and right
+* [export_files.py](tools/export_files.py): Export files from Vicon Nexus session
+* [backup_c3d.py](tools/backup_c3d.py): Backup c3d files in the backup folder before irreversible operations like smoothing. 
 
 ### 1.2. Tools for processing Vicon data
 * [caculateVEHSskeleton_ergo.py](caculateVEHSskeleton_ergo.py): Calculate the 2D and 3D VEHS skeleton joint centers and angles using the VEHSR3 dataset skeleton. Also output cdf in H36M format
@@ -30,7 +30,7 @@ Here is a [YouTube playlist](https://youtube.com/playlist?list=PLjMAlxkYpRr0PwPy
 
 
 ## 3. Supporting classes and functions
-* [ForceTorqueTransducer.py](ForceTorqueTransducer.py): Class for calculating the force and torque from the force plate and a custom-wired analog AMTI force transducer
+* [ForceTorqueTransducer.py](tools/ForceTorqueTransducer.py): Class for calculating the force and torque from the force plate and a custom-wired analog AMTI force transducer
 * [Camera.py](Camera.py): Class for projection, distortion correction, and other camera-related calculations
 * [Skeleton.py](Skeleton.py): Class for defining pose skeleton structure, outputting 3DSSPP batch file, and visualization
 
