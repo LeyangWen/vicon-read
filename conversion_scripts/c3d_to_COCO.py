@@ -156,14 +156,16 @@ if __name__ == '__main__':
         # output_6d_filename = os.path.join(r'C:\Users\wenleyan1\Downloads','VEHS_6DCOCO_downsample20_keep1.json')  # write to ssd instead of hhd for speed
         save_COCO_json(output_6D_dataset, output_6d_filename)
 
-
-
-
     # output statistics to json
     with open(f'{output_3d_filename}_dataset_statistics_total_{total_frame_number}.json', 'w') as f:
         json.dump(dataset_statistics, f)
 
 
+
+    train_val_test = 'validate'
+    json_filename = output_6d_filename.replace('.pkl', f'_{train_val_test}.json')
+    with open(json_filename, 'r') as f:
+        data = json.load(f)
 
 
     # dt_file -- .pkl
