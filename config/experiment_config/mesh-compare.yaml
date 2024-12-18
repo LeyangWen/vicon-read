@@ -1,18 +1,18 @@
 
-eval_key: 'validate'
-root_dir: "/Users/leyangwen/Documents/mesh/"
+eval_key: 'test'
+root_dir: "/Volumes/Z/mesh_compare/"
+
 
 ## GT 66 kpts
-GT_6D_file: "VEHS_6D_downsample5_keep1_66_SMPL.pkl"
+GT_6D_file: "mesh/66kpts_v2/VEHS_6D_downsample5_keep1_66_v2_SMPL.pkl"
 GT_6D_name_list: ['RPSIS', 'RASIS', 'LPSIS', 'LASIS', 'C7_d', 'SS', 'T8', 'XP', 'C7', 'HDTP', 'MDFH', 'REAR', 'LEAR', 'RAP', 'RAP_f', 'RLE', 'RAP_b', 'RME', 'LAP', 'LAP_f', 'LLE', 'LAP_b', 'LME',
                              'LUS', 'LRS', 'RUS', 'RRS', 'RMCP5', 'RMCP2', 'LMCP5', 'LMCP2', 'LGT', 'LMFC', 'LLFC', 'RGT', 'RMFC', 'RLFC', 'RMM', 'RLM', 'LMM', 'LLM', 'LMTP1', 'LMTP5', 'LHEEL',
                              'RMTP1', 'RMTP5', 'RHEEL', 'HEAD', 'RSHOULDER', 'LSHOULDER', 'THORAX', 'LELBOW', 'RELBOW', 'RWRIST', 'LWRIST', 'RHAND', 'LHAND', 'PELVIS', 'RHIP', 'RKNEE',
                              'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']  # 66: drop c7_m, add MDFH, V2
 
 ## MB 17 kpts
-#name_list: ['PELVIS', 'RHIP', 'RKNEE', 'RANKLE', 'LHIP', 'LKNEE', 'LANKLE', 'T8', 'THORAX', 'C7', 'HEAD', 'LSHOULDER', 'LELBOW', 'LWRIST', 'RSHOULDER', 'RELBOW', 'RWRIST']  # todo: neck in h36m is more like center of jaw joint
-
-#estimate_3D_file: "/Volumes/Z/mesh/VEHS_3D_downsample5_keep1_66_SMPL.pkl"
+estimate_3D_name_list: ['PELVIS', 'RHIP', 'RKNEE', 'RANKLE', 'LHIP', 'LKNEE', 'LANKLE', 'T8', 'THORAX', 'C7', 'HEAD', 'LSHOULDER', 'LELBOW', 'LWRIST', 'RSHOULDER', 'RELBOW', 'RWRIST']  # todo: neck in h36m is more like center of jaw joint
+estimate_3D_file: "pose/17kpts/X3D.npy"
 
 ## MB 66 kpts
 #name_list: ['RPSIS', 'RASIS', 'LPSIS', 'LASIS', 'C7_d', 'SS', 'T8', 'XP', 'C7', 'HDTP', 'REAR', 'LEAR', 'RAP', 'RAP_f', 'RLE', 'RAP_b', 'RME', 'LAP', 'LAP_f', 'LLE', 'LAP_b', 'LME', 'LUS', 'LRS', 'RUS', 'RRS', 'RMCP5', 'RMCP2', 'LMCP5', 'LMCP2', 'LGT', 'LMFC', 'LLFC', 'RGT', 'RMFC', 'RLFC', 'RMM', 'RLM', 'LMM', 'LLM', 'LMTP1', 'LMTP5', 'LHEEL', 'RMTP1', 'RMTP5', 'RHEEL', 'HEAD', 'RSHOULDER', 'LSHOULDER', 'C7_m', 'THORAX', 'LELBOW', 'RELBOW', 'RWRIST', 'LWRIST', 'RHAND', 'LHAND', 'PELVIS', 'RHIP', 'RKNEE', 'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']
@@ -25,7 +25,8 @@ GT_6D_name_list: ['RPSIS', 'RASIS', 'LPSIS', 'LASIS', 'C7_d', 'SS', 'T8', 'XP', 
 
 
 # MB mesh
-estimate_mesh_file: 'H36M Results_1000.pkl'
+estimate_mesh_17_file: 'mesh/17kpts/validate_result/H36M Results.pkl'  # 17 2D kpts --> mesh (validation set)
+estimate_mesh_66_file: 'mesh/66kpts_v2/VEHS7M_results.pkl'  # 66 2D kpts --> mesh (test set)
 
 
 
