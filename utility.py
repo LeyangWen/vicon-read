@@ -312,3 +312,12 @@ def bbox_tlbr2tlwh(bbox):
     x1, y1 = tl
     x2, y2 = br
     return [x1, y1, x2 - x1, y2 - y1]
+
+
+def non_zero_mean(arr):
+    # Filter out the zero elements and calculate the mean of the non-zero elements
+    return np.mean(arr[arr != 0])
+
+def non_zero_median(arr):
+    # Filter out the zero elements and calculate the mean of the non-zero elements
+    return np.median(arr[arr != 0])

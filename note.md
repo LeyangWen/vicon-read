@@ -11,3 +11,8 @@
   - 6D mesh result: 286528 test
 - Also, 3D pose is in 50 fps, while 6D mesh is 20 fps
 
+## RTMPose 2D Evaluate
+2025-01-09
+
+### Selected metric: normalized_MPJPE, PCK (circle)
+
