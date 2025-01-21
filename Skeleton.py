@@ -716,7 +716,7 @@ class VEHSErgoSkeleton(Skeleton):
             loc[:, 18:21] = Point.mid_point(self.point_poses['THORAX'], self.point_poses['C7'], 0.85).xyz.T  # 19 - 21 C7/T1 Joint Center
             loc[:, 21:24] = self.point_poses['THORAX'].xyz.T  # 22 - 24 Sternoclavicular Joint Joint Center
             loc[:, 24:27] = self.point_poses['SS'].xyz.T  # 25 - 27 Suprasternale Skin Surface
-            loc[:, 27:30] = Point.mid_point(self.point_poses['T8'], self.point_poses['PELVIS_b'], 0.5).xyz.T  # 28 - 30 L5/S1 Joint Center
+            loc[:, 27:30] = Point.mid_point(self.point_poses['T8'], self.point_poses['PELVIS_b'], 0.5).xyz.T  # 28 - 30 L5/S1 Joint Center, todo: maybe use PSIS?
             loc[:, 30:33] = self.point_poses['PELVIS_b'].xyz.T  # 31 - 33 PSIS Joint Center
             loc[:, 33:36] = self.point_poses['LSHOULDER'].xyz.T  # 34 - 36 L. Shoulder Joint Center
             loc[:, 36:39] = self.point_poses['LAP'].xyz.T  # 37 - 39 L. Acromion Skin Surface
