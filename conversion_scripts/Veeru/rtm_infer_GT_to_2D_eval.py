@@ -23,8 +23,10 @@ from utility import *
 
 def phrase_args():
     parser = argparse.ArgumentParser(description='RTM pose inference to 2D metric')
-    # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_v1/last_epoch_270/Inference_results')
-    parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_v1/best_epoch_40/outputs_epoch_best')
+    parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_v2/best_epoch/lab_videos_phase_2_correct_epoch_best_30')
+    # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_v1/best_epoch_40/outputs_epoch_best')
+    # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/original_rtmpose/outputs_rtmpose_old')
+    parser.add_argument('--infer_pose_type', type=str, choices=['rtm37_from_coco133', 'rtm37_from_37'], default='rtm37_from_37')
     parser.add_argument('--GT_ann_file', type=str, default='/Volumes/Z/RTMPose/37kpts_v1/GT/VEHS_6DCOCO_downsample20_keep1_validate.json')
     parser.add_argument('--number_of_keypoints', type=int, default=37)
     parser.add_argument('--img_shape', type=tuple, default=(1200,1920), help='height, width in px')
@@ -181,9 +183,15 @@ if __name__ == '__main__':
 
             #### Get Inference Pose
             all_bboxes, all_kpts_bef, keypoint_names = load_json_arr(os.path.join(root, file))
-            inference_pose = filter_subject_using_center_of_joints_with_disqualify(all_kpts_bef, img_shape=args.img_shape, window=4, num_keypoints=args.number_of_keypoints, type='rtm37_from_37')
+            inference_pose = filter_subject_using_center_of_joints_with_disqualify(all_kpts_bef, img_shape=args.img_shape, window=4, num_keypoints=args.number_of_keypoints,
+                                                                                   type="rtm37_from_37")
+            if args.infer_pose_type == 'rtm37_from_coco133':
+                inference_pose = coco133_to_VEHS7M_37(inference_pose)
 
             #### Get GT Pose
+            # update keypoint names
+            coco_keypoint_names = coco.cats[1]['keypoints']
+            keypoint_names = {str(idx): name for idx, name in enumerate(coco_keypoint_names)}
             img_ids = get_image_id_from_filename(coco, video_name)
             ann_ids = coco.getAnnIds(imgIds=img_ids)  # todo: does this work in there are multiple instances in the image?
             assert img_ids==ann_ids, "img_ids and ann_ids are not the same, meaning there are multiple instances in the image, might cause bugs"

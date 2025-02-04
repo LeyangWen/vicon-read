@@ -129,8 +129,26 @@ if __name__ == '__main__':
 
                 RMSE = root_mean_squared_error(ja1, ja2)
                 MAE = mean_absolute_error(ja1, ja2)
-                print(f'MAE: {MAE:.2f}, RMSE: {RMSE:.2f}')
-                this_log = [this_angle_name, this_ergo_angle, md, sd, MAE, RMSE]
+
+                angle_compare = AngleCompare(ja1, ja2)
+                # 1,435,236 frames in test set, use Rice rule --> approx 225 bins
+                plot_error_histogram(angle_compare.diff_deg, bins=225, title=f'{print_angle_name}: {print_ergo_name}',
+                                     save_path=f'frames/MB_angles/histograms/{angle_index}-{this_angle_name}-{this_ergo_angle}_hist.png',
+                                                   plot_normal_curve=angle_compare.plot_normal_curve)
+
+                error_dist = analyze_error_distribution(angle_compare.diff_deg)
+                print(f'Error distribution: {error_dist}')
+
+                # error_dist = analyze_error_distribution(angle_compare.diff_inliers_deg)
+                # print(f'Error distribution: {error_dist}')
+
+                np.nanstd(ja1, axis=0)
+                np.nanstd(ja1)
+
+
+                print(f'MAE: {MAE:.2f}, RMSE: {RMSE:.2f}, median: {angle_compare.median_deg:.2f}')
+                # this_log = [this_angle_name, this_ergo_angle, md, sd, MAE, RMSE]
+                this_log = [this_angle_name, this_ergo_angle, md, sd, error_dist['skewness'], error_dist['kurtosis'], angle_compare.median_deg, error_dist['IQR']]
                 log.append(this_log)
     print(f"Store location: {'frames/MB_angles/BA_plots/'}")
     # print log as csv in console
@@ -141,7 +159,7 @@ if __name__ == '__main__':
         print()
 
 
-    # generate merged bland-altman plot for left and right
+# generate merged bland-altman plot for left and right
 
 
 """ powershell batch crop png files

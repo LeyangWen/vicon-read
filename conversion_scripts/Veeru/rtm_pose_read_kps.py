@@ -251,6 +251,9 @@ def get_rtm_keyps(all_keyps_before, type='rtm24'):
         rtm_keyps[:,25,:3] = (rtm_keyps[:,3,:3] + rtm_keyps[:,4,:3])/2 # Head
     elif type == 'rtm37_from_37':
         rtm_keyps = all_keyps
+    elif type == 'rtm37_from_coco133':
+        rtm_keyps = coco133_to_VEHS7M_37(all_keyps)
+        raise NotImplementedError('Bug in other places')
     elif type == 'Lhand21':
         rtm_keyps = all_keyps[:, 91:112, :]
     elif type == 'Rhand21':
@@ -280,3 +283,37 @@ def get_rtm_keyps(all_keyps_before, type='rtm24'):
 # plt.savefig(os.path.join(experiment_folder,'loss_plot.png'))
 # # plt.show()
 
+def coco133_to_VEHS7M_37(coco133):
+    """
+    Convert coco133 to VEHS7M_37 for RTMPose eval
+    coco133: (n, 133, 2)
+    output: (n, 37, 2), fill with nan
+    """
+    coco133_VEHS7M = [(11-1, 1),
+                        (10-1, 2),
+                        (13-1, 3),
+                        (12-1, 4),
+                        (15-1, 5),
+                        (14-1, 6),
+                        (17-1, 7),
+                        (16-1, 8),
+                        (21-1, 9),
+                        (18-1, 10),
+                        (122-1, 11),
+                        (101-1, 12),
+                        (9-1, 13),
+                        (8-1, 14),
+                        (7-1, 15),
+                        (6-1, 16),
+                        (51-1, 17),
+                        (5-1, 20),
+                        (4-1, 21),
+                        (118-1, 33),
+                        (130-1, 34),
+                        (97-1, 35),
+                        (109-1, 36)]
+    n, _, _ = coco133.shape
+    VEHS7M_37 = np.full((n, 37, 3), np.nan)
+    for i, j in coco133_VEHS7M:
+        VEHS7M_37[:, j] = coco133[:, i]
+    return VEHS7M_37

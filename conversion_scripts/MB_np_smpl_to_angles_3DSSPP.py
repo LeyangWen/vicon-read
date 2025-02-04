@@ -9,7 +9,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file', type=str, default=r'config/experiment_config/mesh-compare.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
-    parser.add_argument("--input_type", choices=["mesh_17", "mesh_66", "3D", "6D"], default="3D")
+    parser.add_argument("--input_type", choices=["mesh_17", "mesh_66", "3D", "6D"], default="mesh_66")
     # parser.add_argument("--output_type", choices=["22angles", "3DSSPP"], default=["22angles"], nargs="+")
 
     parser.add_argument('--output_frame_folder', type=str, default=None)
@@ -54,11 +54,11 @@ def MB_output_pose_file_loader(args):
     np_pose_shape = output_np_pose.shape
     output_np_pose = output_np_pose.reshape(-1, np_pose_shape[-2], np_pose_shape[-1])
     # todo: temp fix, need to run eval again with another dataset
-    ## approx convert 50 fps to 20 fps
-    # 1. double the frame rate
-    output_np_pose = np.repeat(output_np_pose, 2, axis=0)
+    ## approx convert 20 fps to 10 fps
+    # # 1. double the frame rate
+    # output_np_pose = np.repeat(output_np_pose, 2, axis=0)
     # 2. take every 5th frame
-    output_np_pose = output_np_pose[::5]
+    output_np_pose = output_np_pose[::2]
     return output_np_pose
 
 
@@ -82,6 +82,8 @@ def MB_input_pose_file_loader(args, file):
         if source[i] != source[i+1]:
             k = 0
     np_pose = data[args.eval_key]['joint3d_image'][MB_clip_id]
+    ## approx convert 50 fps to 10 fps
+    np_pose = np_pose[::5]
 
     # print(f'2.5d_factor: {data[args.eval_key]["2.5d_factor"]}')
     return np_pose
