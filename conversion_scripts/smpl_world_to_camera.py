@@ -12,7 +12,7 @@ import yaml
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_SMPL_dir', type=str, default=r"W:\VEHS\VEHS-7M\Mesh\SMPL_pkl")
-    parser.add_argument('--input_MB_file', type=str, default=r"W:\VEHS\VEHS data collection round 3\processed\VEHS_3D_downsample5_keep1_66.pkl")
+    parser.add_argument('--input_MB_file', type=str, default=r"W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_66_v2.pkl")
     parser.add_argument('--camera_xcp_dir', type=str, default=r"W:\VEHS\VEHS data collection round 3\processed")  #S01\FullCollection\Activity00.xcp
     parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/VEHS-R3-622-MotionBert.yaml')
     parser.add_argument('--output_MB_file', type=str, default=None)
