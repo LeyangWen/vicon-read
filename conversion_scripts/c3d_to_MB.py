@@ -15,11 +15,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/VEHS-R3-622-MotionBert.yaml') #default=r'config/experiment_config/VEHS-R3-721-MotionBert.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton-66.yaml')
-    parser.add_argument('--downsample', type=int, default=5)
+    parser.add_argument('--downsample', type=int, default=20)
     parser.add_argument('--downsample_keep', type=int, default=1)
     parser.add_argument('--split_output', action='store_true')  # not implemented yet
     parser.add_argument('--output_type', type=list, default=[False, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
-    parser.add_argument('--output_file_name_end', type=str, default='_66_v2')
+    parser.add_argument('--output_file_name_end', type=str, default='_37_v1')
     parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
     args = parser.parse_args()
 
@@ -64,8 +64,10 @@ if __name__ == '__main__':
     rtm_pose_keypoints_vicon_dataset_config2 = ['NOSE', 'LEAR', 'REAR', 'LSHOULDER', 'RSHOULDER', 'LELBOW', 'RELBOW', 'LWRIST', 'RWRIST', 'LHIP', 'RHIP',
                                                 'LKNEE', 'RKNEE', 'LANKLE', 'RANKLE', 'LMCP2', 'LHAND', 'LMCP5', 'RMCP2', 'RHAND', 'RMCP5', 'PELVIS_b', 'SHOULDER_c', 'HEAD']
 
+    rtm_pose_37_keypoints_vicon_dataset_v1 = ['PELVIS', 'RWRIST', 'LWRIST', 'RHIP', 'LHIP', 'RKNEE', 'LKNEE', 'RANKLE', 'LANKLE', 'RFOOT', 'LFOOT', 'RHAND', 'LHAND', 'RELBOW', 'LELBOW', 'RSHOULDER', 'LSHOULDER', 'HEAD', 'THORAX', 'HDTP', 'REAR', 'LEAR', 'C7', 'C7_d', 'SS', 'RAP_b', 'RAP_f', 'LAP_b', 'LAP_f', 'RLE', 'RME', 'LLE', 'LME', 'RMCP2', 'RMCP5', 'LMCP2', 'LMCP5']
+
     ####### change output keypoints here
-    custom_6D_joint_names = paper_custom_6D_joint_names
+    custom_6D_joint_names = rtm_pose_37_keypoints_vicon_dataset_v1
 
     output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names))  # 66
     output_smpl_dataset = {}
