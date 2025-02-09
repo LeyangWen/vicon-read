@@ -21,6 +21,8 @@ if __name__ == '__main__':
     parser.add_argument('--output_type', type=list, default=[False, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
     parser.add_argument('--output_file_name_end', type=str, default='_37_v1')
     parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
+    parser.add_argument('--rootIdx', type=int, default=0, help='root index for 2D pose output')  # 21: pelvis for 66 kpts
+    parser.add_argument('--det2D_dir', type=str, default=None, help='directory to RTMPose 2D pose output')
     args = parser.parse_args()
 
 
@@ -111,13 +113,20 @@ if __name__ == '__main__':
 
                 # this_skeleton.plot_3d_pose_frame(frame=0, coord_system="world")
 
+                # get RTMPose output (npy) to replace gt 2d
+                if args.det2D_dir is not None:
+                    if True:   # RTM37kpt V1 format: results_S01-activity00-51470934_keypoints.npy
+                        print(f"Getting RTMPose output from {args.det2D_dir}")
+                        raise NotImplementedError  # actually, lets do after the 3D pose pkl fileis done
+
                 if args.output_type[0]:  # calculate 3D pose first
                     this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=h36m_joint_names, rootIdx=0)
                     output3D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep)
                     output_3D_dataset = append_output_xD_dataset(output_3D_dataset, train_val_test, output3D)
                 if args.output_type[1]:  # calculate 6D pose
-                    this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=custom_6D_joint_names, rootIdx=21)  # Pelvis index
+                    this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=custom_6D_joint_names, rootIdx=args.rootIdx)  # Pelvis index
                     output6D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep)
+
                     output_6D_dataset = append_output_xD_dataset(output_6D_dataset, train_val_test, output6D)
                 if args.output_type[2]:
                     raise NotImplementedError('Implemented using moshpp+soma in separate repo')

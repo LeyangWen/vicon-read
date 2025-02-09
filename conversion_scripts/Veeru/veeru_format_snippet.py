@@ -3,7 +3,16 @@ import pickle
 import os
 import numpy as np
 
+######################################
+#
+# Used to delete two activities from the Vicon-MB pkl file
+#
+######################################
+
 pkl_file = r"W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_config6_tilt_corrected.pkl"
+# pkl_file = r"W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample20_keep1_37_v1.pkl"  # no need actually
+
+
 with open(pkl_file, 'rb') as f:
     data = pickle.load(f)
 
@@ -40,5 +49,6 @@ for key in data.keys():
 
 # save pkl file
 save_pkl_file = pkl_file.replace('.pkl', '_modified.pkl')
+print(f"Saving to {save_pkl_file}")
 with open(save_pkl_file, 'wb') as f:
     pickle.dump(data, f)

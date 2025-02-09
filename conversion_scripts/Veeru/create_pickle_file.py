@@ -1,4 +1,5 @@
 # File from Veeru to overwrite Vicon-MB pkl files with the RTMPose 2D pose and confidence score
+####### For RMTpose - COCO-WB - 24kpts (2024)
 # Step 1: c3d_to_MB.py to generate Vicon GT pkl file
 # Step 2: veeru_format_snippet.py to delete two activities
 # Step 3: create_pickle_file.py to overwrite with RTMPose 2D pose and confidence score
