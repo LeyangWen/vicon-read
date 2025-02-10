@@ -1,4 +1,4 @@
-# for creating RTMPose inference file from json files
+# for creating RTMPose inference file from json files (e.g., for industry vids)
 
 import argparse
 import pickle
@@ -10,27 +10,35 @@ import rtm_pose_read_kps
 import ref
 from utility import *
 
-def read_input(json_path):
+def read_input(json_path, type='rtm24'):
     """
     Read the input from the json file
     :param json_path: path to the json file
     :return: all_keyps_rtm: (n,24,3), x, y, confidence
     """
-    all_bboxes,all_keyps_bef = rtm_pose_read_kps.load_json_arr(json_path) # Load the json file and read the keypoints and bounding boxes
-    all_keyps_rtm = rtm_pose_read_kps.filter_subject_using_center_of_joints_with_disqualify(all_keyps_bef,window=4) # Filter subject using the center of the joints
-    angle_joint_order = [ref.rtm_pose_keypoints.index(joint) for joint in ref.rtm_pose_keypoints_vicon_dataset] # Get the order of the joints in the Vicon dataset
-    all_keyps_rtm = all_keyps_rtm[:,angle_joint_order]
-    all_keyps_rtm[:, ref.rtm_pose_keypoints_vicon_dataset.index('left_middle_mcp')] = (all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('left_pinky')]+all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('left_index')])/2
-    all_keyps_rtm[:, ref.rtm_pose_keypoints_vicon_dataset.index('right_middle_mcp')] = (all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('right_pinky')]+all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('right_index')])/2
+    if type == 'rtm24':
+        all_bboxes,all_keyps_bef = rtm_pose_read_kps.load_json_arr(json_path) # Load the json file and read the keypoints and bounding boxes
+        all_keyps_rtm = rtm_pose_read_kps.filter_subject_using_center_of_joints_with_disqualify(all_keyps_bef,window=4) # Filter subject using the center of the joints
+        angle_joint_order = [ref.rtm_pose_keypoints.index(joint) for joint in ref.rtm_pose_keypoints_vicon_dataset] # Get the order of the joints in the Vicon dataset
+        all_keyps_rtm = all_keyps_rtm[:,angle_joint_order]
+        all_keyps_rtm[:, ref.rtm_pose_keypoints_vicon_dataset.index('left_middle_mcp')] = (all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('left_pinky')]+all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('left_index')])/2
+        all_keyps_rtm[:, ref.rtm_pose_keypoints_vicon_dataset.index('right_middle_mcp')] = (all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('right_pinky')]+all_keyps_rtm[:,ref.rtm_pose_keypoints_vicon_dataset.index('right_index')])/2
+    elif type == 'rtm37_from_37':
+        all_bboxes, all_keyps_bef, keypoint_names = rtm_pose_read_kps.load_json_arr(json_path)  # Load the json file and read the keypoints and bounding boxes
+        all_keyps_rtm = rtm_pose_read_kps.filter_subject_using_center_of_joints_with_disqualify(all_keyps_bef, window=4, type=type ,num_keypoints = 37,)  # Filter subject using the center of the joints
+
     print('RTMPOse keypoints shape:',all_keyps_rtm.shape)
     return all_keyps_rtm
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--json_folder', type=str, default=r'W:\VEHS\Testing_Videos_and_rtmpose_results\OneDrive_2_9-4-2024\kps_133_fps_20')
-    parser.add_argument('--output_file', type=str, default=r'rtmpose_industry_3_no3d_j24_f20_s1_RTM2D.pkl')
-    parser.add_argument('--joint_num', type=int, default=24)
+    # parser.add_argument('--json_folder', type=str, default=r'W:\VEHS\Testing_Videos_and_rtmpose_results\OneDrive_2_9-4-2024\kps_133_fps_20')
+    parser.add_argument('--json_folder', type=str, default=r'/Volumes/Z/RTMPose/37kpts_v1/best_epoch_40/Ricks_Videos_epoch_best')
+    parser.add_argument('--output_file', type=str, default=r'rtmpose_V1_industry_37kpts_v1.pkl')
+    parser.add_argument('--joint_num', type=int, default=37)
+    parser.add_argument('--type', type=str, default='rtm37_from_37')
+
     args = parser.parse_args()
     return args
 
@@ -45,13 +53,15 @@ if __name__ == '__main__':
         for file in files:
             if not file.endswith('.json'):
                 continue
+            if file.startswith('.'):
+                continue
             print("#"*50)
             json_path = os.path.join(root, file)
             print(f"file: {file}, root: {root}")
 
             # read from json file
             source = json_path.split('\\')[-1].split('.')[0]
-            all_keyps_rtm = read_input(json_path)
+            all_keyps_rtm = read_input(json_path, type=args.type)
             assert all_keyps_rtm.shape[1] == args.joint_num, f"all_keyps_rtm.shape[1]: {all_keyps_rtm.shape[1]}, args.joint_num: {args.joint_num}, they should be the same"
             frame_no = all_keyps_rtm.shape[0]
             print(f"frame_no: {frame_no}, %243: {frame_no%243}")

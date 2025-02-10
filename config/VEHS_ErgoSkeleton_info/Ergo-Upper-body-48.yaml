@@ -1,0 +1,13 @@
+joints:
+  mid: ['Wrist', 'Middle_0', 'Middle_1', 'Middle_2', 'Middle_3']
+  topR: ['Ring_0', 'Ring_1', 'Ring_2', 'Ring_3']
+  topL: ['Index_0', 'Index_1', 'Index_2', 'Index_3']
+  botR: ['Pinky_0', 'Pinky_1', 'Pinky_2', 'Pinky_3']
+  botL: ['Thumb_0', 'Thumb_1', 'Thumb_2', 'Thumb_3']
+
+parent:
+  mid: [None, 'Wrist', 'Middle_0', 'Middle_1', 'Middle_2']
+  topR: ['Wrist', 'Ring_0', 'Ring_1', 'Ring_2']
+  topL: ['Wrist', 'Index_0', 'Index_1', 'Index_2']
+  botR: ['Wrist', 'Pinky_0', 'Pinky_1', 'Pinky_2']
+  botL: ['Wrist', 'Thumb_0', 'Thumb_1', 'Thumb_2']
