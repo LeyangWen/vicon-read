@@ -2,12 +2,43 @@ import numpy as np
 import time
 from sklearn.neighbors import KDTree
 import pickle
+import argparse
 
 def format_large_number(num):
     """Format large numbers as ##k for better readability."""
     if num >= 1000:
         return f"{num // 1000}k"
     return str(num)
+
+def max_joint_distance(pose1, pose2):
+    """
+    Compute the maximum joint-wise Euclidean distance between two poses.
+    """
+    # i = 3000
+    # pose1, pose2 = poses[i], poses[i+5]
+    return np.max(np.linalg.norm(pose1 - pose2, axis=1))  # Max over all joints
+
+def preprocess_poses(poses, tolerance=100, sequential_skip=300):
+    """
+    Preprocesses the poses by removing sequential similar pose
+    """
+    N, J, _ = poses.shape  # (Frames, Joints, 3D)
+    processed_indices = [0]
+    i = 0
+
+    while i < N:
+        processed_indices.append(i)
+        for plus_i in range(1, sequential_skip):
+            if i + plus_i < N:
+                joint_dist =  max_joint_distance(poses[i], poses[i + plus_i])
+                if joint_dist > tolerance:
+                    break
+        i += plus_i
+        # print(f"i: {i}, +i: {plus_i}, joint_dist: {joint_dist}")
+    frame_length = len(processed_indices)
+    print(f"Reduced from {N} to {frame_length} frames, {frame_length/N*100:.2f}%")
+    preprocess_poses = poses[processed_indices]
+    return preprocess_poses, processed_indices
 
 def select_diverse_poses(poses, tolerance):
     """
@@ -34,7 +65,7 @@ def select_diverse_poses(poses, tolerance):
     for j in range(J):
         trees.append(KDTree(poses[:, j, :], metric="euclidean"))
     tree_build_time = time.time() - tree_build_start
-    print(f"KDTree built for all joints in {tree_build_time:.2f} seconds.")
+    # print(f"KDTree built for all joints in {tree_build_time:.2f} seconds.")
 
     # Step 2: Iterate through all poses
     last_checkpoint_time = time.time()
@@ -112,11 +143,35 @@ def tests():
                 print(f"Error: Poses at indices {diverse_pose_indices[i]} and {diverse_pose_indices[j]} are too similar.")
                 break
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--GT_file", type=str, default=r'/Users/leyangwen/Documents/Pose/paper/VEHS_6D_downsample2_keep1_37_v1_diversity.pkl', help="Path to the GT file.")
+    parser.add_argument("--tolerance", type=int, default=100, help="mm")
+    return parser.parse_args()
+
 if __name__ == "__main__":
-    file = r'/Users/leyangwen/Documents/Pose/paper/VEHS_6D_downsample2_keep1.pkl'
-    with open(file, "rb") as f:
+    args = parse_args()
+
+    with open(args.GT_file, "rb") as f:
         data = pickle.load(f)
+
+    store_results = {}
     for key in data.keys():
-       data
-    poses = data['joint3d_image']
-    tolerance = 100
+        poses = data[key]['joints_2.5d_image']
+        sources = data[key]['source']
+        split_idx = []
+        ## find the index of the first unique source
+        subject_name = sources[0].split('\\')[4]
+        for i, source in enumerate(sources):
+            if subject_name not in source:
+                split_idx.append(i)
+                subject_name = source.split('\\')[4]
+
+        split_pose = np.split(poses, split_idx)
+        for i, pose in enumerate(split_pose):
+            N = pose.shape[0]
+            print(f"Processing {key}-sub{i}: {subject_name} with {pose.shape[0]} frames")
+            small_pose, _ = preprocess_poses(pose, tolerance=args.tolerance, sequential_skip=300)
+            diverse_pose_indices = select_diverse_poses(small_pose, args.tolerance)
+            print(f"Selected {len(diverse_pose_indices)} diverse pose from {N} frames, {len(diverse_pose_indices)/N*100:.2f}%")
+            print("#" * 20)
