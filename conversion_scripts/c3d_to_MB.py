@@ -74,7 +74,7 @@ if __name__ == '__main__':
     ####### change output keypoints here
     custom_6D_joint_names = diversity_metric_keypointset
 
-    output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names))  # 66
+    output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names), version=args.MB_dict_version)  # 66
     output_smpl_dataset = {}
     count = 0
     pkl_filenames = {'3D': [], '6D': [], 'SMPL': []}  # if split_output, save intermediate results
