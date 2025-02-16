@@ -7,7 +7,6 @@ import datetime
 from mpl_toolkits.mplot3d import Axes3D
 import json
 from tqdm import tqdm
-from sklearn.neighbors import KDTree
 
 def plot_joint_axis(joint_axis_pts,label=None):
     # example
