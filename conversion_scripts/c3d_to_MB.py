@@ -1,8 +1,6 @@
 # c3d_to_MB.py
 
 import c3d
-
-# from conversion_scripts.Veeru.create_pickle_file_from_vehs37_npy import subject_name
 from utility import *
 
 from Skeleton import *
@@ -116,6 +114,10 @@ if __name__ == '__main__':
                 # this_skeleton.plot_3d_pose_frame(frame=0, coord_system="world")
 
                 # get RTMPose output (npy) to replace gt 2d
+                if args.det2D_dir is not None:
+                    if True:   # RTM37kpt V1 format: results_S01-activity00-51470934_keypoints.npy
+                        print(f"Getting RTMPose output from {args.det2D_dir}")
+                        raise NotImplementedError  # actually, lets do after the 3D pose pkl fileis done
 
                 if args.output_type[0]:  # calculate 3D pose first
                     this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=h36m_joint_names, rootIdx=0)
@@ -146,7 +148,6 @@ if __name__ == '__main__':
                             with open(f'{output_6d_filename}_segment{count}.pkl', 'wb') as f:
                                 pickle.dump(output_6D_dataset, f)
                             pkl_filenames['6D'].append(f'{output_6d_filename}_segment{count}.pkl')
-
                         # empty the dataset, else it is too big for memory and make it slow
                         output_3D_dataset = empty_MotionBert_dataset_dict(len(h36m_joint_names))  # 17
                         output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names))  # 66

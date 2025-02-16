@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/VEHS-R3-721-MotionBert.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
     parser.add_argument('--downsample', type=int, default=20)
-    parser.add_argument('--downsample_keep', type=int, default=1)
+    parser.add_argument('--downsample_keep', type=int, default=1)  # note: coco output already auto align to middle of each downample frames, just keep 1 is fine
     parser.add_argument('--split_output', action='store_true')  # not implemented yet
     parser.add_argument('--output_type', type=list, default=[False, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
     parser.add_argument('--output_file_name_end', type=str, default='')

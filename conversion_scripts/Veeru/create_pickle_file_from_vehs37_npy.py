@@ -8,7 +8,7 @@ import argparse
 # Step 1: c3d_to_MB.py to generate Vicon GT pkl file
 # Step 2: create_pickle_file.py to overwrite with RTMPose 2D pose and confidence score
 
-motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample20_keep1_37_v1.pkl'
+motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample20_keep10_37_v1.pkl'
 npy_dir = r'W:\VEHS\VEHS data collection round 3\RTM2D\RTMPose_VEHS7M_37kpts_v1\outputs_epoch_best_all'
 
 
@@ -45,8 +45,9 @@ for key in motionbert_data_dict.keys():
             with open(npy_dir + '/' + npy_file, 'rb') as f:
                 det_2d_conf = np.load(f)
             length_diff = old_clip_len - det_2d_conf.shape[0]
+            gt_2d = motionbert_data_dict[key]['joint_2d'][cum_start:cum_start+old_clip_len]
             print( f"diff: {length_diff}, old_clip_len: {old_clip_len}, det_2d_conf.shape[0]: {det_2d_conf.shape[0]} for {subject_name}-{action_name}-{camera_id}")
-            assert abs(length_diff) < 1.5, f"diff: {length_diff}, old_clip_len: {old_clip_len}, det_2d_conf.shape[0]: {det_2d_conf.shape[0]} for {subject_name}-{action_name}-{camera_id}"
+            assert abs(length_diff) < 0.5, f"diff: {length_diff}, old_clip_len: {old_clip_len}, det_2d_conf.shape[0]: {det_2d_conf.shape[0]} for {subject_name}-{action_name}-{camera_id}"
             if length_diff > 0:
                 ## concatenate the last frame to fill the gap, visualized and checked it is not big issues since last frame is stationary, frames before lines up perfectly
                 det_2d_conf = np.concatenate([det_2d_conf, det_2d_conf[-1:]]*length_diff, axis=0)
@@ -78,14 +79,17 @@ det_2d = det_2d_conf[:, :, :2]
 rtm_pose_37_keypoints_vicon_dataset_v1 = ['PELVIS', 'RWRIST', 'LWRIST', 'RHIP', 'LHIP', 'RKNEE', 'LKNEE', 'RANKLE', 'LANKLE', 'RFOOT', 'LFOOT', 'RHAND', 'LHAND', 'RELBOW', 'LELBOW', 'RSHOULDER',
                                           'LSHOULDER', 'HEAD', 'THORAX', 'HDTP', 'REAR', 'LEAR', 'C7', 'C7_d', 'SS', 'RAP_b', 'RAP_f', 'LAP_b', 'LAP_f', 'RLE', 'RME', 'LLE', 'LME', 'RMCP2', 'RMCP5',
                                           'LMCP2', 'LMCP5']
-this_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton-66.yaml')
-this_skeleton.load_name_list_and_np_points(rtm_pose_37_keypoints_vicon_dataset_v1, det_2d)
+det_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton-66.yaml')
+det_skeleton.load_name_list_and_np_points(rtm_pose_37_keypoints_vicon_dataset_v1, det_2d)
+gt_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton-66.yaml')
+gt_skeleton.load_name_list_and_np_points(rtm_pose_37_keypoints_vicon_dataset_v1, gt_2d)
 
-frame_no = 400
+frame_no = 200
 base_image = f"W:\\VEHS\\VEHS-7M\\img\\5fps\\{key}\\{subject_name}-{action_name}-{camera_id}-{frame_no+1:06d}.jpg"
 # W:\VEHS\VEHS-7M\img\5fps\test\S09-activity00-51470934-000001.jpg
-this_skeleton.plot_2d_pose_frame(frame=frame_no, baseimage=base_image)  #, filename=r'C:\Users\wenleyan1\Downloads\test')
 
+gt_skeleton.plot_2d_pose_frame(frame=frame_no, baseimage=base_image)  #, filename=r'C:\Users\wenleyan1\Downloads\test')
+det_skeleton.plot_2d_pose_frame(frame=frame_no, baseimage=base_image)  #, filename=r'C:\Users\wenleyan1\Downloads\test')
 
 
 

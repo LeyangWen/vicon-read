@@ -518,8 +518,8 @@ class VEHSErgoSkeleton(Skeleton):
             frame_count = 0
             # camera_pitch_angle = this_camera.get_camera_pitch()
             for downsample_idx in range(downsample):
-                if downsample_idx == downsample_keep:
-                    break
+                if downsample_idx != downsample_keep-1:
+                    continue
                 for frame_idx in range(0, self.frame_number, downsample):
                     real_frame_idx = frame_idx + downsample_idx + int(downsample/2)  # middle frame for coco image alignment
                     if real_frame_idx >= self.frame_number:
@@ -578,8 +578,9 @@ class VEHSErgoSkeleton(Skeleton):
             camera_pitch_angle = this_camera.get_camera_pitch()
             print(f"correcting pitch for {this_camera.DEVICEID}, pitch: {camera_pitch_angle / np.pi * 180:.01f} degrees") if pitch_correction else None
             for downsample_idx in range(downsample):
-                if downsample_idx == downsample_keep:
-                    break
+                if downsample_idx != downsample_keep-1:
+                    continue
+                # print(f"downsample {downsample_idx}/{downsample}")
                 for frame_idx in range(0, self.frame_number, downsample):
                     real_frame_idx = frame_idx + downsample_idx
                     if real_frame_idx >= self.frame_number:
@@ -1643,8 +1644,8 @@ class RokokoHandSkeleton(Skeleton):
         c3d_frame = []
         for this_camera in self.cameras:
             for downsample_idx in range(downsample):
-                if downsample_idx == downsample_keep:
-                    break
+                if downsample_idx != downsample_keep-1:
+                    continue
                 for frame_idx in range(0, self.frame_number, downsample):
                     real_frame_idx = frame_idx + downsample_idx
                     if real_frame_idx >= self.frame_number:
