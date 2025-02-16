@@ -1,0 +1,11 @@
+name_list: ['PELVIS',
+            'RWRIST', 'LWRIST', 'RHIP', 'LHIP', 'RKNEE', 'LKNEE', 'RANKLE', 'LANKLE', 'RFOOT', 'LFOOT',
+            'RHAND', 'LHAND', 'RELBOW', 'LELBOW', 'RSHOULDER', 'LSHOULDER',
+            'HEAD', 'THORAX', 'HDTP', 'REAR', 'LEAR', 'C7', 'C7_d', 'SS',
+            'RAP_b', 'RAP_f', 'LAP_b', 'LAP_f', 'RLE', 'RME', 'LLE', 'LME', 'RMCP2', 'RMCP5', 'LMCP2', 'LMCP5']
+
+GT_file: None
+eval_key: 'validate'
+
+#estimate_file: '/Volumes/Z/RTMPose/37kpts_v1/best_epoch_40/outputs_epoch_best/X3D.npy'
+estimate_file: '/Volumes/Z/RTMPose/37kpts_v1/best_epoch_40/Ricks_Videos_epoch_best/37kpts_V1_RTMPose_MB/X3D.npy'

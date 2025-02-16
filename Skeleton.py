@@ -198,7 +198,7 @@ class Skeleton:
 
         for joint_name in self.key_joint_name:
             if joint_name in self.poses:
-                point_type, point_size = self.get_plot_property(joint_name, size=[30, 40])
+                point_type, point_size = self.get_plot_property(joint_name, size=[10, 20])
                 ax.scatter(self.poses[joint_name][frame, pose_sequence[0]],
                            self.poses[joint_name][frame, pose_sequence[1]],
                            self.poses[joint_name][frame, pose_sequence[2]], label=joint_name, marker=point_type, s=point_size)

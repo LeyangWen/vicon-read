@@ -1,6 +1,8 @@
 # c3d_to_MB.py
 
 import c3d
+
+# from conversion_scripts.Veeru.create_pickle_file_from_vehs37_npy import subject_name
 from utility import *
 
 from Skeleton import *
@@ -15,14 +17,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/VEHS-R3-622-MotionBert.yaml') #default=r'config/experiment_config/VEHS-R3-721-MotionBert.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton-66.yaml')
-    parser.add_argument('--downsample', type=int, default=20)
+    parser.add_argument('--downsample', type=int, default=2)
     parser.add_argument('--downsample_keep', type=int, default=1)
     parser.add_argument('--split_output', action='store_true')  # not implemented yet
     parser.add_argument('--output_type', type=list, default=[False, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
-    parser.add_argument('--output_file_name_end', type=str, default='_37_v1')
+    parser.add_argument('--output_file_name_end', type=str, default='_37_v1_diversity')
     parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
     parser.add_argument('--rootIdx', type=int, default=0, help='root index for 2D pose output')  # 21: pelvis for 66 kpts
-    parser.add_argument('--det2D_dir', type=str, default=None, help='directory to RTMPose 2D pose output')
+    parser.add_argument('--MB_dict_version', type=str, default='diversity_metric', help='select from "normal", "diversity_metric"')
     args = parser.parse_args()
 
 
@@ -114,10 +116,6 @@ if __name__ == '__main__':
                 # this_skeleton.plot_3d_pose_frame(frame=0, coord_system="world")
 
                 # get RTMPose output (npy) to replace gt 2d
-                if args.det2D_dir is not None:
-                    if True:   # RTM37kpt V1 format: results_S01-activity00-51470934_keypoints.npy
-                        print(f"Getting RTMPose output from {args.det2D_dir}")
-                        raise NotImplementedError  # actually, lets do after the 3D pose pkl fileis done
 
                 if args.output_type[0]:  # calculate 3D pose first
                     this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=h36m_joint_names, rootIdx=0)
@@ -138,7 +136,7 @@ if __name__ == '__main__':
                     break  # self = this_skeleton
                 del this_skeleton
                 if args.split_output:
-                    if 'activity08' in root or 'Activity08' in file:  # save intermediate results
+                    if 'activity08' in root or 'Activity08' in file:  # save intermediate results, Not in use
                         print(f'Saving intermediate results for {c3d_file}')
                         if args.output_type[0]:  # 3D pose
                             with open(f'{output_3d_filename}_segment{count}.pkl', 'wb') as f:
@@ -148,6 +146,7 @@ if __name__ == '__main__':
                             with open(f'{output_6d_filename}_segment{count}.pkl', 'wb') as f:
                                 pickle.dump(output_6D_dataset, f)
                             pkl_filenames['6D'].append(f'{output_6d_filename}_segment{count}.pkl')
+
                         # empty the dataset, else it is too big for memory and make it slow
                         output_3D_dataset = empty_MotionBert_dataset_dict(len(h36m_joint_names))  # 17
                         output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names))  # 66

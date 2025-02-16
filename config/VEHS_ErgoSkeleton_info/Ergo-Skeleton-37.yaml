@@ -1,0 +1,26 @@
+joints:
+  mid: ['HDTP', 'REAR', 'LEAR', 'HEAD',   'C7', 'C7_d', 'SS',             'THORAX', 'PELVIS']
+  topR: ['RAP_b', 'RAP_f', 'RSHOULDER', 'RLE', 'RME', 'RELBOW', 'RWRIST', 'RMCP2', 'RMCP5', 'RHAND']
+  topL: ['LAP_b', 'LAP_f', 'LSHOULDER', 'LLE', 'LME', 'LELBOW', 'LWRIST', 'LMCP2', 'LMCP5', 'LHAND']
+  botR: [ 'RHIP',       'RKNEE',         'RANKLE',  'RFOOT']
+  botL: [ 'LHIP',       'LKNEE',         'LANKLE',  'LFOOT']
+
+parent:
+  mid: ['HEAD', 'HEAD', 'HEAD', 'C7', 'C7_d', 'THORAX', 'THORAX', 'PELVIS', None]
+  topR: [ 'RSHOULDER', 'RSHOULDER', 'THORAX', 'RELBOW', 'RELBOW', 'RSHOULDER', 'RELBOW', 'RHAND', 'RHAND', 'RWRIST']
+  topL: [ 'LSHOULDER', 'LSHOULDER', 'THORAX', 'LELBOW', 'LELBOW', 'LSHOULDER', 'LELBOW', 'LHAND', 'LHAND', 'LWRIST']
+  botR: ['PELVIS',     'RHIP',       'RKNEE', 'RANKLE']
+  botL: ['PELVIS',     'LHIP',       'LKNEE', 'LANKLE']
+
+type:
+  surface_markers: ['RPSIS', 'RASIS', 'LPSIS', 'LASIS', 'C7_d', 'SS', 'T8', 'XP', 'C7', 'HDTP', 'MDFH', 'REAR', 'LEAR', 'RAP', 'RAP_f', 'RLE', 'RAP_b', 'RME', 'LAP', 'LAP_f', 'LLE',
+                    'LAP_b', 'LME', 'LUS', 'LRS', 'RUS', 'RRS', 'RMCP5', 'RMCP2', 'LMCP5', 'LMCP2', 'LGT', 'LMFC', 'LLFC', 'RGT', 'RMFC', 'RLFC', 'RMM', 'RLM', 'LMM',
+                    'LLM', 'LMTP1', 'LMTP5', 'LHEEL', 'RMTP1', 'RMTP5', 'RHEEL']
+  joint_centers: ['HEAD', 'RSHOULDER', 'LSHOULDER', 'THORAX', 'LELBOW', 'RELBOW', 'RWRIST', 'LWRIST', 'RHAND', 'LHAND', 'PELVIS', 'RHIP', 'RKNEE',
+                  'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']
+
+marker_vids: {'smpl': {'HDTP': 411, 'REAR': 3941, 'LEAR': 517, 'MDFH': 335, 'C7': 829, 'C7_d': 1305, 'SS': 3171, 'T8': 3024, 'XP': 3077, 'RPSIS': 5246, 'RASIS': 6573, 'LPSIS': 1781, 'LASIS': 3156, 'RAP': 4721, 'RAP_b': 5283, 'RAP_f': 5354, 'LAP': 1238, 'LAP_b': 2888, 'LAP_f': 1317, 'RLE': 5090, 'RME': 5202, 'LLE': 1621, 'LME': 1732, 'RRS': 5573, 'RUS': 5568, 'LRS': 2112, 'LUS': 2108, 'RMCP2': 5595, 'RMCP5': 5636, 'LMCP2': 2135, 'LMCP5': 2290, 'RIC': 5257, 'RGT': 4927, 'LIC': 1794, 'LGT': 1454, 'RMFC': 4842, 'RLFC': 4540, 'LMFC': 1369, 'LLFC': 1054, 'RMM': 6832, 'RLM': 6728, 'LMM': 3432, 'LLM': 3327, 'RMTP1': 6739, 'RMTP5': 6745, 'LMTP1': 3337, 'LMTP5': 3344, 'RHEEL': 6786, 'LHEEL': 3387},
+              'smplh': {'HDTP': 411, 'REAR': 3941, 'LEAR': 517, 'MDFH': 335, 'C7': 829, 'C7_d': 1305, 'SS': 3171, 'T8': 3024, 'XP': 3077, 'RPSIS': 5246, 'RASIS': 6573, 'LPSIS': 1781, 'LASIS': 3156, 'RAP': 4721, 'RAP_b': 5283, 'RAP_f': 5354, 'LAP': 1238, 'LAP_b': 2888, 'LAP_f': 1317, 'RLE': 5090, 'RME': 5202, 'LLE': 1621, 'LME': 1732, 'RRS': 5573, 'RUS': 5568, 'LRS': 2112, 'LUS': 2108, 'RMCP2': 5595, 'RMCP5': 5636, 'LMCP2': 2135, 'LMCP5': 2290, 'RIC': 5257, 'RGT': 4927, 'LIC': 1794, 'LGT': 1454, 'RMFC': 4842, 'RLFC': 4540, 'LMFC': 1369, 'LLFC': 1054, 'RMM': 6832, 'RLM': 6728, 'LMM': 3432, 'LLM': 3327, 'RMTP1': 6739, 'RMTP5': 6745, 'LMTP1': 3337, 'LMTP5': 3344, 'RHEEL': 6786, 'LHEEL': 3387},
+              'smplx': {'HDTP': 9011, 'REAR': 1050, 'LEAR': 560, 'MDFH': 8949, 'C7': 3353, 'C7_d': 5349, 'SS': 5533, 'T8': 5495, 'XP': 5534, 'RPSIS': 7141, 'RASIS': 8421, 'LPSIS': 4405, 'LASIS': 5727, 'RAP': 6175, 'RAP_b': 6632, 'RAP_f': 7253, 'LAP': 3414, 'LAP_b': 4431, 'LAP_f': 4517, 'RLE': 6695, 'RME': 7107, 'LLE': 4251, 'LME': 4371, 'RRS': 7462, 'RUS': 7458, 'LRS': 4726, 'LUS': 4722, 'RMCP2': 7483, 'RMCP5': 7525, 'LMCP2': 4747, 'LMCP5': 4788, 'RIC': 7149, 'RGT': 6832, 'LIC': 4413, 'LGT': 4088, 'RMFC': 6747, 'RLFC': 6445, 'LMFC': 3999, 'LLFC': 3684, 'RMM': 8680, 'RLM': 8576, 'LMM': 8892, 'LLM': 5882, 'RMTP1': 8587, 'RMTP5': 8593, 'LMTP1': 5893, 'LMTP5': 5899, 'RHEEL': 8634, 'LHEEL': 8846}}
+
+# from soma - marker_vid.py, but smpl  'RLE': 5090

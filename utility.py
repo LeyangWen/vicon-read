@@ -7,6 +7,7 @@ import datetime
 from mpl_toolkits.mplot3d import Axes3D
 import json
 from tqdm import tqdm
+from sklearn.neighbors import KDTree
 
 def plot_joint_axis(joint_axis_pts,label=None):
     # example
@@ -96,7 +97,7 @@ def store_cdf(file_name, data, date='', kp_names='', subjectID='', TaskID='', Ca
     cdf['bbox'] = bbox
     cdf.close()
 
-def empty_MotionBert_dataset_dict(joint_number):
+def empty_MotionBert_dataset_dict(joint_number, version="normal"):
     '''
     usage example:
     h36m_joint_names = ['PELVIS', 'RHIP', 'RKNEE', 'RANKLE', 'LHIP', 'LKNEE', 'LANKLE', 'T8', 'THORAX', 'C7', 'HEAD', 'LSHOULDER', 'LELBOW', 'LWRIST', 'RSHOULDER', 'RELBOW', 'RWRIST']
@@ -104,38 +105,54 @@ def empty_MotionBert_dataset_dict(joint_number):
     custom_6D_joint_names = ['RPSIS', 'RASIS', 'LPSIS', 'LASIS', 'C7_d', 'SS', 'T8', 'XP', 'C7', 'HDTP', 'REAR', 'LEAR', 'RAP', 'RAP_f', 'RLE', 'RAP_b', 'RME', 'LAP', 'LAP_f', 'LLE', 'LAP_b', 'LME', 'LUS', 'LRS', 'RUS', 'RRS', 'RMCP5', 'RMCP2', 'LMCP5', 'LMCP2', 'LGT', 'LMFC', 'LLFC', 'RGT', 'RMFC', 'RLFC', 'RMM', 'RLM', 'LMM', 'LLM', 'LMTP1', 'LMTP5', 'LHEEL', 'RMTP1', 'RMTP5', 'RHEEL', 'HEAD', 'RSHOULDER', 'LSHOULDER', 'C7_m', 'THORAX', 'LELBOW', 'RELBOW', 'RWRIST', 'LWRIST', 'RHAND', 'LHAND', 'PELVIS', 'RHIP', 'RKNEE', 'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']
     output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names))  # 66
     '''
-    return {
-        'train': {
-            'joint_2d': np.empty((0, joint_number, 2)),
-            'confidence': np.empty((0, joint_number, 1)),
-            'joint3d_image': np.empty((0, joint_number, 3)),
-            'camera_name': np.empty((0,)),
-            'source': [],
-            'c3d_frame': []
-        },
-        'validate': {
-            'joint_2d': np.empty((0, joint_number, 2)),
-            'confidence': np.empty((0, joint_number, 1)),
-            'joint3d_image': np.empty((0, joint_number, 3)),
-            'joints_2.5d_image': np.empty((0, joint_number, 3)),
-            '2.5d_factor': np.empty((0,)),
-            'camera_name': np.empty((0,)),
-            'action': [],
-            'source': [],
-            'c3d_frame': []
-        },
-        'test': {
-            'joint_2d': np.empty((0, joint_number, 2)),
-            'confidence': np.empty((0, joint_number, 1)),
-            'joint3d_image': np.empty((0, joint_number, 3)),
-            'joints_2.5d_image': np.empty((0, joint_number, 3)),
-            '2.5d_factor': np.empty((0,)),
-            'camera_name': np.empty((0,)),
-            'action': [],
-            'source': [],
-            'c3d_frame': []
+    if version == "normal":  # V1 normal MB training
+        return {
+            'train': {
+                'joint_2d': np.empty((0, joint_number, 2)),
+                'confidence': np.empty((0, joint_number, 1)),
+                'joint3d_image': np.empty((0, joint_number, 3)),
+                'camera_name': np.empty((0,)),
+                'source': [],
+                'c3d_frame': []
+            },
+            'validate': {
+                'joint_2d': np.empty((0, joint_number, 2)),
+                'confidence': np.empty((0, joint_number, 1)),
+                'joint3d_image': np.empty((0, joint_number, 3)),
+                'joints_2.5d_image': np.empty((0, joint_number, 3)),
+                '2.5d_factor': np.empty((0,)),
+                'camera_name': np.empty((0,)),
+                'action': [],
+                'source': [],
+                'c3d_frame': []
+            },
+            'test': {
+                'joint_2d': np.empty((0, joint_number, 2)),
+                'confidence': np.empty((0, joint_number, 1)),
+                'joint3d_image': np.empty((0, joint_number, 3)),
+                'joints_2.5d_image': np.empty((0, joint_number, 3)),
+                '2.5d_factor': np.empty((0,)),
+                'camera_name': np.empty((0,)),
+                'action': [],
+                'source': [],
+                'c3d_frame': []
+            }
         }
-    }
+    elif version == "diversity_metric":  # V2 for diversity metric calculation only
+        return {
+            'train': {
+                'joints_2.5d_image': np.empty((0, joint_number, 3)),
+                'source': [],
+            },
+            'validate': {
+                'joints_2.5d_image': np.empty((0, joint_number, 3)),
+                'source': [],
+            },
+            'test': {
+                'joints_2.5d_image': np.empty((0, joint_number, 3)),
+                'source': [],
+            }
+        }
 
 def empty_COCO_dataset_dict(joint_number):
     """
@@ -321,3 +338,5 @@ def non_zero_mean(arr):
 def non_zero_median(arr):
     # Filter out the zero elements and calculate the mean of the non-zero elements
     return np.median(arr[arr != 0])
+
+
