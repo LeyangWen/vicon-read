@@ -693,7 +693,7 @@ class VEHSErgoSkeleton(Skeleton):
         # 112 - 114 R. Ball of Foot Virtual point
         # 115 - 117 R. Metatarsalphalangeal Skin Surface
         """
-        weight = getattr(self, 'weight', 75)
+        weight = getattr(self, 'weight', 60)
         height = getattr(self, 'height', 180)
         gender = getattr(self, 'gender', 'male')
         gender_id = 0 if gender=='male' else 1  # male 0, female 1

@@ -18,7 +18,7 @@ if __name__ == '__main__':
     parser.add_argument('--downsample', type=int, default=2)
     parser.add_argument('--downsample_keep', type=int, default=1)
     parser.add_argument('--split_output', action='store_true')  # not implemented yet
-    parser.add_argument('--output_type', type=list, default=[False, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
+    parser.add_argument('--output_type', type=list, default=[False, False, False, True], help='3D, 6D, SMPL, 3DSSPP')
     parser.add_argument('--output_file_name_end', type=str, default='_37_v1_diversity')
     parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
     parser.add_argument('--rootIdx', type=int, default=0, help='root index for 2D pose output')  # 21: pelvis for 66 kpts
@@ -84,6 +84,8 @@ if __name__ == '__main__':
         dirs.sort()  # Sort directories in-place --> important, will change walk sequence
         files.sort(key=str.lower)  # Sort files in-place
         for file in files:
+            if "S01" not in root:
+                continue
             if file.endswith('.c3d') and root[-6:] != 'backup' and (not file.startswith('ROM')) and (not file.endswith('_bad.c3d')):
                 # val_keyword is a list of string, if any of them is in the root, then it is val set
                 if any(keyword in root for keyword in val_keyword):
@@ -131,7 +133,7 @@ if __name__ == '__main__':
                     # output_smpl_dataset =
                 if args.output_type[3]:  # GT 3DSSPP output
                     batch_3DSSPP_batch_filename = c3d_file.replace('.c3d', '-3DSSPP.txt')
-                    this_skeleton.output_3DSSPP_loc(frame_range=[0, 3000, 10], loc_file=batch_3DSSPP_batch_filename)
+                    this_skeleton.output_3DSSPP_loc(frame_range=[0, 3000, 5], loc_file=batch_3DSSPP_batch_filename)
                     break  # self = this_skeleton
                 del this_skeleton
                 if args.split_output:
