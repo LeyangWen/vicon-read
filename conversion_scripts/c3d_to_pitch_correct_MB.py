@@ -13,14 +13,16 @@ import argparse
 if __name__ == '__main__':
     # read arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/VEHS-R3-721-MotionBert.yaml')
+    parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/VEHS-R3-622-MotionBert.yaml') #default=r'config/experiment_config/VEHS-R3-721-MotionBert.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton-66.yaml')
     parser.add_argument('--downsample', type=int, default=5)
     parser.add_argument('--downsample_keep', type=int, default=1)
     parser.add_argument('--split_output', action='store_true')  # not implemented yet
     parser.add_argument('--output_type', type=list, default=[False, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
-    parser.add_argument('--output_file_name_end', type=str, default='_config6_tilt_corrected')
+    parser.add_argument('--output_file_name_end', type=str, default='_37_v2_pitch_correct')
     parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
+    parser.add_argument('--rootIdx', type=int, default=0, help='root index for 2D pose output')  # 21: pelvis for 66 kpts
+    parser.add_argument('--MB_dict_version', type=str, default='normal', help='select from "normal", "diversity_metric"')
     parser.add_argument('--zero_camera_pitch', type=bool, default=True)
     args = parser.parse_args()
 
@@ -47,13 +49,16 @@ if __name__ == '__main__':
 
     # iterate through the folder to find all c3d
     # h36m_joint_names = ['Hip', 'RHip', 'RKnee', 'RFoot', 'LHip', 'LKnee', 'LFoot', 'Spine', 'Thorax', 'Neck/Nose', 'Head', 'LShoulder', 'LElbow', 'LWrist', 'RShoulder', 'RElbow', 'RWrist']  # h36m original names
-    h36m_joint_names = ['PELVIS', 'RHIP', 'RKNEE', 'RANKLE', 'LHIP', 'LKNEE', 'LANKLE', 'T8', 'THORAX', 'C7', 'HEAD', 'LSHOULDER', 'LELBOW', 'LWRIST', 'RSHOULDER', 'RELBOW', 'RWRIST']
+    h36m_joint_names = ['PELVIS', 'RHIP', 'RKNEE', 'RANKLE', 'LHIP', 'LKNEE', 'LANKLE', 'T8', 'THORAX', 'C7', 'HEAD', 'LSHOULDER', 'LELBOW', 'LWRIST', 'RSHOULDER', 'RELBOW', 'RWRIST']  # todo: neck in h36m is more like center of jaw joint
     output_3D_dataset = empty_MotionBert_dataset_dict(len(h36m_joint_names))  # 17
-    pkl_custom_6D_joint_names = ['RPSIS', 'RASIS', 'LPSIS', 'LASIS', 'C7_d', 'SS', 'T8', 'XP', 'C7', 'HDTP', 'REAR', 'LEAR', 'RAP', 'RAP_f', 'RLE', 'RAP_b', 'RME', 'LAP', 'LAP_f', 'LLE', 'LAP_b', 'LME', 'LUS', 'LRS', 'RUS', 'RRS', 'RMCP5', 'RMCP2', 'LMCP5', 'LMCP2', 'LGT', 'LMFC', 'LLFC', 'RGT', 'RMFC', 'RLFC', 'RMM', 'RLM', 'LMM', 'LLM', 'LMTP1', 'LMTP5', 'LHEEL', 'RMTP1', 'RMTP5', 'RHEEL', 'HEAD', 'RSHOULDER', 'LSHOULDER', 'C7_m', 'THORAX', 'LELBOW', 'RELBOW', 'RWRIST', 'LWRIST', 'RHAND', 'LHAND', 'PELVIS', 'RHIP', 'RKNEE', 'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']
+    pkl_custom_6D_joint_names = ['RPSIS', 'RASIS', 'LPSIS', 'LASIS', 'C7_d', 'SS', 'T8', 'XP', 'C7', 'HDTP', 'REAR', 'LEAR', 'RAP', 'RAP_f', 'RLE', 'RAP_b', 'RME', 'LAP', 'LAP_f', 'LLE', 'LAP_b', 'LME',
+                                 'LUS', 'LRS', 'RUS', 'RRS', 'RMCP5', 'RMCP2', 'LMCP5', 'LMCP2', 'LGT', 'LMFC', 'LLFC', 'RGT', 'RMFC', 'RLFC', 'RMM', 'RLM', 'LMM', 'LLM', 'LMTP1', 'LMTP5', 'LHEEL',
+                                 'RMTP1', 'RMTP5', 'RHEEL', 'HEAD', 'RSHOULDER', 'LSHOULDER', 'C7_m', 'THORAX', 'LELBOW', 'RELBOW', 'RWRIST', 'LWRIST', 'RHAND', 'LHAND', 'PELVIS', 'RHIP', 'RKNEE',
+                                 'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']  # V1
     paper_custom_6D_joint_names = ['RPSIS', 'RASIS', 'LPSIS', 'LASIS', 'C7_d', 'SS', 'T8', 'XP', 'C7', 'HDTP', 'MDFH', 'REAR', 'LEAR', 'RAP', 'RAP_f', 'RLE', 'RAP_b', 'RME', 'LAP', 'LAP_f', 'LLE', 'LAP_b', 'LME',
                              'LUS', 'LRS', 'RUS', 'RRS', 'RMCP5', 'RMCP2', 'LMCP5', 'LMCP2', 'LGT', 'LMFC', 'LLFC', 'RGT', 'RMFC', 'RLFC', 'RMM', 'RLM', 'LMM', 'LLM', 'LMTP1', 'LMTP5', 'LHEEL',
                              'RMTP1', 'RMTP5', 'RHEEL', 'HEAD', 'RSHOULDER', 'LSHOULDER', 'THORAX', 'LELBOW', 'RELBOW', 'RWRIST', 'LWRIST', 'RHAND', 'LHAND', 'PELVIS', 'RHIP', 'RKNEE',
-                             'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']  # 66: drop c7_m, add MDFH
+                             'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']  # 66: drop c7_m, add MDFH, V2
 
     rtm_pose_keypoints_vicon_dataset_config6 = ['NOSE', 'LEAR', 'REAR', 'LSHOULDER', 'RSHOULDER', 'LELBOW', 'RELBOW', 'LWRIST', 'RWRIST', 'LHIP', 'RHIP',
                                         'LKNEE', 'RKNEE', 'LANKLE', 'RANKLE', 'LMCP2', 'LHAND', 'LMCP5', 'RMCP2', 'RHAND', 'RMCP5', 'HIP_c', 'SHOULDER_c', 'HEAD'] # RTMPose output (selected)
@@ -62,10 +67,15 @@ if __name__ == '__main__':
     rtm_pose_keypoints_vicon_dataset_config2 = ['NOSE', 'LEAR', 'REAR', 'LSHOULDER', 'RSHOULDER', 'LELBOW', 'RELBOW', 'LWRIST', 'RWRIST', 'LHIP', 'RHIP',
                                                 'LKNEE', 'RKNEE', 'LANKLE', 'RANKLE', 'LMCP2', 'LHAND', 'LMCP5', 'RMCP2', 'RHAND', 'RMCP5', 'PELVIS_b', 'SHOULDER_c', 'HEAD']
 
-    ####### change output keypoints here
-    custom_6D_joint_names = rtm_pose_keypoints_vicon_dataset_config6
+    rtm_pose_37_keypoints_vicon_dataset_v1 = ['PELVIS', 'RWRIST', 'LWRIST', 'RHIP', 'LHIP', 'RKNEE', 'LKNEE', 'RANKLE', 'LANKLE', 'RFOOT', 'LFOOT', 'RHAND', 'LHAND', 'RELBOW', 'LELBOW', 'RSHOULDER', 'LSHOULDER', 'HEAD', 'THORAX', 'HDTP', 'REAR', 'LEAR', 'C7', 'C7_d', 'SS', 'RAP_b', 'RAP_f', 'LAP_b', 'LAP_f', 'RLE', 'RME', 'LLE', 'LME', 'RMCP2', 'RMCP5', 'LMCP2', 'LMCP5']
 
-    output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names))  # 66
+    diversity_metric_keypointset = ['PELVIS', 'RWRIST', 'LWRIST', 'RHIP', 'LHIP', 'RKNEE', 'LKNEE', 'RANKLE', 'LANKLE', 'RFOOT', 'LFOOT', 'RHAND', 'LHAND', 'RELBOW', 'LELBOW', 'RSHOULDER',
+                                              'LSHOULDER', 'HEAD', 'THORAX', 'HDTP', 'REAR', 'LEAR', 'C7', 'C7_d', 'RMCP2', 'RMCP5', 'LMCP2', 'LMCP5']
+
+    ####### change output keypoints here
+    custom_6D_joint_names = rtm_pose_37_keypoints_vicon_dataset_v1
+
+    output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names), version=args.MB_dict_version)  # 66
     output_smpl_dataset = {}
     count = 0
     pkl_filenames = {'3D': [], '6D': [], 'SMPL': []}  # if split_output, save intermediate results
@@ -118,7 +128,7 @@ if __name__ == '__main__':
                     output3D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep, pitch_correction=args.zero_camera_pitch)
                     output_3D_dataset = append_output_xD_dataset(output_3D_dataset, train_val_test, output3D)
                 if args.output_type[1]:  # calculate 6D pose
-                    this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=custom_6D_joint_names, rootIdx=21)  # Pelvis index
+                    this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=custom_6D_joint_names, rootIdx=args.rootIdx)  # Pelvis index
                     output6D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep, pitch_correction=args.zero_camera_pitch)
                     output_6D_dataset = append_output_xD_dataset(output_6D_dataset, train_val_test, output6D)
                 if args.output_type[2]:
@@ -131,7 +141,7 @@ if __name__ == '__main__':
                     break  # self = this_skeleton
                 del this_skeleton
                 if args.split_output:
-                    if 'activity08' in root or 'Activity08' in file:  # save intermediate results
+                    if 'activity08' in root or 'Activity08' in file:  # save intermediate results, Not in use
                         print(f'Saving intermediate results for {c3d_file}')
                         if args.output_type[0]:  # 3D pose
                             with open(f'{output_3d_filename}_segment{count}.pkl', 'wb') as f:

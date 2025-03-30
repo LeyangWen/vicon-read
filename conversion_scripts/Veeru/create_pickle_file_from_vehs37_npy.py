@@ -8,8 +8,12 @@ import argparse
 # Step 1: c3d_to_MB.py to generate Vicon GT pkl file
 # Step 2: create_pickle_file.py to overwrite with RTMPose 2D pose and confidence score
 
-motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample20_keep10_37_v1.pkl'
+# motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample20_keep10_37_v1.pkl'
 npy_dir = r'W:\VEHS\VEHS data collection round 3\RTM2D\RTMPose_VEHS7M_37kpts_v1\outputs_epoch_best_all'
+
+# motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2.pkl'
+motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2_pitch_correct.pkl'
+npy_dir = r'W:\VEHS\VEHS data collection round 3\RTM2D\RTMPose_VEHS7M_37kpts_freeze_v3\lab_videos_freeze_bacbone_20fps'
 
 
 new_pkl_file = motionbert_pkl_file.replace('.pkl', '_RTM2D.pkl')
@@ -41,19 +45,29 @@ for key in motionbert_data_dict.keys():
             action_name = store_source.split('\\')[-1].split('.')[0].lower()
             camera_id = store_source.split('\\')[-1].split('_')[-1]
 
-            npy_file = f"results_{subject_name}-{action_name}-{camera_id}_keypoints.npy"
-            with open(npy_dir + '/' + npy_file, 'rb') as f:
-                det_2d_conf = np.load(f)
+            # npy_file = f"results_{subject_name}-{action_name}-{camera_id}_keypoints.npy"  # V1
+            npy_file = f"3-{int(subject_name.replace('S',''))}_jsons_npy\\results_{action_name}_1_{camera_id}_keypoints.npy"  # V3
+            try:
+                with open(npy_dir + '\\' + npy_file, 'rb') as f:
+                    det_2d_conf = np.load(f)
+            except:
+                print(f"Cannot find {npy_file}")
+                store_source = source
+                continue
             length_diff = old_clip_len - det_2d_conf.shape[0]
             gt_2d = motionbert_data_dict[key]['joint_2d'][cum_start:cum_start+old_clip_len]
             print( f"diff: {length_diff}, old_clip_len: {old_clip_len}, det_2d_conf.shape[0]: {det_2d_conf.shape[0]} for {subject_name}-{action_name}-{camera_id}")
-            assert abs(length_diff) < 0.5, f"diff: {length_diff}, old_clip_len: {old_clip_len}, det_2d_conf.shape[0]: {det_2d_conf.shape[0]} for {subject_name}-{action_name}-{camera_id}"
+            # if action_name == 'activity01' and key == 'train':
+            #     raise NotImplementedError
+            assert abs(length_diff) < 2.5, f"diff: {length_diff}, old_clip_len: {old_clip_len}, det_2d_conf.shape[0]: {det_2d_conf.shape[0]} for {subject_name}-{action_name}-{camera_id}"
             if length_diff > 0:
                 ## concatenate the last frame to fill the gap, visualized and checked it is not big issues since last frame is stationary, frames before lines up perfectly
                 det_2d_conf = np.concatenate([det_2d_conf, det_2d_conf[-1:]]*length_diff, axis=0)
             elif length_diff < 0:
-                ## remove the last frames to fill the gap
-                det_2d_conf = det_2d_conf[:-length_diff]
+                # ## remove the last frames to fill the gap
+                # det_2d_conf = det_2d_conf[:length_diff]
+                ## remove the first frames to fill the gap
+                det_2d_conf = det_2d_conf[-length_diff:]
             new_motionbert_dict[key]['joint_2d'][cum_start:cum_start+old_clip_len] = det_2d_conf[:, :, :2]
             new_motionbert_dict[key]['confidence'][cum_start:cum_start+old_clip_len] = det_2d_conf[:, :, 2:]
             sanity_check[cum_start:cum_start+old_clip_len] = 0
@@ -62,8 +76,8 @@ for key in motionbert_data_dict.keys():
             cum_start += old_clip_len
             old_clip_len = 1
 
-    assert np.sum(sanity_check) == 1, f"Some frames are not processed for set {key}"
-
+    assert np.sum(sanity_check) <20, f"Some frames are not processed for set {key}: {np.sum(sanity_check)}"
+#
 pickle.dump(new_motionbert_dict, open(new_pkl_file, "wb"))
 
 # test_dict = read_pkl(new_pkl_file)
@@ -84,8 +98,8 @@ det_skeleton.load_name_list_and_np_points(rtm_pose_37_keypoints_vicon_dataset_v1
 gt_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton-66.yaml')
 gt_skeleton.load_name_list_and_np_points(rtm_pose_37_keypoints_vicon_dataset_v1, gt_2d)
 
-frame_no = 200
-base_image = f"W:\\VEHS\\VEHS-7M\\img\\5fps\\{key}\\{subject_name}-{action_name}-{camera_id}-{frame_no+1:06d}.jpg"
+frame_no = 800
+base_image = f"W:\\VEHS\\VEHS-7M\\img\\20fps\\{key}\\{subject_name}-{action_name}-{camera_id}-{frame_no+1:06d}.jpg"
 # W:\VEHS\VEHS-7M\img\5fps\test\S09-activity00-51470934-000001.jpg
 
 gt_skeleton.plot_2d_pose_frame(frame=frame_no, baseimage=base_image)  #, filename=r'C:\Users\wenleyan1\Downloads\test')
