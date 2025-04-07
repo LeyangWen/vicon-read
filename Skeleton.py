@@ -83,7 +83,7 @@ class Skeleton:
         self.load_name_list_and_np_points(name_list, marker_vertices)
 
 
-    def load_c3d(self, c3d_file, analog_read=True):
+    def load_c3d(self, c3d_file, analog_read=True, verbose=True):
         self.c3d_file = c3d_file
         reader = c3d.Reader(open(c3d_file, 'rb'))
         if analog_read:
@@ -98,8 +98,9 @@ class Skeleton:
         points = []
         analog = []
         for i, this_points, this_analog in reader.read_frames():
-            print('frame {}: point {}, analog {}'.format(
-                i, this_points.shape, this_analog.shape), end='\r')
+            if verbose:
+                print('frame {}: point {}, analog {}'.format(
+                    i, this_points.shape, this_analog.shape), end='\r')
             points.append(this_points)
             analog.append(this_analog)
         pt_np = np.array(points)
@@ -320,6 +321,29 @@ class Skeleton:
             print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
             self.plot_2d_pose_frame(frame=i, filename=filename, **kwargs)
+
+    def set_weight_height(self, weight=0, height=0):
+        """
+        set weight in kg and height in m
+        """
+        if weight == 0 or height == 0:
+            self.exp_yaml = self.c3d_file.replace('.c3d', '.yaml')
+            with open (self.exp_yaml, 'r') as stream:
+                try:
+                    data = yaml.safe_load(stream)
+                    self.weight = data['weight']
+                    self.height = data['height']/1000
+                except yaml.YAMLError as exc:
+                    print(self.exp_yaml, exc)
+        else:
+            self.weight = weight
+            self.height = height
+
+    def set_gender(self, gender):
+        """
+        male or female
+        """
+        self.gender = gender
 
 
 class VEHSErgoSkeleton(Skeleton):
@@ -714,45 +738,57 @@ class VEHSErgoSkeleton(Skeleton):
             head_plane = Plane(self.point_poses['HDTP'], self.point_poses['REAR'], self.point_poses['LEAR'])
             loc[:, 12:15] = Point.translate_point(self.point_poses['HEAD'], head_plane.normal_vector, direction=100).xyz.T  # 13 - 15 Nasion Skin Surface
             loc[:, 15:18] = Point.translate_point(self.point_poses['HEAD'], head_plane.normal_vector, direction=200).xyz.T  # 16 - 18 Sight end Virtual point
-            loc[:, 18:21] = Point.mid_point(self.point_poses['THORAX'], self.point_poses['C7'], 0.85).xyz.T  # 19 - 21 C7/T1 Joint Center
+            loc[:, 18:21] = self.point_poses['C7'].xyz.T
+                # Point.mid_point(self.point_poses['THORAX'], self.point_poses['C7'], 0.85).xyz.T  # 19 - 21 C7/T1 Joint Center
             loc[:, 21:24] = self.point_poses['THORAX'].xyz.T  # 22 - 24 Sternoclavicular Joint Joint Center
             loc[:, 24:27] = self.point_poses['SS'].xyz.T  # 25 - 27 Suprasternale Skin Surface
-            loc[:, 27:30] = Point.mid_point(self.point_poses['T8'], self.point_poses['PELVIS_b'], 0.5).xyz.T  # 28 - 30 L5/S1 Joint Center, todo: maybe use PSIS?
-            loc[:, 30:33] = self.point_poses['PELVIS_b'].xyz.T  # 31 - 33 PSIS Joint Center
+            loc[:, 27:30] = Point.mid_point(self.point_poses['PELVIS'], Point.mid_point(self.point_poses['T8'], self.point_poses['XP']), 0.7).xyz.T  # 28 - 30 L5/S1 Joint Center
+                # self.point_poses['PELVIS_b'].xyz.T
+                #
+                # self.point_poses['PELVIS'].xyz.T
+            # loc[:, 30:33] = self.point_poses['PELVIS_b'].xyz.T  # 31 - 33 PSIS Joint Center
             loc[:, 33:36] = self.point_poses['LSHOULDER'].xyz.T  # 34 - 36 L. Shoulder Joint Center
             loc[:, 36:39] = self.point_poses['LAP'].xyz.T  # 37 - 39 L. Acromion Skin Surface
             loc[:, 39:42] = self.point_poses['LELBOW'].xyz.T  # 40 - 42 L. Elbow Joint Center
-            loc[:, 42:45] = self.point_poses['LLE'].xyz.T  # 43 - 45 L. Lat. Epicon. of Humer. Skin Surface
+            # loc[:, 42:45] = self.point_poses['LLE'].xyz.T  # 43 - 45 L. Lat. Epicon. of Humer. Skin Surface
             loc[:, 45:48] = self.point_poses['LWRIST'].xyz.T  # 46 - 48 L. Wrist Joint Center
             loc[:, 48:51] = self.point_poses['LGRIP'].xyz.T  # 49 - 51 L. Grip Center Virtual point
             loc[:, 51:54] = self.point_poses['LHAND'].xyz.T  # 52 - 54 L. Hand Skin Surface
             loc[:, 54:57] = self.point_poses['RSHOULDER'].xyz.T  # 55 - 57 R. Shoulder Joint Center
             loc[:, 57:60] = self.point_poses['RAP'].xyz.T  # 58 - 60 R. Acromion Skin Surface
             loc[:, 60:63] = self.point_poses['RELBOW'].xyz.T  # 61 - 63 R. Elbow Joint Center
-            loc[:, 63:66] = self.point_poses['RLE'].xyz.T  # 64 - 66 R. Lat. Epicon. of Humer. Skin Surface
+            # loc[:, 63:66] = self.point_poses['RLE'].xyz.T  # 64 - 66 R. Lat. Epicon. of Humer. Skin Surface
             loc[:, 66:69] = self.point_poses['RWRIST'].xyz.T  # 67 - 69 R. Wrist Joint Center
             loc[:, 69:72] = self.point_poses['RGRIP'].xyz.T  # 70 - 72 R. Grip Center Virtual point
             loc[:, 72:75] = self.point_poses['RHAND'].xyz.T  # 73 - 75 R. Hand Skin Surface
-            loc[:, 75:78] = Point.mid_point(self.point_poses['LHIP'], self.point_poses['LKNEE'], 0.7).xyz.T  # 76 - 79 L. Hip Joint Center
+            loc[:, 75:78] = Point.mid_point(self.point_poses['LHIP'], self.point_poses['LKNEE'], 0.8).xyz.T  # 76 - 79 L. Hip Joint Center
                 # self.point_poses['LHIP'].xyz.T  # 76 - 79 L. Hip Joint Center
             loc[:, 78:81] = self.point_poses['LKNEE'].xyz.T  # 79 - 81 L. Knee Joint Center
-            loc[:, 81:84] = self.point_poses['LLFC'].xyz.T  # 82 - 84 L. Lat. Epicon. of Femur Skin Surface
+            # loc[:, 81:84] = self.point_poses['LLFC'].xyz.T  # 82 - 84 L. Lat. Epicon. of Femur Skin Surface
             loc[:, 84:87] = self.point_poses['LANKLE'].xyz.T  # 85 - 87 L. Ankle Joint Center
-            loc[:, 87:90] = self.point_poses['LLM'].xyz.T  # 88 - 90 L. Lateral Malleolus Skin Surface
-            loc[:, 90:93] = Point.mid_point(self.point_poses['LFOOT'], self.point_poses['LHEEL'], 0.4).xyz.T  # 91 - 93 L. Ball of Foot Virtual point
-            loc[:, 93:96] = self.point_poses['LFOOT'].xyz.T  # 94 - 96 L. Metatarsalphalangeal Skin Surface
-            loc[:, 96:99] = Point.mid_point(self.point_poses['RHIP'], self.point_poses['RKNEE'], 0.7).xyz.T
+            # loc[:, 87:90] = self.point_poses['LLM'].xyz.T  # 88 - 90 L. Lateral Malleolus Skin Surface
+            loc[:, 90:93] = Point.mid_point(self.point_poses['LFOOT'], self.point_poses['LHEEL'], 0.9).xyz.T  # 91 - 93 L. Ball of Foot Virtual point
+            # loc[:, 93:96] = self.point_poses['LFOOT'].xyz.T  # 94 - 96 L. Metatarsalphalangeal Skin Surface
+            loc[:, 96:99] = Point.mid_point(self.point_poses['RHIP'], self.point_poses['RKNEE'], 0.9).xyz.T
                 # self.point_poses['RHIP'].xyz.T  # 97 - 99 R. Hip Joint Center
             loc[:, 99:102] = self.point_poses['RKNEE'].xyz.T  # 100 - 102 R. Knee Joint Center
-            loc[:, 102:105] = self.point_poses['RLFC'].xyz.T  # 103 - 105 R. Lat. Epicon. of Femur Skin Surface
+            # loc[:, 102:105] = self.point_poses['RLFC'].xyz.T  # 103 - 105 R. Lat. Epicon. of Femur Skin Surface
             loc[:, 105:108] = self.point_poses['RANKLE'].xyz.T  # 106 - 108 R. Ankle Joint Center
-            loc[:, 108:111] = self.point_poses['RLM'].xyz.T  # 109 - 111 R. Lateral Malleolus Skin Surface
-            loc[:, 111:114] = Point.mid_point(self.point_poses['RFOOT'], self.point_poses['RHEEL'], 0.4).xyz.T  # 112 - 114 R. Ball of Foot Virtual point
-            loc[:, 114:117] = self.point_poses['RFOOT'].xyz.T  # 115 - 117 R. Metatarsalphalangeal Skin Surface
+            # loc[:, 108:111] = self.point_poses['RLM'].xyz.T  # 109 - 111 R. Lateral Malleolus Skin Surface
+            loc[:, 111:114] = Point.mid_point(self.point_poses['RFOOT'], self.point_poses['RHEEL'], 0.9).xyz.T  # 112 - 114 R. Ball of Foot Virtual point
+            # loc[:, 114:117] = self.point_poses['RFOOT'].xyz.T  # 115 - 117 R. Metatarsalphalangeal Skin Surface
+        # set foot Z to zero at start
+        foot_z = Point.mid_point(self.point_poses['LHEEL'], self.point_poses['RHEEL'], 0.5).xyz.T
+        foot_z[:, :2] = 0
+        foot_z = foot_z.reshape(-1, 1, 3)
+        loc = loc.reshape(-1, 39, 3)
+        loc = loc - foot_z
+        loc = loc.reshape(-1, 117)
+
         loc = loc / 1000  # convert to meters
         # convert np list to space separated string
         if loc_file is None:
-            loc_file = self.c3d_file.replace('.c3d', '.txt')
+            loc_file = self.c3d_file.replace('.c3d', '-3DSSPP.txt')
         pelvic_tilt_angles = self.get_pelvic_tilt(loc)
         # write as txt file
         with open(loc_file, 'w') as f:
@@ -766,7 +802,7 @@ class VEHSErgoSkeleton(Skeleton):
                 joint_locations = np.array2string(loc[k], separator=' ', max_line_width=1000000, precision=3, suppress_small=True)[1:-1].replace('0. ', '0 ')
                 f.write('FRM ' + str(i) + ' #\n')
                 f.write(f'LOC {joint_locations} #\n')
-                support_feet_max_height = 0.15  # m
+                support_feet_max_height = 0.30  # m
                 left_foot_supported = True if self.poses['LFOOT'][k, 2] < support_feet_max_height else False  # todo: this only works in world coord
                 right_foot_supported = True if self.poses['RFOOT'][k, 2] < support_feet_max_height else False
                 if left_foot_supported and right_foot_supported:
@@ -799,23 +835,6 @@ class PulginGaitSkeleton(Skeleton):
         base_dir = c3d_file[:-4]
         cdf_file = os.path.join(base_dir, 'Pose3D.cdf')
         self.output_cdf(cdf_file)
-
-    def set_weight_height(self, weight=0, height=0):
-        """
-        set weight in kg and height in m
-        """
-        if weight == 0 or height == 0:
-            self.exp_yaml = self.c3d_file.replace('.c3d', '.yaml')
-            with open (self.exp_yaml, 'r') as stream:
-                try:
-                    data = yaml.safe_load(stream)
-                    self.weight = data['weight']
-                    self.height = data['height']/1000
-                except yaml.YAMLError as exc:
-                    print(self.exp_yaml, exc)
-        else:
-            self.weight = weight
-            self.height = height
 
     def __load_acronym(self, filename):
         # read yaml

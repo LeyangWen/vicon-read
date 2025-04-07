@@ -5,14 +5,20 @@ import numpy as np
 import csv
 import pickle
 
-import Point
-from utility import *
+import os
+import sys
+
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(parent_dir)
+
+
 from ergo3d import *
+from ergo3d import Point
 import yaml
 import datetime
 import warnings
 from utility import *
-from Camera import *
+from ergo3d import *
 from Skeleton import *
 import argparse
 
@@ -41,23 +47,29 @@ if __name__ == '__main__':
     foot = ['MTP1', 'MTP5', 'MM', 'LM', 'HEEL']
     pelvis = ['ASIS', 'PSIS']
 
-    frame = 14578
-    target_markers = None
-
-    joints_dict = {}
-    for marker in target_markers:
-        LR_markers = []
-        for LR in ['L', 'R']:
-            LR_marker = LR + marker
-            joints_dict[LR_marker] = MarkerPoint(vicon.GetTrajectory(subject_names[0], LR_marker))
-            LR_markers.append(LR_marker)
-        L_marker, R_marker = LR_markers
-        joints_dict[L_marker], joints_dict[R_marker] = Point.swap_trajectory(joints_dict[L_marker], joints_dict[R_marker], frame-1)
+    # frame = 14578
+    # target_markers = None
+    #
+    # joints_dict = {}
+    # for marker in target_markers:
+    #     LR_markers = []
+    #     for LR in ['L', 'R']:
+    #         LR_marker = LR + marker
+    #         joints_dict[LR_marker] = MarkerPoint(vicon.GetTrajectory(subject_names[0], LR_marker))
+    #         LR_markers.append(LR_marker)
+    #     L_marker, R_marker = LR_markers
+    #     joints_dict[L_marker], joints_dict[R_marker] = Point.swap_trajectory(joints_dict[L_marker], joints_dict[R_marker], frame-1)
 
     # output back to Vicon
-    for joint_name, value in joints_dict.items():
-        vicon.SetTrajectory(subject_names[0], joint_name, joints_dict[joint_name].x, joints_dict[joint_name].y, joints_dict[joint_name].z, joints_dict[joint_name].exist)
-        print(f'{joint_name} trajectory updated')
+    # for joint_name, value in joints_dict.items():
+    #     vicon.SetTrajectory(subject_names[0], joint_name, joints_dict[joint_name].x, joints_dict[joint_name].y, joints_dict[joint_name].z, joints_dict[joint_name].exist)
+    #     print(f'{joint_name} trajectory updated')
+
+    if True:
+        C7 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'C7'))
+        T8 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'T8'))
+        C7_d = Point.mid_point(C7, T8, precentage=0.85)
+        vicon.SetTrajectory(subject_names[0], 'C7_d', C7_d.x, C7_d.y, C7_d.z, C7_d.exist)
 
     if False:
         target_markers = ['RUS', 'RRS', 'RMCP2']

@@ -4,14 +4,16 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import csv
 import pickle
+import os
+import sys
 
-from utility import *
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(parent_dir)
+
 from ergo3d import *
 import yaml
 import datetime
 import warnings
-from utility import *
-from Camera import *
 from Skeleton import *
 import argparse
 
