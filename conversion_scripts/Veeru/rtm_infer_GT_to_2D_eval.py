@@ -23,7 +23,8 @@ from utility import *
 
 def phrase_args():
     parser = argparse.ArgumentParser(description='RTM pose inference to 2D metric')
-    parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_v2/best_epoch/lab_videos_phase_2_correct_epoch_best_30')
+    # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_v2/best_epoch/lab_videos_phase_2_correct_epoch_best_30')
+    parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_freeze_v3/lab_videos_freeze_backbone_epoch_best')
     # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_v1/best_epoch_40/outputs_epoch_best')
     # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/original_rtmpose/outputs_rtmpose_old')
     parser.add_argument('--infer_pose_type', type=str, choices=['rtm37_from_coco133', 'rtm37_from_37'], default='rtm37_from_37')

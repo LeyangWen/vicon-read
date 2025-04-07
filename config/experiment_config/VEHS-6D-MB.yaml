@@ -1,4 +1,7 @@
-name_list: ['RPSIS', 'RASIS', 'LPSIS', 'LASIS', 'C7_d', 'SS', 'T8', 'XP', 'C7', 'HDTP', 'REAR', 'LEAR', 'RAP', 'RAP_f', 'RLE', 'RAP_b', 'RME', 'LAP', 'LAP_f', 'LLE', 'LAP_b', 'LME', 'LUS', 'LRS', 'RUS', 'RRS', 'RMCP5', 'RMCP2', 'LMCP5', 'LMCP2', 'LGT', 'LMFC', 'LLFC', 'RGT', 'RMFC', 'RLFC', 'RMM', 'RLM', 'LMM', 'LLM', 'LMTP1', 'LMTP5', 'LHEEL', 'RMTP1', 'RMTP5', 'RHEEL', 'HEAD', 'RSHOULDER', 'LSHOULDER', 'C7_m', 'THORAX', 'LELBOW', 'RELBOW', 'RWRIST', 'LWRIST', 'RHAND', 'LHAND', 'PELVIS', 'RHIP', 'RKNEE', 'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']
+name_list: ['RPSIS', 'RASIS', 'LPSIS', 'LASIS', 'C7_d', 'SS', 'T8', 'XP', 'C7', 'HDTP', 'REAR', 'LEAR', 'RAP', 'RAP_f', 'RLE', 'RAP_b', 'RME', 'LAP', 'LAP_f', 'LLE', 'LAP_b', 'LME',
+            'LUS', 'LRS', 'RUS', 'RRS', 'RMCP5', 'RMCP2', 'LMCP5', 'LMCP2', 'LGT', 'LMFC', 'LLFC', 'RGT', 'RMFC', 'RLFC', 'RMM', 'RLM', 'LMM', 'LLM', 'LMTP1', 'LMTP5', 'LHEEL',
+            'RMTP1', 'RMTP5', 'RHEEL', 'HEAD', 'RSHOULDER', 'LSHOULDER', 'C7_m', 'THORAX', 'LELBOW', 'RELBOW', 'RWRIST', 'LWRIST', 'RHAND', 'LHAND', 'PELVIS', 'RHIP', 'RKNEE',
+            'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']
 
 #GT_file: 'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample2_keep1.pkl'
 #eval_key: 'test'
@@ -6,6 +9,11 @@ name_list: ['RPSIS', 'RASIS', 'LPSIS', 'LASIS', 'C7_d', 'SS', 'T8', 'XP', 'C7', 
 #estimate_file: 'W:\VEHS\VEHS data collection round 3\estimated results\X3D.npy'
 
 GT_file: '/Users/leyangwen/Documents/Pose/paper/VEHS_6D_downsample2_keep1.pkl'
-eval_key: 'test'
 
+eval_key: 'test'
 estimate_file: '/Users/leyangwen/Documents/Pose/paper/X3D_old.npy'
+#estimate_file: '/Users/leyangwen/Documents/Pose/paper/66kpts_v1/test/X3D.npy'
+
+#eval_key: 'dict'
+#estimate_file: {'validate': '/Users/leyangwen/Documents/Pose/paper/66kpts_v1/validate/X3D.npy',
+#                 'test': '/Users/leyangwen/Documents/Pose/paper/66kpts_v1/test/X3D.npy'}

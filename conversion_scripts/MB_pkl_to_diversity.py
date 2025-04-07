@@ -146,7 +146,7 @@ def tests():
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--GT_file", type=str, default=r'/Users/leyangwen/Documents/Pose/paper/VEHS_6D_downsample2_keep1_37_v1_diversity.pkl', help="Path to the GT file.")
-    parser.add_argument("--tolerance", type=int, default=100, help="mm")
+    parser.add_argument("--tolerance", type=int, default=50, help="mm")
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -156,6 +156,8 @@ if __name__ == "__main__":
         data = pickle.load(f)
 
     store_results = {}
+    total_frames = 0
+    selected_frames = 0
     for key in data.keys():
         poses = data[key]['joints_2.5d_image']
         sources = data[key]['source']
@@ -163,15 +165,20 @@ if __name__ == "__main__":
         ## find the index of the first unique source
         subject_name = sources[0].split('\\')[4]
         for i, source in enumerate(sources):
-            if subject_name not in source:
+            if subject_name != source.split('\\')[4]:
                 split_idx.append(i)
                 subject_name = source.split('\\')[4]
-
         split_pose = np.split(poses, split_idx)
         for i, pose in enumerate(split_pose):
             N = pose.shape[0]
+            total_frames += N
             print(f"Processing {key}-sub{i}: {subject_name} with {pose.shape[0]} frames")
             small_pose, _ = preprocess_poses(pose, tolerance=args.tolerance, sequential_skip=300)
             diverse_pose_indices = select_diverse_poses(small_pose, args.tolerance)
             print(f"Selected {len(diverse_pose_indices)} diverse pose from {N} frames, {len(diverse_pose_indices)/N*100:.2f}%")
             print("#" * 20)
+            selected_frames += len(diverse_pose_indices)
+            store_results[f"{key}"] = diverse_pose_indices
+    print(f"Tolerance: {args.tolerance} mm, Total frames: {total_frames}, Selected frames: {selected_frames}, {selected_frames/total_frames*100:.2f}%")
+
+
