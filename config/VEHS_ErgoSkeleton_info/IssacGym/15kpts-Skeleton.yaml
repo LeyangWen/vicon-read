@@ -1,0 +1,16 @@
+joints:
+  mid: ['PELVIS', 'torso', 'head']
+  topR: ['right_upper_arm', 'right_lower_arm', 'right_hand']
+  topL: ['left_upper_arm', 'left_lower_arm', 'left_hand']
+  botR: ['right_thigh', 'right_shin', 'right_foot']
+  botL: ['left_thigh', 'left_shin', 'left_foot']
+  others: ['1', '2', '3']
+
+parent:
+  mid: [None, 'PELVIS', 'torso']
+  topR: ['torso', 'right_upper_arm', 'right_lower_arm']
+  topL: ['torso', 'left_upper_arm', 'left_lower_arm']
+  botR: ['PELVIS', 'right_thigh', 'right_shin']
+  botL: ['PELVIS', 'left_thigh', 'left_shin']
+  others: ['torso', 'torso', 'torso']
+
