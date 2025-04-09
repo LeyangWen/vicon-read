@@ -4,5 +4,5 @@ name_list: ['PELVIS', 'torso', 'head', 'right_upper_arm', 'right_lower_arm',
  'right_thigh', 'right_shin', 'right_foot', 'left_thigh', 'left_shin', 'left_foot', '1', '2', '3']
 
 
-estimate_file: '/Users/leyangwen/Downloads/Isaac/3long/joint_states.csv'
+estimate_file: '/Users/leyangwen/Downloads/Isaac/start_end_loc/joint_states.csv'
 

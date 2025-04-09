@@ -14,7 +14,7 @@ def parse_args():
 
     parser.add_argument('--output_frame_folder', type=str, default=None)
     parser.add_argument('--output_GT_frame_folder', type=str, default=None)
-    parser.add_argument('--plot_mode', type=str, default='paper_view', help='mode: camera_view, camera_side_view, 0_135_view, normal_view, paper_view')
+    parser.add_argument('--plot_mode', type=str, default='global_view', help='mode: camera_view, camera_side_view, 0_135_view, normal_view, paper_view')
     parser.add_argument('--MB_data_stride', type=int, default=243)
     parser.add_argument('--debug_mode', default=True, type=bool)
 
@@ -42,16 +42,16 @@ if __name__ == '__main__':
     estimate_pose = estimate_pose[:,:n, 0:3]  # shape: (num_frames, 15 + extra, 3)
 
     if args.debug_mode:
-        small_sample = 1500
+        small_sample = 1000
         estimate_pose = estimate_pose[:small_sample]
 
-    estimate_pose = estimate_pose*1000 # convert to mm
+    estimate_pose = estimate_pose # convert to mm
     estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
     estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
 
-    estimate_skeleton.plot_3d_pose_frame(frame=400, coord_system="world", plot_range=1500, mode=args.plot_mode, center_key='PELVIS')
+    # estimate_skeleton.plot_3d_pose_frame(frame=600, coord_system="world-m", plot_range=1, mode=args.plot_mode, center_key='PELVIS')
 
-    # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="world", plot_range=1800, mode=args.plot_mode, center_key='PELVIS')
+    estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="world-m", plot_range=10, mode=args.plot_mode, center_key='PELVIS')
 
     # get legend
     # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='PELVIS')

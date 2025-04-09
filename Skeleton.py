@@ -181,7 +181,7 @@ class Skeleton:
             point_size = size[1]
         return point_type, point_size
 
-    def plot_3d_pose_frame(self, frame=0, filename=False, plot_range=1800, coord_system="world", center_key='PELVIS', mode='normal_view', get_legend=False):
+    def plot_3d_pose_frame(self, frame=0, filename=False, plot_range=1800, coord_system="world-mm", center_key='PELVIS', mode='normal_view', get_legend=False):
         """
         plot 3d pose in 3d space
         coord_system: camera-px or world
@@ -192,12 +192,19 @@ class Skeleton:
         if coord_system == "camera-px":
             pose_sequence = [0, 2, 1]
             xyz_label = ['X (px)', 'Y (px)', 'Z (px)']
+            meter = 1000  # placeholder, can not convert px to meters without extra info
         elif coord_system == "camera-mm":
             pose_sequence = [0, 2, 1]
             xyz_label = ['X (mm)', 'Y (mm)', 'Z (mm)']
-        elif coord_system == "world":
+            meter = 1000
+        elif coord_system == "world-mm":
             pose_sequence = [0, 1, 2]
             xyz_label = ['X (mm)', 'Y (mm)', 'Z (mm)']
+            meter = 1000
+        elif coord_system == "world-m":
+            pose_sequence = [0, 1, 2]
+            xyz_label = ['X (m)', 'Y (m)', 'Z (m)']
+            meter = 1
         else:
             raise ValueError(f"coord_system {coord_system} not recognized, set to camera or world")
 
@@ -233,20 +240,31 @@ class Skeleton:
             ax.view_init(elev=0, azim=135)
         elif mode == 'paper_view':
             ax.view_init(elev=18, azim=-72)
-        elif mode == 'normal_view':
+        elif mode == 'normal_view' or mode == 'global_view':
             pass
         else:
             raise ValueError(f"mode {mode} not recognized, set to camera_view, camera_side_view, 0_135_view, normal_view")
 
-        pelvis_loc = self.poses[center_key][frame, :]
-        ax.set_xlim(pelvis_loc[pose_sequence[0]] - plot_range / 2, pelvis_loc[pose_sequence[0]] + plot_range / 2)
-        ax.set_ylim(pelvis_loc[pose_sequence[1]] - plot_range / 2, pelvis_loc[pose_sequence[1]] + plot_range / 2)
-        ax.set_zlim(pelvis_loc[pose_sequence[2]] - plot_range / 2, pelvis_loc[pose_sequence[2]] + plot_range / 2)
+        if mode == 'global_view':
+            # global view
+            ax.set_xlim(-plot_range/2, plot_range/2)
+            ax.set_ylim(-plot_range/2, plot_range/2)
+            ax.set_zlim(0, 2*meter)
+            ax.set_zticks([0, 1*meter, 2*meter])
+            ax.set_box_aspect((plot_range, plot_range, 2*meter))
+
+        else:
+            pelvis_loc = self.poses[center_key][frame, :]
+            ax.set_xlim(pelvis_loc[pose_sequence[0]] - plot_range / 2, pelvis_loc[pose_sequence[0]] + plot_range / 2)
+            ax.set_ylim(pelvis_loc[pose_sequence[1]] - plot_range / 2, pelvis_loc[pose_sequence[1]] + plot_range / 2)
+            ax.set_zlim(pelvis_loc[pose_sequence[2]] - plot_range / 2, pelvis_loc[pose_sequence[2]] + plot_range / 2)
+
         if coord_system[:6] == "camera":  # invert y axis in camera coord
             ax.invert_zaxis()
         ax.set_xlabel(xyz_label[pose_sequence[0]])
         ax.set_ylabel(xyz_label[pose_sequence[1]])
         ax.set_zlabel(xyz_label[pose_sequence[2]])
+
         fig.tight_layout()
 
         if get_legend:  # use this to get a legend screenshot
