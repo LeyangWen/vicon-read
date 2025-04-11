@@ -658,6 +658,7 @@ class VEHSErgoSkeleton(Skeleton):
                     camera_name.append(this_camera.DEVICEID)
                     source.append(f"{self.c3d_file} - cam_{this_camera.DEVICEID}")
                     c3d_frame.append(real_frame_idx)
+            break  # todo: remove after experiment w. one cam
 
         output['joint_2d'] = np.array(joint_2d)  # this is gt, but should be detection
         output['confidence'] = np.array(confidence)

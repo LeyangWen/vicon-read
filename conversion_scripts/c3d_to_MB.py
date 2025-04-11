@@ -19,7 +19,7 @@ if __name__ == '__main__':
     parser.add_argument('--downsample_keep', type=int, default=1)
     parser.add_argument('--split_output', action='store_true')  # not implemented yet
     parser.add_argument('--output_type', type=list, default=[False, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
-    parser.add_argument('--output_file_name_end', type=str, default='_37_v2')
+    parser.add_argument('--output_file_name_end', type=str, default='_37_oneCam')
     parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
     parser.add_argument('--rootIdx', type=int, default=0, help='root index for 2D pose output')  # 21: pelvis for 66 kpts
     parser.add_argument('--MB_dict_version', type=str, default='normal', help='select from "normal", "diversity_metric"')
