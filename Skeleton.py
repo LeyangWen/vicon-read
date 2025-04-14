@@ -127,6 +127,8 @@ class Skeleton:
                 self.joint_name_topL = data['joints']['topL']
                 self.joint_name_botR = data['joints']['botR']
                 self.joint_name_topR = data['joints']['topR']
+                data['joints']['others'] = data['joints']['others'] if 'others' in data['joints'] else []
+                data['parent']['others'] = data['parent']['others'] if 'others' in data['parent'] else []
                 self.joint_name_others = data['joints']['others']
                 self.key_joint_name = data['joints']['mid'] + data['joints']['botL'] + data['joints']['topL'] + data['joints']['botR'] + data['joints']['topR'] + data['joints']['others']
                 self.key_joint_parent = data['parent']['mid'] + data['parent']['botL'] + data['parent']['topL'] + data['parent']['botR'] + data['parent']['topR'] + data['parent']['others']
@@ -1266,7 +1268,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         # RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, RSHOULDER_C7_m_project, sequence='zyx', axis_positive=False)  # old: use shoulder to chest vector
         RSHOULDER_angles = JointAngles()
         RSHOULDER_angles.set_zero(zero_frame, by_frame=False)
-        RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, Point.vector(RSHOULDER, RELBOW), plane_seq=['xy', 'xz'])
+        RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, Point.vector(RSHOULDER, RELBOW), plane_seq=['xy', 'xz'], flip_sign=[1, -1])
         RSHOULDER_angles.get_rot(RAP_b, RAP_f, RME, RLE)
 
         if False:  # shoulder angles used in paper
@@ -1303,9 +1305,9 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         LSHOULDER_coord = CoordinateSystem3D()
         LSHOULDER_coord.set_by_plane(LSHOULDER_plane, C7_d, LSHOULDER_SS_project, sequence='zyx', axis_positive=True)
         LSHOULDER_angles = JointAngles()
-        LSHOULDER_angles.get_flex_abd(LSHOULDER_coord, Point.vector(LSHOULDER, LELBOW), plane_seq=['xy', 'xz'], flip_sign=[1, -1])
+        LSHOULDER_angles.get_flex_abd(LSHOULDER_coord, Point.vector(LSHOULDER, LELBOW), plane_seq=['xy', 'xz'], flip_sign=[1, 1])
         LSHOULDER_angles.set_zero(zero_frame, by_frame=False)
-        LSHOULDER_angles.get_rot(LAP_b, LAP_f, LME, LLE)
+        LSHOULDER_angles.get_rot(LAP_b, LAP_f, LME, LLE, flip_sign=-1)
         if False:  # shoulder angles used in paper
             LSHOULDER_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'abduction', 'rotation': 'rotation'}  # horizontal abduction
         else:  # shoulder angles used in VEHS application
@@ -1372,7 +1374,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         RWRIST_angles = JointAngles()
         RWRIST_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'deviation', 'rotation': 'pronation'}
         RWRIST_angles.set_zero(zero_frame, by_frame=False)
-        RWRIST_angles.get_flex_abd(RWRIST_coord, Point.vector(RWRIST, RELBOW), plane_seq=['xy', 'yz'])
+        RWRIST_angles.get_flex_abd(RWRIST_coord, Point.vector(RWRIST, RELBOW), plane_seq=['xy', 'yz'], flip_sign=[-1, 1])
         try:
             RWRIST_angles.get_rot(RRS, RUS, RLE, RME)
         except:
@@ -1401,11 +1403,11 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         LWrist_angles = JointAngles()
         LWrist_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'deviation ', 'rotation': 'pronation'}
         LWrist_angles.set_zero(zero_frame, by_frame=False)
-        LWrist_angles.get_flex_abd(LWrist_coord, Point.vector(LWrist, LELBOW), plane_seq=['xy', 'yz'])
+        LWrist_angles.get_flex_abd(LWrist_coord, Point.vector(LWrist, LELBOW), plane_seq=['xy', 'yz'], flip_sign=[-1, 1])
         try:
-            LWrist_angles.get_rot(LRS, LUS, LLE, LME)
+            LWrist_angles.get_rot(LRS, LUS, LLE, LME, flip_sign=-1)
         except:
-            LWrist_angles.get_rot(LMCP2, LMCP5, LLE, LME)
+            LWrist_angles.get_rot(LMCP2, LMCP5, LLE, LME, flip_sign=-1)
         return LWrist_angles
 
     def back_angles(self, up_axis=[0, 1000, 0], zero_frame = [-90, 180, 180]):
@@ -1429,7 +1431,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         BACK_angles = JointAngles()
         BACK_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'L-flexion', 'rotation': 'rotation'}  #lateral flexion
         BACK_angles.set_zero(zero_frame)
-        BACK_angles.get_flex_abd(BACK_coord, Point.vector(PELVIS, C7), plane_seq=['xy', 'yz'])
+        BACK_angles.get_flex_abd(BACK_coord, Point.vector(PELVIS, C7), plane_seq=['xy', 'yz'], flip_sign=[-1, -1])  # right to be positive for lateral bend
         # BACK_angles.get_rot(RSHOULDER, LSHOULDER, RPSIS, LPSIS, flip_sign=1)
         BACK_angles.get_rot(RSHOULDER, LSHOULDER, RHIP, LHIP, flip_sign=1)
 

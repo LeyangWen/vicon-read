@@ -25,4 +25,4 @@ GT_file: '/Volumes/Z/RTMPose/37kpts_freeze_v3/20fps/MB_GT/VEHS_6D_downsample5_ke
 #estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20-fps-finetune-pitch-correct-6/VEHS7M-validate/X3D.npy'
 
 # angle loss added
-estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20fps-finetune-pitch-correct-angleLoss-7/VEHS7M-Validate/X3D.npy'
+estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20fps-finetune-pitch-correct-angleLoss-8/VEHS7M-Validate/X3D.npy'
