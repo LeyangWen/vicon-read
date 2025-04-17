@@ -249,8 +249,12 @@ class Skeleton:
 
         if mode == 'global_view':
             # global view
-            ax.set_xlim(-plot_range/2, plot_range/2)
-            ax.set_ylim(-plot_range/2, plot_range/2)
+            if True:
+                ax.set_xlim(0, plot_range)
+                ax.set_ylim(0, plot_range)
+            else:
+                ax.set_xlim(-plot_range / 2, plot_range / 2)
+                ax.set_ylim(-plot_range / 2, plot_range / 2)
             ax.set_zlim(0, 2*meter)
             ax.set_zticks([0, 1*meter, 2*meter])
             ax.set_box_aspect((plot_range, plot_range, 2*meter))
@@ -1284,7 +1288,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         return RSHOULDER_angles
 
     def left_shoulder_angles(self):     # not checked
-        zero_frame = [0, 0, -90]
+        zero_frame = [0, 0, 90]
         LSHOULDER = self.point_poses['LSHOULDER']
         C7 = self.point_poses['C7']
         C7_d = self.point_poses['C7_d']
@@ -1382,7 +1386,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         return RWRIST_angles
 
     def left_wrist_angles(self):  # not checked
-        zero_frame = [-90, -180, 90]
+        zero_frame = [-90, -180, -90]
         LWrist = self.point_poses['LWRIST']
         LMCP2 = self.point_poses['LMCP2']
         LMCP5 = self.point_poses['LMCP5']  # todo: more accurate using LRS
@@ -1410,7 +1414,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
             LWrist_angles.get_rot(LMCP2, LMCP5, LLE, LME, flip_sign=-1)
         return LWrist_angles
 
-    def back_angles(self, up_axis=[0, 1000, 0], zero_frame = [-90, 180, 180]):
+    def back_angles(self, up_axis=[0, 1000, 0], zero_frame = [-90, -180, 180]):
         # todo: back correction
         C7 = self.point_poses['C7']
         # RPSIS = self.point_poses['RPSIS']

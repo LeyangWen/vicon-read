@@ -86,7 +86,7 @@ if __name__ == '__main__':
             assert GT_pose.shape == estimate_pose.shape, f"GT_pose.shape: {GT_pose.shape}, estimate_pose.shape: {estimate_pose.shape}, they should be the same"
 
     if args.debug_mode:
-        small_sample = 243*6
+        small_sample = 1200 #243*6
         GT_pose = GT_pose[:small_sample] if GT_pose is not None else None
         estimate_pose = estimate_pose[:small_sample]
 
