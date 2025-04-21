@@ -17,4 +17,4 @@ GT_file: None
 #estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20-fps-finetune-pitch-correct-6/Industry/X3D.npy'
 
 # angle loss added
-estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20fps-finetune-pitch-correct-angleLoss-7/Industry/X3D.npy'
+estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20fps-finetune-pitch-correct-angleLoss-7/Industry_2/X3D.npy'

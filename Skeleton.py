@@ -1390,7 +1390,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         LWrist = self.point_poses['LWRIST']
         LMCP2 = self.point_poses['LMCP2']
         LMCP5 = self.point_poses['LMCP5']  # todo: more accurate using LRS
-        LHand = self.point_poses['LHAND']
+        LHand = self.point_poses['LHAND']  # todo: calculate based on 2 and 5
         try:
             LRS = self.point_poses['LRS']
             LUS = self.point_poses['LUS']

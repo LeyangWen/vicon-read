@@ -34,8 +34,9 @@ def read_input(json_path, type='rtm24'):
 def parse_args():
     parser = argparse.ArgumentParser()
     # parser.add_argument('--json_folder', type=str, default=r'W:\VEHS\Testing_Videos_and_rtmpose_results\OneDrive_2_9-4-2024\kps_133_fps_20')
-    parser.add_argument('--json_folder', type=str, default=r'/Volumes/Z/RTMPose/37kpts_freeze_v3/20fps/Ricks_Videos_freeze_backbone_epoch_best_20fps')
-    parser.add_argument('--output_file', type=str, default=r'rtmpose_v3_20fps_industry_37kpts_v2.pkl')
+    parser.add_argument('--json_folder', type=str, default=r'/Volumes/Z/RTMPose/37kpts_freeze_v3/20fps/Industry_2')
+                                                           # r'/Volumes/Z/RTMPose/37kpts_freeze_v3/20fps/Ricks_Videos_freeze_backbone_epoch_best_20fps')
+    parser.add_argument('--output_file', type=str, default=r'rtmpose_v3_20fps_industry_2_37kpts_v2.pkl')
     parser.add_argument('--joint_num', type=int, default=37)
     parser.add_argument('--type', type=str, default='rtm37_from_37')
 
@@ -46,6 +47,7 @@ if __name__ == '__main__':
     args = parse_args()
     output_MB_dataset = empty_MotionBert_dataset_dict(args.joint_num)
     cumulative_segments = [0,]
+    seg_length = []
     name_list = []
     for root, dirs, files in os.walk(args.json_folder):
         dirs.sort()  # Sort directories in-place
@@ -66,6 +68,7 @@ if __name__ == '__main__':
             frame_no = all_keyps_rtm.shape[0]
             print(f"frame_no: {frame_no}, %243: {frame_no%243}")
             this_segment = frame_no//243
+            seg_length.append(this_segment)
             cum_segment = this_segment+cumulative_segments[-1]
             cumulative_segments.append(cum_segment)
             name_list.append(source)
@@ -90,11 +93,13 @@ if __name__ == '__main__':
         pickle.dump(output_MB_dataset, f)
     print(f"output_filename: {output_filename}")
 
+
+    print(seg_length)
     cumulative_segments = np.array(cumulative_segments)
-    cumulative_segments = cumulative_segments*243
-    cumulative_segments = cumulative_segments[:-1]
-    for na, seg in zip(name_list, cumulative_segments):
-        print(f"{na}: {seg*5}")
+    cumulative_segment_frames = cumulative_segments*243
+    cumulative_segment_frames = cumulative_segment_frames[:-1]
+    for na, seg in zip(name_list, cumulative_segment_frames):
+        print(f"{na}: {seg}")
 
 #
 # with open(json_path, 'r') as f:

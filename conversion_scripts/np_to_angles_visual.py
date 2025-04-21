@@ -114,8 +114,10 @@ if __name__ == '__main__':
     # estimate_skeleton.plot_3d_pose_frame(frame)
 
     frame_range = None #[0, 60*3*20]
-    target_angles = estimate_skeleton.angle_names
-    # target_angles = ['right_shoulder']
+    target_angles = estimate_skeleton.angle_names  # ['neck', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'right_wrist', 'left_wrist', 'back', 'right_knee', 'left_knee']
+    # target_angles = ['back']
+    # target_angles = ['right_knee']
+    target_angles = ['left_knee']
     print(f"target angles: {target_angles}")
     # Single thread
     for angle_index, this_angle_name in enumerate(target_angles):
@@ -135,7 +137,8 @@ if __name__ == '__main__':
                                                                        angle_names=list(print_ergo_names.values()), overlay=GT_ergo_angles[this_angle_name], overlay_colors=['g', 'g', 'g'], fps=20, x_tick_s=15)
         else:
             # frame_range_max = 243
-            frame_range_max = list(np.array([2,2,1,2,1,2,2,2,1,2,2,2])*243)
+            # frame_range_max = list(np.array([2,2,1,2,1,2,2,2,1,2,2,2])*243)  # industry
+            frame_range_max = list(np.array([11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * 243)  # industry #2
             estimate_ergo_angles[this_angle_name].plot_angles_by_frame(render_dir, joint_name=f"{this_angle_name}", alpha=0.75, colors=['r', 'r', 'r'], frame_range=frame_range, frame_range_max=frame_range_max,
                                                                        angle_names=list(print_ergo_names.values()), fps=20, x_tick_s=2)
 
