@@ -48,6 +48,95 @@ cd 'W:\VEHS\VEHS data collection round 3\processed\DanLi\FullCollection'
 Get-ChildItem -Filter *ctivity06.66920734.20230825192231.avi | ForEach-Object { If (!(Test-Path "$($_.DirectoryName)/$($_.BaseName).mp4")) {ffmpeg -i $_.FullName -c:v copy -c:a copy -y "$($_.DirectoryName)/$($_.BaseName).mp4"}}
 
 ```
+
+```bash
+# Base path to your processed data
+BASE="/media/leyang/My Book/VEHS/VEHS data collection round 3/processed"
+
+# Loop sessions S02 through S10
+for session in S0{1..9} S10; do
+  DIR="$BASE/$session/FullCollection"
+  if [ ! -d "$DIR" ]; then
+    echo "⚠️  Skipping missing directory: $DIR"
+    continue
+  fi
+
+  echo "🔄 Processing session: $session"
+
+  # look for *tivity04*.avi in that folder
+  for avi in "$DIR"/*tivity03.51470934*.avi; do
+    # if no match, the glob stays literal and avi won't exist
+    if [ ! -e "$avi" ]; then
+      echo "   • No *tivity03.51470934*.avi files in $DIR"
+      break
+    fi
+
+    base="${avi%.*}"
+    if [ ! -f "${base}.mp4" ]; then
+      echo "   • Converting $(basename "$avi") → $(basename "${base}.mp4")"
+      ffmpeg -i "$avi" -c:v copy -c:a copy -y "${base}.mp4"
+    else
+      echo "   • Skipping $(basename "$avi") (mp4 exists)"
+    fi
+  done
+
+  echo
+done
+
+echo "✅ All sessions done."
+
+```
+### Copy over to Z drive SSD.
+
+```bash
+#!/usr/bin/env bash
+# set -euo pipefail
+
+# ─── CONFIG ────────────────────────────────────────────────────────────────────
+BASE_SRC="/media/leyang/My Book/VEHS/VEHS data collection round 3/processed"
+BASE_DST="/media/leyang/Z/VEHS/VEHS7M/vid_mp4"
+# ────────────────────────────────────────────────────────────────────────────────
+
+shopt -s nullglob
+
+for session in S0{1..9} S10; do
+  SRC_DIR="$BASE_SRC/$session/FullCollection"
+  DST_DIR="$BASE_DST/$session/FullCollection"
+
+  if [[ ! -d "$SRC_DIR" ]]; then
+    echo "⚠️  Skipping missing directory: $SRC_DIR"
+    continue
+  fi
+
+  mkdir -p "$DST_DIR"
+  echo "🔄 Processing session: $session"
+
+  mp4_files=( "$SRC_DIR"/*.51470934*.mp4 )
+  if (( ${#mp4_files[@]} == 0 )); then
+    echo "   • No .mp4 files in $SRC_DIR"
+  else
+    for src in "${mp4_files[@]}"; do
+      fname="$(basename "$src")"
+      dst="$DST_DIR/$fname"
+
+      if [[ ! -e "$dst" ]]; then
+        echo "   • Copying $fname → $DST_DIR/"
+        cp -- "$src" "$dst"
+      else
+        echo "   • Skipping $fname (already exists)"
+      fi
+    done
+  fi
+
+  echo
+done
+
+echo "✅ All sessions done."
+
+
+```
+
+
 - Batch rename of all files in one folder from "activity{x}" to "activity{y)"
 ```powershell
 cd 'C:\Users\Public\Documents\Vicon\data\Vicon_F\Round3\XinyanWang\FullCollection'
