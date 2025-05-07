@@ -65,8 +65,8 @@ if __name__ == "__main__":
     ax1 = fig.add_subplot(1, 2, 1, projection='3d')
     surf = ax1.plot_surface(X, Y, height_field, cmap='terrain', edgecolor='none')
     ax1.set_title("Height Field")
-    ax1.set_xlabel("X (dm)")
-    ax1.set_ylabel("Y (dm)")
+    ax1.set_xlabel("Y (dm)")
+    ax1.set_ylabel("X (dm)")
     ax1.set_zlabel("Height (dm)")
 
     # Calculate the range of x, y, and z
@@ -84,6 +84,7 @@ if __name__ == "__main__":
     ax1.set_ylim(y_mid - max_range / 2, y_mid + max_range / 2)
     meter = 10
     ax1.set_zlim(0, 2 * meter)
+    ax1.set_xlim(ax1.get_xlim()[::-1])
 
     # Set equal aspect ratio for x, y, z
     ax1.set_box_aspect([max_range, max_range, 2 * meter])  # Equal scaling for all axes
@@ -97,9 +98,13 @@ if __name__ == "__main__":
     # Heatmap for Walkable Field
     ax2 = fig.add_subplot(1, 2, 2)
     heatmap = ax2.imshow(walkable_field, cmap='gray', origin='lower')  #, vmin=0, vmax=1)
+    # flip plot by y axis
+    ax2.set_xlim(ax2.get_xlim()[::-1])
+    # verticle axis to right
+    ax2.yaxis.tick_right()
     ax2.set_title("Walkable Field")
-    ax2.set_xlabel("X (dm)")
-    ax2.set_ylabel("Y (dm)")
+    ax2.set_xlabel("Y (dm)")
+    ax2.set_ylabel("X (dm)")
     fig.colorbar(heatmap, ax=ax2, shrink=0.5, aspect=10)
 
     plt.tight_layout()
