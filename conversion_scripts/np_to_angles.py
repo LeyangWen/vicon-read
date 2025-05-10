@@ -10,7 +10,7 @@ def parse_args():
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/VEHS-6D-MB.yaml')
     # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
 
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
 
     parser.add_argument('--MB_data_stride', type=int, default=243)
@@ -25,7 +25,10 @@ def parse_args():
         args.GT_file = data['GT_file']
         args.eval_key = data['eval_key']
         args.estimate_file = data['estimate_file']
-        args.output_dir = os.path.join(os.path.dirname(args.estimate_file), 'results')
+        if type(args.estimate_file) == str:
+            args.output_dir = os.path.join(os.path.dirname(args.estimate_file), 'results')
+        else:
+            args.output_dir = os.path.join('/Users/leyangwen/Downloads/temp', 'results')
         if not os.path.exists(args.output_dir):
             os.makedirs(args.output_dir)
     return args

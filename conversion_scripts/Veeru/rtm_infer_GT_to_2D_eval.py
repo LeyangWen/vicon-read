@@ -24,9 +24,12 @@ from utility import *
 def phrase_args():
     parser = argparse.ArgumentParser(description='RTM pose inference to 2D metric')
     # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_v2/best_epoch/lab_videos_phase_2_correct_epoch_best_30')
-    parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_freeze_v3/lab_videos_freeze_backbone_epoch_best')
+    # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_freeze_v3/lab_videos_freeze_backbone_epoch_best')
     # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_v1/best_epoch_40/outputs_epoch_best')
     # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/original_rtmpose/outputs_rtmpose_old')
+
+    parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_rtmw_v4/lab_videos_RTMW_freeze_backbone_neck_merged_epoch_best')
+
     parser.add_argument('--infer_pose_type', type=str, choices=['rtm37_from_coco133', 'rtm37_from_37'], default='rtm37_from_37')
     parser.add_argument('--GT_ann_file', type=str, default='/Volumes/Z/RTMPose/37kpts_v1/GT/VEHS_6DCOCO_downsample20_keep1_validate.json')
     parser.add_argument('--number_of_keypoints', type=int, default=37)
@@ -175,19 +178,23 @@ if __name__ == '__main__':
         dirs.sort()  # Sort directories in-place --> important, will change walk sequence
         files.sort(key=str.lower)  # Sort files in-place
         for file in files:
-            if not file.endswith('.json'):
-                continue
             if file.startswith('.'):  # ignore hidden files
                 continue
             print(f"Processing {file}") if args.verbose else None
             video_name = file.split('_')[1].split('.')[0]  # results_S01-activity00-51470934.json --> S01-activity00-51470934
 
             #### Get Inference Pose
-            all_bboxes, all_kpts_bef, keypoint_names = load_json_arr(os.path.join(root, file))
-            inference_pose = filter_subject_using_center_of_joints_with_disqualify(all_kpts_bef, img_shape=args.img_shape, window=4, num_keypoints=args.number_of_keypoints,
-                                                                                   type="rtm37_from_37")
-            if args.infer_pose_type == 'rtm37_from_coco133':
-                inference_pose = coco133_to_VEHS7M_37(inference_pose)
+            if file.endswith('.json'):
+                all_bboxes, all_kpts_bef, keypoint_names = load_json_arr(os.path.join(root, file))
+                inference_pose = filter_subject_using_center_of_joints_with_disqualify(all_kpts_bef, img_shape=args.img_shape,
+                                                                                       window=4, num_keypoints=args.number_of_keypoints,
+                                                                                       type="rtm37_from_37")
+                if args.infer_pose_type == 'rtm37_from_coco133':
+                    inference_pose = coco133_to_VEHS7M_37(inference_pose)
+
+            elif file.endswith('.npy'):
+                with open(os.path.join(root, file), 'rb') as f:
+                    inference_pose = np.load(f)
 
             #### Get GT Pose
             # update keypoint names

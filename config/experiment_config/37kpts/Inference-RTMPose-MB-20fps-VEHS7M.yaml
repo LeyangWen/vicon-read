@@ -5,10 +5,11 @@ name_list: ['PELVIS',
             'RAP_b', 'RAP_f', 'LAP_b', 'LAP_f', 'RLE', 'RME', 'LLE', 'LME', 'RMCP2', 'RMCP5', 'LMCP2', 'LMCP5']
 
 
-##eval_key: 'dict'
-##estimate_file: {'validate': '/Users/leyangwen/Documents/Pose/paper/37kpts_v1/validate/X3D.npy',
-##                 'test': '/Users/leyangwen/Documents/Pose/paper/37kpts_v1/test/X3D.npy'}
-
+#eval_key: 'dict'
+#estimate_file: {'validate': '/Users/leyangwen/Documents/Pose/paper/37kpts_v1/validate/X3D.npy',
+#                 'test': '/Users/leyangwen/Documents/Pose/paper/37kpts_v1/test/X3D.npy'}
+#
+#GT_file: '/Users/leyangwen/Documents/Pose/paper/VEHS_6D_downsample2_keep1.pkl'  # 66 kpts, not matching
 
 eval_key: 'validate'
 
@@ -25,4 +26,7 @@ GT_file: '/Volumes/Z/RTMPose/37kpts_freeze_v3/20fps/MB_GT/VEHS_6D_downsample5_ke
 #estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20-fps-finetune-pitch-correct-6/VEHS7M-validate/X3D.npy'
 
 # angle loss added
-estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20fps-finetune-pitch-correct-angleLoss-7/VEHS7M-Validate/X3D.npy'
+#estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20fps-finetune-pitch-correct-angleLoss-7/VEHS7M-Validate/X3D.npy'
+
+# OG loss
+estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20fps-finetune-pitch-correct-9/VEHS7M-validate/X3D.npy'

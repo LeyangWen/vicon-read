@@ -1,0 +1,14 @@
+joints:
+  mid: ["H36M_HEAD", "H36M_NECK", "H36M_THORAX", "T8", "HIP_c"]
+  topR: ["RSHOULDER", "RELBOW", "RWRIST"]
+  topL: ["LSHOULDER", "LELBOW", "LWRIST"]
+  botR: ["RHIP", "RKNEE", "RANKLE"]
+  botL: ["LHIP", "LKNEE", "LANKLE"]
+
+parent:
+  mid: ["H36M_NECK", "H36M_THORAX", "T8", "HIP_c", null]
+  topR: ["H36M_THORAX", "RSHOULDER", "RELBOW"]
+  topL: ["H36M_THORAX", "LSHOULDER", "LELBOW"]
+  botR: ["HIP_c", "RHIP", "RKNEE"]
+  botL: ["HIP_c", "LHIP", "LKNEE"]
+

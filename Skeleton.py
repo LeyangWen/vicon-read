@@ -19,6 +19,7 @@ import cv2
 from ergo3d import *
 from ergo3d.camera.FLIR_camera import batch_load_from_xcp
 from scipy.spatial.transform import Rotation as R
+import matplotlib.image as mpimg
 # todo: self.frame_no vs self.frame_number be consistent
 
 class Skeleton:
@@ -264,7 +265,10 @@ class Skeleton:
             ax.set_xlim(pelvis_loc[pose_sequence[0]] - plot_range / 2, pelvis_loc[pose_sequence[0]] + plot_range / 2)
             ax.set_ylim(pelvis_loc[pose_sequence[1]] - plot_range / 2, pelvis_loc[pose_sequence[1]] + plot_range / 2)
             ax.set_zlim(pelvis_loc[pose_sequence[2]] - plot_range / 2, pelvis_loc[pose_sequence[2]] + plot_range / 2)
-
+            # ax.set_box_aspect([1, 1, 1])
+            # TODO: test this out, does this make equal scale plots
+            # # Set the scale to be equal
+        ax.set_aspect('equal')
         if coord_system[:6] == "camera":  # invert y axis in camera coord
             ax.invert_zaxis()
         ax.set_xlabel(xyz_label[pose_sequence[0]])
@@ -295,16 +299,20 @@ class Skeleton:
             return fig, ax
 
     def plot_2d_pose_frame(self, frame=0, baseimage=False, filename=False, resolution=(1920, 1200), dpi=100):
+        if baseimage:
+            try:
+                img = mpimg.imread(baseimage)
+                resolution = (img.shape[1], img.shape[0])
+            except:
+                return
+
         # return a transparent image
         img_width, img_height = resolution
         inches_width, inches_height = img_width / dpi, img_height / dpi
         fig = plt.figure(figsize=(inches_width, inches_height), dpi=dpi)  # not quite working
         ax = fig.add_subplot(111)
         if baseimage:
-            import matplotlib.image as mpimg
-            img = mpimg.imread(baseimage)
             plt.imshow(img)
-            # raise NotImplementedError
         for joint_name in self.key_joint_name:
             if joint_name in self.poses:
                 point_type, point_size = self.get_plot_property(joint_name, size=[50, 60])
@@ -346,13 +354,14 @@ class Skeleton:
             self.plot_3d_pose_frame(frame=i, filename=filename, **kwargs)
             # break
 
-    def plot_2d_pose(self, foldername=False, **kwargs):
+    def plot_2d_pose(self, foldername=False, baseimage_folder=None, **kwargs):
         if foldername:
             create_dir(foldername)
-        for i in range(self.frame_number):
+        for i in range(1, self.frame_number):
             print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
-            self.plot_2d_pose_frame(frame=i, filename=filename, **kwargs)
+            baseimage = os.path.join(baseimage_folder, f'{i :05d}.png')
+            self.plot_2d_pose_frame(frame=i, filename=filename, baseimage=baseimage, **kwargs)
 
     def set_weight_height(self, weight=0, height=0):
         """
@@ -436,6 +445,11 @@ class VEHSErgoSkeleton(Skeleton):
         self.point_poses['LFOOT'] = Point.mid_point(self.point_poses['LMTP1'], self.point_poses['LMTP5'])
         self.point_poses['HIP_c'] = Point.mid_point(self.point_poses['RHIP'], self.point_poses['LHIP'])
         self.point_poses['SHOULDER_c'] = Point.mid_point(self.point_poses['RSHOULDER'], self.point_poses['LSHOULDER'])
+
+        self.point_poses['HIP_c'] = Point.mid_point(self.point_poses['RHIP'], self.point_poses['LHIP'])
+        self.point_poses['H36M_THORAX'] = Point.mid_point(self.point_poses['C7'], self.point_poses['THROAX'])
+        self.point_poses['H36M_HEAD'] = Point.mid_point(self.point_poses['HEAD'], self.point_poses['HDTP'])
+        self.point_poses['H36M_NECK'] = Point.translate_point(self.point_poses['H36M_HEAD'], Point.vector(self.point_poses['H36M_HEAD'], self.point_poses['HEAD']))
 
         self.update_pose_from_point_pose()
 
@@ -1255,8 +1269,8 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         C7_d = self.point_poses['C7_d']
         # PELVIS_b = Point.mid_point(self.point_poses['RPSIS'], self.point_poses['LPSIS'])
         PELVIS = self.point_poses['PELVIS']
-        # C7_m = self.point_poses['C7_m']
         SS = self.point_poses['SS']
+        C7_m =Point.mid_point(C7_d, SS)
         RELBOW = self.point_poses['RELBOW']
         RAP_b = self.point_poses['RAP_b']
         RAP_f = self.point_poses['RAP_f']
@@ -1294,8 +1308,8 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         C7_d = self.point_poses['C7_d']
         # PELVIS_b = Point.mid_point(self.point_poses['RPSIS'], self.point_poses['LPSIS'])
         PELVIS = self.point_poses['PELVIS']
-        # C7_m = self.point_poses['C7_m']
         SS = self.point_poses['SS']
+        C7_m = Point.mid_point(C7_d, SS)
         LELBOW = self.point_poses['LELBOW']
         LAP_b = self.point_poses['LAP_b']
         LAP_f = self.point_poses['LAP_f']
@@ -1331,7 +1345,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         RWRIST = self.point_poses['RWRIST']
 
         RELBOW_angles = JointAngles()
-        RELBOW_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'na', 'rotation': 'na'}
+        RELBOW_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'N/A', 'rotation': 'N/A'}
         RELBOW_angles.set_zero(zero_frame, by_frame=False)
         RELBOW_angles.flexion = -Point.angle(Point.vector(RELBOW, RSHOULDER).xyz, Point.vector(RELBOW, RWRIST).xyz)
         RELBOW_angles.flexion = RELBOW_angles.zero_by_idx(0)  # zero by zero frame
@@ -1347,7 +1361,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         LWRIST = self.point_poses['LWRIST']
 
         LELBOW_angles = JointAngles()
-        LELBOW_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'na', 'rotation': 'na'}
+        LELBOW_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'N/A', 'rotation': 'N/A'}
         LELBOW_angles.set_zero(zero_frame, by_frame=False)
         LELBOW_angles.flexion = -Point.angle(Point.vector(LELBOW, LSHOULDER).xyz, Point.vector(LELBOW, LWRIST).xyz)
         LELBOW_angles.flexion = LELBOW_angles.zero_by_idx(0)
@@ -1361,6 +1375,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         RWRIST = self.point_poses['RWRIST']
         RMCP2 = self.point_poses['RMCP2']
         RMCP5 = self.point_poses['RMCP5']
+        # RHAND = Point.mid_point(self.point_poses['RMCP2'], self.point_poses['RMCP5'])
         RHAND = self.point_poses['RHAND']
         try:
             RRS = self.point_poses['RRS']
@@ -1390,7 +1405,8 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         LWrist = self.point_poses['LWRIST']
         LMCP2 = self.point_poses['LMCP2']
         LMCP5 = self.point_poses['LMCP5']  # todo: more accurate using LRS
-        LHand = self.point_poses['LHAND']  # todo: calculate based on 2 and 5
+        # LHand = Point.mid_point(self.point_poses['LMCP2'], self.point_poses['LMCP5'])
+        LHand = self.point_poses['LHAND']
         try:
             LRS = self.point_poses['LRS']
             LUS = self.point_poses['LUS']
@@ -1448,7 +1464,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         RANKLE = self.point_poses['RANKLE']
 
         RKNEE_angles = JointAngles()
-        RKNEE_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'na', 'rotation': 'na'}
+        RKNEE_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'N/A', 'rotation': 'N/A'}
         RKNEE_angles.set_zero(zero_frame, by_frame=False)
         RKNEE_angles.flexion = -Point.angle(Point.vector(RKNEE, RHIP).xyz, Point.vector(RKNEE, RANKLE).xyz)
         RKNEE_angles.flexion = RKNEE_angles.zero_by_idx(0)  # zero by zero frame
@@ -1464,7 +1480,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         LANKLE = self.point_poses['LANKLE']
 
         LKNEE_angles = JointAngles()
-        LKNEE_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'na', 'rotation': 'na'}
+        LKNEE_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'N/A', 'rotation': 'N/A'}
         LKNEE_angles.set_zero(zero_frame, by_frame=False)
         LKNEE_angles.flexion = -Point.angle(Point.vector(LKNEE, LHIP).xyz, Point.vector(LKNEE, LANKLE).xyz)
         LKNEE_angles.flexion = LKNEE_angles.zero_by_idx(0)

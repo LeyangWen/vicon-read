@@ -1,0 +1,8 @@
+name_list: ['HIP_c', 'RHIP', 'RKNEE', 'RANKLE', 'LHIP', 'LKNEE', 'LANKLE', 'T8',
+            'H36M_THORAX', 'H36M_NECK', 'H36M_HEAD', 'LSHOULDER', 'LELBOW', 'LWRIST', 'RSHOULDER', 'RELBOW', 'RWRIST']
+eval_key: 'test'
+
+
+GT_file: '/Users/leyangwen/Downloads/scratch_pose/H36M-17kpts/h36m_sh_conf_cam_source_final.pkl'
+
+estimate_file: None
