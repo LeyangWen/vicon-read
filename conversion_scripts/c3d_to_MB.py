@@ -15,11 +15,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/VEHS-R3-622-MotionBert.yaml') #default=r'config/experiment_config/VEHS-R3-721-MotionBert.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton-66.yaml')
-    parser.add_argument('--downsample', type=int, default=5)
+    parser.add_argument('--downsample', type=int, default=2)
     parser.add_argument('--downsample_keep', type=int, default=1)
     parser.add_argument('--split_output', action='store_true')  # not implemented yet
-    parser.add_argument('--output_type', type=list, default=[False, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
-    parser.add_argument('--output_file_name_end', type=str, default='_37_oneCam')
+    parser.add_argument('--output_type', type=list, default=[True, False, False, False], help='3D, 6D, SMPL, 3DSSPP')
+    parser.add_argument('--output_file_name_end', type=str, default='_H36M_17')
     parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
     parser.add_argument('--rootIdx', type=int, default=0, help='root index for 2D pose output')  # 21: pelvis for 66 kpts
     parser.add_argument('--MB_dict_version', type=str, default='normal', help='select from "normal", "diversity_metric"')
