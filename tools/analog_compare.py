@@ -54,6 +54,8 @@ forceplate_Fx = np.array(vicon.GetDeviceChannel(device_ID, 1, 1)[0])
 forceplate_Tz = np.array(vicon.GetDeviceChannel(device_ID, 2, 3)[0])/1000
 forceplate_Ty = -np.array(vicon.GetDeviceChannel(device_ID, 2, 2)[0])/1000
 forceplate_Tx = np.array(vicon.GetDeviceChannel(device_ID, 2, 1)[0])/1000
+
+
 gain_voltage = []
 for i in range(1,8):
     gain_voltage.append(vicon.GetDeviceChannel(4, 1, i)[0])

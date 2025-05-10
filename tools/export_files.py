@@ -35,6 +35,7 @@ for ID in device_IDs:
     sensor.load_nexus_device_detail(vicon, ID)
     name = f'{sensor.device_type}{sensor.side}'
     df = pd.DataFrame(sensor.force_torque_values)
+    print(f"total frames: {len(df)}")
     # column name = name-sensor.channel_names-sensor.units
     df.columns = [f'{name}-{channel}-{unit}' for channel, unit in zip(sensor.channel_names, sensor.units)]
     stacked_df = pd.concat([stacked_df, df], axis=1)
