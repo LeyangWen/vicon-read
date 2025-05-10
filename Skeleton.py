@@ -447,7 +447,7 @@ class VEHSErgoSkeleton(Skeleton):
         self.point_poses['SHOULDER_c'] = Point.mid_point(self.point_poses['RSHOULDER'], self.point_poses['LSHOULDER'])
 
         self.point_poses['HIP_c'] = Point.mid_point(self.point_poses['RHIP'], self.point_poses['LHIP'])
-        self.point_poses['H36M_THORAX'] = Point.mid_point(self.point_poses['C7'], self.point_poses['THROAX'])
+        self.point_poses['H36M_THORAX'] = Point.mid_point(self.point_poses['C7'], self.point_poses['THORAX'])
         self.point_poses['H36M_HEAD'] = Point.mid_point(self.point_poses['HEAD'], self.point_poses['HDTP'])
         self.point_poses['H36M_NECK'] = Point.translate_point(self.point_poses['H36M_HEAD'], Point.vector(self.point_poses['H36M_HEAD'], self.point_poses['HEAD']))
 
