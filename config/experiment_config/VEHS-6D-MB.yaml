@@ -12,6 +12,9 @@ GT_file: '/Users/leyangwen/Documents/Pose/paper/VEHS_6D_downsample2_keep1.pkl'
 
 eval_key: 'test'
 estimate_file: '/Users/leyangwen/Documents/Pose/paper/X3D_old.npy'
+
+
+#eval_key: 'test'
 #estimate_file: '/Users/leyangwen/Documents/Pose/paper/66kpts_v1/test/X3D.npy'
 
 #eval_key: 'dict'

@@ -34,8 +34,10 @@ def read_input(json_path, type='rtm24'):
 def parse_args():
     parser = argparse.ArgumentParser()
     # parser.add_argument('--json_folder', type=str, default=r'W:\VEHS\Testing_Videos_and_rtmpose_results\OneDrive_2_9-4-2024\kps_133_fps_20')
-    parser.add_argument('--json_folder', type=str, default=r'/Volumes/Z/RTMPose/37kpts_freeze_v3/20fps/Industry_2')
+    parser.add_argument('--json_folder', type=str, default=r'/Volumes/Z/RTMPose/37kpts_rtmw_v4/Industry_2')
                                                            # r'/Volumes/Z/RTMPose/37kpts_freeze_v3/20fps/Ricks_Videos_freeze_backbone_epoch_best_20fps')
+
+    parser.add_argument('--read_type', type=str, default='npy', help='json or npy')
     parser.add_argument('--output_file', type=str, default=r'rtmpose_v3_20fps_industry_2_37kpts_v2.pkl')
     parser.add_argument('--joint_num', type=int, default=37)
     parser.add_argument('--type', type=str, default='rtm37_from_37')
@@ -53,17 +55,22 @@ if __name__ == '__main__':
         dirs.sort()  # Sort directories in-place
         files.sort(key=str.lower)  # Sort files in-place
         for file in files:
-            if not file.endswith('.json'):
-                continue
             if file.startswith('.'):
                 continue
-            print("#"*50)
             json_path = os.path.join(root, file)
-            print(f"file: {file}, root: {root}")
+            source = json_path.split('/')[-1].split('.')[0]
+            if file.endswith('.json') and args.read_type == 'json':
+                print("#"*50)
+                print(f"file: {file}, root: {root}")
+                # read from json file
+                all_keyps_rtm = read_input(json_path, type=args.type)
+            elif file.endswith('.npy') and args.read_type == 'npy':
+                print("#"*50)
+                print(f"file: {file}, root: {root}")
+                with open(os.path.join(root, file), 'rb') as f:
+                    all_keyps_rtm = np.load(f)
 
-            # read from json file
-            source = json_path.split('\\')[-1].split('.')[0]
-            all_keyps_rtm = read_input(json_path, type=args.type)
+
             assert all_keyps_rtm.shape[1] == args.joint_num, f"all_keyps_rtm.shape[1]: {all_keyps_rtm.shape[1]}, args.joint_num: {args.joint_num}, they should be the same"
             frame_no = all_keyps_rtm.shape[0]
             print(f"frame_no: {frame_no}, %243: {frame_no%243}")

@@ -12,11 +12,12 @@ def parse_args():
     # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Hand-21.yaml')
     # parser.add_argument('--type', type=str, default='hand')
 
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/H36M17kpts/H36M-MB.yaml')
-    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/H36M-17.yaml')
+    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/H36M17kpts/H36M-MB.yaml')
+    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/H36M17kpts/VEHS-3D-MB.yaml')
+    # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/H36M-17.yaml')
 
-    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-Industry.yaml')
-    # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')
+    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
     parser.add_argument('--type', type=str, default='body')
 
 
@@ -151,12 +152,13 @@ def find_joint_ids(full_list, select_list):
 if __name__ == '__main__':
     # read arguments
     args = parse_args()
-    # estimate_pose = MB_output_pose_file_loader(args)
+    estimate_pose = MB_output_pose_file_loader(args)
     GT_pose = MB_input_pose_file_loader(args, clip_fill=False)
 
     if args.debug_mode:
-        small_sample = 16560
-        # estimate_pose = estimate_pose[:small_sample]
+        small_sample = 1200
+        # small_sample = 16560
+        estimate_pose = estimate_pose[:small_sample]
         # GT_pose = GT_pose[:small_sample]
 
     if False:
@@ -174,11 +176,11 @@ if __name__ == '__main__':
         args.name_list = name_list
         args.output_frame_folder = args.output_frame_folder + '_ub'
     
-    # estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
-    # estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
+    estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
+    estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
 
-    GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
-    GT_skeleton.load_name_list_and_np_points(args.name_list, GT_pose)
+    # GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
+    # GT_skeleton.load_name_list_and_np_points(args.name_list, GT_pose)
 
     if args.type == 'hand':
         # get legend
@@ -200,6 +202,7 @@ if __name__ == '__main__':
         # GT_skeleton.plot_3d_pose_frame(frame=frame + 2, coord_system="camera-px", mode="normal_view", center_key='Middle_0', plot_range=plot_range)
     elif args.type == 'body':
         # todo: after finishing this round, add plot mode and if pitch correct to the png file name, speed up render process
+        estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1200, mode=args.plot_mode, center_key='HIP_c')
         # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=750, mode=args.plot_mode, center_key='PELVIS')
         # GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, coord_system="camera-px", plot_range=750, mode=args.plot_mode, center_key='PELVIS')
 
@@ -228,15 +231,15 @@ if __name__ == '__main__':
 
 
 
-store = ""
-frame_no = 0
-for i, s in enumerate(source):
-    frame_no += 1
-    if s != store:
-        print(i, s, frame_no//50)
-        store = s
-        frame_no = 0
-
-2356/50
+# store = ""
+# frame_no = 0
+# for i, s in enumerate(source):
+#     frame_no += 1
+#     if s != store:
+#         print(i, s, frame_no//50)
+#         store = s
+#         frame_no = 0
+#
+# 2356/50
 
 

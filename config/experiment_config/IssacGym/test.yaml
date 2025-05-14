@@ -5,5 +5,8 @@ name_list: ['PELVIS', 'torso', 'head', 'right_upper_arm', 'right_lower_arm',
 
 
 #estimate_file: '/Users/leyangwen/Documents/Isaac/terrain_default/joint_states.csv'
-estimate_file: '/Users/leyangwen/Documents/Isaac/terrain_model/download/pipeline-construction-site/motion/joint_states.csv'
+# estimate_file: '/Users/leyangwen/Documents/Isaac/terrain_model/download/pipeline-construction-site/motion/joint_states.csv'
+estimate_file: '/Users/leyangwen/Documents/Isaac/motion_output/ergo_debug/joint_states.csv'
+
+
 

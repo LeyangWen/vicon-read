@@ -12,5 +12,5 @@ parent:
   topL: ['torso', 'left_upper_arm', 'left_lower_arm']
   botR: ['PELVIS', 'right_thigh', 'right_shin']
   botL: ['PELVIS', 'left_thigh', 'left_shin']
-  others: ['torso', 'torso', 'torso']
+#  others: ['torso', 'torso', 'torso']
 

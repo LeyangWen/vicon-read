@@ -9,9 +9,17 @@ def parse_args():
     parser = argparse.ArgumentParser()
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/VEHS-6D-MB.yaml')
     # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
+    # parser.add_argument('--angle_mode', type=str, default='VEHS')
 
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
-    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/H36M17kpts/VEHS-3D-MB.yaml')
+    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/H36M-17.yaml')
+    parser.add_argument('--angle_mode', type=str, default='VEHS')
+
+    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
+    # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
+    # parser.add_argument('--angle_mode', type=str, default='VEHS')
+
+
 
     parser.add_argument('--MB_data_stride', type=int, default=243)
     parser.add_argument('--debug_mode', default=False)
@@ -22,6 +30,7 @@ def parse_args():
     with open(args.config_file, 'r') as stream:
         data = yaml.safe_load(stream)
         args.name_list = data['name_list']
+        args.GT_name_list = data['GT_name_list'] if 'GT_name_list' in data else data['name_list']
         args.GT_file = data['GT_file']
         args.eval_key = data['eval_key']
         args.estimate_file = data['estimate_file']
@@ -78,13 +87,11 @@ if __name__ == '__main__':
             GT_pose.append(this_gt_pose)
         estimate_pose = np.concatenate(estimate_pose, axis=0)
         GT_pose = np.concatenate(GT_pose, axis=0)
-        print(estimate_pose.shape, GT_pose.shape)
-        assert estimate_pose.shape == GT_pose.shape, f"GT_pose.shape: {GT_pose.shape}, estimate_pose.shape: {estimate_pose.shape}, they should be the same"
     else:
         GT_pose = MB_input_pose_file_loader(args)
         estimate_pose = MB_output_pose_file_loader(args)
-        assert GT_pose.shape == estimate_pose.shape, f"GT_pose.shape: {GT_pose.shape}, estimate_pose.shape: {estimate_pose.shape}, they should be the same"
-
+    # assert GT_pose.shape == estimate_pose.shape, f"GT_pose.shape: {GT_pose.shape}, estimate_pose.shape: {estimate_pose.shape}, they should be the same"
+    assert GT_pose.shape[0] == estimate_pose.shape[0], f"GT_pose.shape: {GT_pose.shape}, estimate_pose.shape: {estimate_pose.shape}, frame no should be the same"
 
     if args.debug_mode:
         small_sample = 7500
@@ -92,20 +99,26 @@ if __name__ == '__main__':
         estimate_pose = estimate_pose[:small_sample]
 
     # Step 1: calculate GT angles
-    GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
-    GT_skeleton.load_name_list_and_np_points(args.name_list, GT_pose)
+    GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode)
+    # GT_skeleton = H36MSkeleton_angles(args.skeleton_file, mode=args.angle_mode)  # todo: remember to change this back to VEHSErgoSkeleton_angles
+    GT_skeleton.load_name_list_and_np_points(args.GT_name_list, GT_pose)
     GT_ergo_angles = {}
     for angle_name in GT_skeleton.angle_names:  # calling the angle calculation methods in skeleton class
         class_method_name = f'{angle_name}_angles'
         GT_ergo_angles[angle_name] = getattr(GT_skeleton, class_method_name)()
 
+
     # Step 2: calculate MB angles
-    estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
+    # estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode)
+    estimate_skeleton = H36MSkeleton_angles(args.skeleton_file, mode=args.angle_mode)  # todo: remember to change this back to VEHSErgoSkeleton_angles
     estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
     estimate_ergo_angles = {}
-    for angle_name in estimate_skeleton.angle_names:  # calling the angle calculation methods in skeleton class
+    for angle_name in GT_skeleton.angle_names:  # calling the angle calculation methods in skeleton class
         class_method_name = f'{angle_name}_angles'
-        estimate_ergo_angles[angle_name] = getattr(estimate_skeleton, class_method_name)()
+        try:
+            estimate_ergo_angles[angle_name] = getattr(estimate_skeleton, class_method_name)()
+        except:
+            estimate_ergo_angles[angle_name] = estimate_skeleton.empty_angles()
 
     # Step 3: visualize
     
@@ -118,18 +131,21 @@ if __name__ == '__main__':
     frame_range = [101800, 102200]
     log = []
     anova_results = []
+    average_error = {}
     target_angles = GT_skeleton.angle_names
     # target_angles = ['right_shoulder']
     for angle_index, this_angle_name in enumerate(target_angles):
         # plot angles
-        # GT_fig, GT_ax = GT_ergo_angles[this_angle_name].plot_angles(joint_name=f"GT-{this_angle_name}", frame_range=frame_range, alpha=0.75, colors=['g', 'g', 'g'])
-        # estimate_fig, _ = estimate_ergo_angles[this_angle_name].plot_angles(joint_name=f"Est-{this_angle_name}", frame_range=frame_range, alpha=0.75, colors=['r', 'r', 'r'], overlay=[GT_fig, GT_ax])
+        GT_fig, GT_ax = GT_ergo_angles[this_angle_name].plot_angles(joint_name=f"GT-{this_angle_name}", frame_range=frame_range, alpha=0.75, colors=['g', 'g', 'g'])
+        estimate_fig, _ = estimate_ergo_angles[this_angle_name].plot_angles(joint_name=f"Est-{this_angle_name}", frame_range=frame_range, alpha=0.75, colors=['r', 'r', 'r'], overlay=[GT_fig, GT_ax])
         # plt.show()
         # GT_fig.savefig(f'frames/MB_angles/GT-{this_angle_name}.png')
-        # estimate_fig.savefig(f'frames/MB_angles/Est-{this_angle_name}.png')
+        if estimate_fig:
+            estimate_fig.savefig(f'frames/MB_angles/Est-{this_angle_name}.png')
+
 
         ergo_angle_name = ['flexion', 'abduction', 'rotation']
-        print_ergo_names = getattr(estimate_ergo_angles[this_angle_name], 'ergo_name')
+        print_ergo_names = getattr(GT_ergo_angles[this_angle_name], 'ergo_name')
         print_angle_name = this_angle_name.replace('_', '').replace('right', 'R-').replace('left', 'L-').capitalize()
         flexion_errors = np.array([])
         abduction_errors = np.array([])
@@ -165,6 +181,8 @@ if __name__ == '__main__':
                 RMSE = root_mean_squared_error(ja1, ja2)
                 MAE = mean_absolute_error(ja1, ja2)
                 median_AE = median_absolute_error(ja1, ja2)
+                merge_name = f"{print_angle_name}-{print_ergo_name}"
+                average_error[merge_name] = angle_diff(ja1, ja2, input_rad=True, output_rad=False)
 
                 angle_compare = AngleCompare(ja1, ja2)
                 # 1,435,236 frames in test set, use Rice rule --> approx 225 bins
@@ -216,7 +234,7 @@ if __name__ == '__main__':
             print(j, end=",")
         print()
     # also save log as csv
-    with open(os.path.join(args.output_dir, f'{args.eval_key}_log.csv'), 'w') as f:
+    with open(os.path.join(args.output_dir, f'{args.eval_key}_{args.angle_mode}_log.csv'), 'w') as f:
         f.write(f"{header}\n")
         for i in log:
             for j in i:
@@ -227,6 +245,10 @@ if __name__ == '__main__':
     print("Angle Name, F-Statistic, P-Value")
     for result in anova_results:
         print(f"{result[0]}, {result[1]:}, {result[2]}")
+
+    # store Absolute Error for each angle in dict
+    with open(os.path.join(args.output_dir, f'{args.eval_key}_{args.angle_mode}_AE.pkl'), 'wb') as f:
+        pickle.dump(average_error, f)
 
     print(f"Store location: {args.output_dir}")
 # generate merged bland-altman plot for left and right

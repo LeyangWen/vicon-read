@@ -1,5 +1,7 @@
 name_list: ['HIP_c', 'RHIP', 'RKNEE', 'RANKLE', 'LHIP', 'LKNEE', 'LANKLE', 'T8',
             'H36M_THORAX', 'H36M_NECK', 'H36M_HEAD', 'LSHOULDER', 'LELBOW', 'LWRIST', 'RSHOULDER', 'RELBOW', 'RWRIST']
+
+
 eval_key: 'test'
 
 
