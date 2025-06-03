@@ -13,7 +13,7 @@ def parse_args():
 
     parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-Industry.yaml')
     parser.add_argument('--overlay_GT', type=bool, default=False)
-    parser.add_argument('--debug_mode', default=True)
+    parser.add_argument('--debug_mode', default=False)
 
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
     parser.add_argument('--MB_data_stride', type=int, default=243)
@@ -86,7 +86,7 @@ if __name__ == '__main__':
             assert GT_pose.shape == estimate_pose.shape, f"GT_pose.shape: {GT_pose.shape}, estimate_pose.shape: {estimate_pose.shape}, they should be the same"
 
     if args.debug_mode:
-        small_sample = 1000 #243*6
+        small_sample = 1200 #243*6
         GT_pose = GT_pose[:small_sample] if GT_pose is not None else None
         estimate_pose = estimate_pose[:small_sample]
 
@@ -116,11 +116,11 @@ if __name__ == '__main__':
 
     frame_range = None #[0, 60*3*20]
     target_angles = estimate_skeleton.angle_names  # ['neck', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'right_wrist', 'left_wrist', 'back', 'right_knee', 'left_knee']
-    target_angles = ['back']
-    # target_angles = ['left_knee', 'right_knee']
-    target_angles = ['left_shoulder']
-    # target_angles = ['left_wrist', 'right_wrist']
-    # target_angles = []
+    # target_angles = ['neck', 'right_shoulder', 'left_shoulder']
+    # target_angles = ['right_elbow', 'left_elbow', 'right_wrist', 'left_wrist']
+
+    target_angles = ['back', 'right_knee', 'left_knee']
+
     print(f"target angles: {target_angles}")
     # Single thread
     for angle_index, this_angle_name in enumerate(target_angles):

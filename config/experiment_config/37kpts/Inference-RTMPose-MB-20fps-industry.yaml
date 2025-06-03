@@ -5,21 +5,31 @@ name_list: ['PELVIS',
             'RAP_b', 'RAP_f', 'LAP_b', 'LAP_f', 'RLE', 'RME', 'LLE', 'LME', 'RMCP2', 'RMCP5', 'LMCP2', 'LMCP5']
 
 eval_key: 'validate'
-GT_file: None
-# if frame number not same, try switching between validate and median
+
+# RTMW-V4, no 3d, 2d only
+GT_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v4/20fps/Industry_2/rtmpose_v4_20fps_industry_2_37kpts_v2.pkl'
+#GT_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v4/20fps/Ricks_Videos_RTMW_freeze_backbone_neck_merged_epoch_best/rtmpose_v4_20fps_industry_1_37kpts_v2.pkl'
+#GT_file: None
+
+# if frame number not same, try switching between validate and test
 
 # normal
 #estimate_file: '/Volumes/Z/RTMPose/37kpts_freeze_v3/20fps/Ricks_Videos_freeze_backbone_epoch_best_20fps/normal/X3D.npy'
 #estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20fps-finetune-normal-6/Industry/X3D.npy'
 
 ## pitch-correct
-#limb loss added
+#limb loss added: RTM-V3 MB-V6
 #estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20-fps-finetune-pitch-correct-6/Industry/X3D.npy'
-estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20fps-finetune-pitch-correct-angleLoss-6/Industry_2/X3D.npy'
+#estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20fps-finetune-pitch-correct-angleLoss-6/Industry_2/X3D.npy'
 
-# angle loss added
+# angle loss added: RTM-V3 MB-V7
 #estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20fps-finetune-pitch-correct-angleLoss-7/Industry_2/X3D.npy'
 
-# OG loss
+# RTMW-V4 MB-V7
+estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20fps-finetune-pitch-correct-angleLoss-7/RTMW-v4/Industry_2/X3D.npy'
+
+
+
+# OG loss: RTM-V3 MB-V9
 #estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20fps-finetune-pitch-correct-9/Industry_2/X3D.npy'
 

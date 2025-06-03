@@ -6,7 +6,21 @@ name_list: ['PELVIS', 'torso', 'head', 'right_upper_arm', 'right_lower_arm',
 
 #estimate_file: '/Users/leyangwen/Documents/Isaac/terrain_default/joint_states.csv'
 # estimate_file: '/Users/leyangwen/Documents/Isaac/terrain_model/download/pipeline-construction-site/motion/joint_states.csv'
-estimate_file: '/Users/leyangwen/Documents/Isaac/motion_output/ergo_debug/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Documents/Isaac/motion_output/ergo_debug/joint_states.csv'
 
 
+
+# compare 1
+fps: 10
+density: 100
+dim: [0.25, 0.30, 0.20]  # w l h
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/joint_states.csv'
+
+
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try2-1_new_motion/joint_states.csv'
+estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try1-10_og/joint_states.csv'
+
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/compare_infer_weight/50-25-25_train_more/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/compare_infer_weight/20-40-40/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/compare_infer_weight/80-10-10/joint_states.csv'
 

@@ -20,7 +20,6 @@ from ergo3d import *
 from ergo3d.camera.FLIR_camera import batch_load_from_xcp
 from scipy.spatial.transform import Rotation as R
 import matplotlib.image as mpimg
-# todo: self.frame_no vs self.frame_number be consistent
 
 class Skeleton:
     def __init__(self, skeleton_file):
@@ -63,6 +62,9 @@ class Skeleton:
                 exist = pt_np[:, i, 0] != np.nan  # todo: check if missing points is expressed as np.nan in c3d
                 xyz_exist = [pt_np[:, i, 0], pt_np[:, i, 1], pt_np[:, i, 2], exist.tolist()]
                 self.point_poses[self.point_labels[i]] = MarkerPoint(xyz_exist, name=self.point_labels[i])
+
+    def load_np_rot_quat(self, rot_quat):
+        raise NotImplementedError
 
     def load_name_list_and_np_points(self, name_list, pt_np):
         self.load_name_list(name_list)
@@ -184,7 +186,7 @@ class Skeleton:
             point_size = size[1]
         return point_type, point_size
 
-    def plot_3d_pose_frame(self, frame=0, filename=False, plot_range=1800, coord_system="world-mm", center_key='PELVIS', mode='normal_view', get_legend=False):
+    def plot_3d_pose_frame(self, frame=0, filename=False, plot_range=1800, coord_system="world-mm", center_key='PELVIS', mode='normal_view', get_legend=False, plot_rot=False):
         """
         plot 3d pose in 3d space
         coord_system: camera-px or world
@@ -223,6 +225,22 @@ class Skeleton:
                     ax.plot([self.poses[joint_name][frame, pose_sequence[0]], self.poses[parent_name][frame, pose_sequence[0]]],
                             [self.poses[joint_name][frame, pose_sequence[1]], self.poses[parent_name][frame, pose_sequence[1]]],
                             [self.poses[joint_name][frame, pose_sequence[2]], self.poses[parent_name][frame, pose_sequence[2]]], 'k-')
+            if plot_rot:
+                if not hasattr(self, 'rot_poses'):
+                    raise AttributeError("rot_quat not found in skeleton, please load it first")
+                rot_quat = self.rot_poses[joint_name][frame]
+                r = R.from_quat(rot_quat)
+                # TODO: currently only works in world coord
+                origin = self.poses[joint_name][frame, pose_sequence]
+                axes = r.apply(np.eye(3))  # 3 unit vectors (x, y, z)
+                arrow_len = 0.075 * meter  # Adjust this to scale the axis length
+                axes_scaled = axes * arrow_len
+                quiver_alpha = 0.5
+                ax.quiver(origin[0], origin[1], origin[2], axes_scaled[0, 0], axes_scaled[0, 1], axes_scaled[0, 2], color='r', alpha=quiver_alpha)  # X-axis
+                ax.quiver(origin[0], origin[1], origin[2], axes_scaled[1, 0], axes_scaled[1, 1], axes_scaled[1, 2], color='g', alpha=quiver_alpha)  # Y-axis
+                ax.quiver(origin[0], origin[1], origin[2], axes_scaled[2, 0], axes_scaled[2, 1], axes_scaled[2, 2], color='b', alpha=quiver_alpha)  # Z-axis
+
+
         # ax.legend(bbox_to_anchor=(0.95, 1), loc=2, borderaxespad=0.)
         # uniform scale based on pelvis location and 1800mm
 
@@ -360,8 +378,10 @@ class Skeleton:
         for i in range(1, self.frame_number):
             print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
-            baseimage = os.path.join(baseimage_folder, f'{i :05d}.png')
+            baseimage = os.path.join(baseimage_folder, f'{i :05d}.png') if baseimage_folder else None
             self.plot_2d_pose_frame(frame=i, filename=filename, baseimage=baseimage, **kwargs)
+            if i > 10:
+                break
 
     def set_weight_height(self, weight=0, height=0):
         """
@@ -867,6 +887,566 @@ class VEHSErgoSkeleton(Skeleton):
         return loc
 
 
+class IsaacSkeleton(VEHSErgoSkeleton):
+    def __init__(self, skeleton_file='config/VEHS_ErgoSkeleton_info/IssacGym/15kpts-Skeleton.yaml', mode="VEHS"):
+        super().__init__(skeleton_file)
+
+    def load_rot_quat(self, rot_quat):
+        """
+        Load from isaacGym quat format, which is in the order of (x, y, z, w), world rotation quaternion.
+        """
+        assert rot_quat.shape[-1] == 4, "Rotation quaternion must have 4 elements (x, y, z, w)"
+        self.rot_poses = {}
+        for i in range(self.point_number):
+            self.rot_poses[self.point_labels[i]] = rot_quat[:, i, :]
+
+    def calculate_joint_center(self):
+        self.point_poses['SHOULDER_c'] = Point.mid_point(self.point_poses['left_upper_arm'], self.point_poses['right_upper_arm'])
+        self.point_poses['HIP_c'] = Point.mid_point(self.point_poses['left_thigh'], self.point_poses['right_thigh'])
+
+        # define 3DSSPP BACK coordinate system (for all general projections)
+        PELVIS = self.point_poses['PELVIS']
+        up_axis = [0, 0, 1000]
+        BACK_plane = Plane()
+        BACK_plane.set_by_vector(PELVIS, Point.create_const_vector(*up_axis, examplePt=PELVIS), direction=1)
+        PELVIS_rot_quat = self.rot_poses['PELVIS']
+        PELVIS_rot = R.from_quat(PELVIS_rot_quat)
+        PELVIS_X = NpPoints(PELVIS_rot.apply(np.array([1.0, 0.0, 0.0])))
+        PELVIS_X_project = BACK_plane.project_point(Point.translate_point(PELVIS, PELVIS_X))  # project pelvis_x to BACK plane
+        BACK_coord = CoordinateSystem3D()
+        BACK_coord.set_by_plane(BACK_plane, PELVIS, PELVIS_X_project, sequence='yzx', axis_positive=True)  # in 3DSSPP, y is fwd, in isaac x is fwd
+        self.BACK_coord = BACK_coord
+
+        palm_size = 0.1  # 10cm, typical size for hand palm
+        foot_size = 0.271*0.8  # 21.7cm, typical size for foot palm, 80% of 27.1cm
+        head_size = None  # TODO: put in head
+        for side in ["left", "right"]:
+            WRIST = self.point_poses[f'{side}_hand']
+            HAND_rot_quat = self.rot_poses[f'{side}_hand']
+            HAND_rot = R.from_quat(HAND_rot_quat)
+            HAND_mZ = NpPoints(HAND_rot.apply(np.array([0.0, 0.0, -1.0])))  # -Z axis of hand
+            HAND = Point.translate_point(WRIST, HAND_mZ, direction=palm_size)  # palm center
+            self.point_poses[f'{side}_finger'] = HAND
+
+            ANKLE = self.point_poses[f'{side}_foot']
+            FOOT_rot_quat = self.rot_poses[f'{side}_foot']
+            FOOT_rot = R.from_quat(FOOT_rot_quat)
+            FOOT_X = NpPoints(FOOT_rot.apply(np.array([1.0, 0.0, 0.0])))  # X axis of foot
+            FOOT = Point.translate_point(ANKLE, FOOT_X, direction=foot_size)  # foot center
+            self.point_poses[f'{side}_toe'] = FOOT
+
+        self.update_pose_from_point_pose()
+        return
+
+    def calculate_3DSSPP_angles(self):
+        """
+        example:
+        Index	Body Part	Side	Angle Name	JOA
+        0	Hand	L	Horizontal	110
+        1	Hand	L	Vertical	-10
+        2	Hand	L	Rotation	40
+        3	Forearm	L	Horizontal	85
+        4	Forearm	L	Vertical	-25
+        5	Upper Arm	L	Horizontal	10
+        6	Upper Arm	L	Vertical	-80
+        7	Clavicle	L	Horizontal	-20
+        8	Clavicle	L	Vertical	15
+        9	Upper Leg (Thigh)	L	Horizontal	90
+        10	Upper Leg (Thigh)	L	Vertical	-35
+        11	Lower Leg (Shin)	L	Horizontal	90
+        12	Lower Leg (Shin)	L	Vertical	-70
+        13	Foot	L	Horizontal	95
+        14	Foot	L	Vertical	0
+        15	Hand	R	Horizontal	70
+        16	Hand	R	Vertical	-10
+        17	Hand	R	Rotation	-40
+        18	Forearm	R	Horizontal	70
+        19	Forearm	R	Vertical	-20
+        20	Upper Arm	R	Horizontal	5
+        21	Upper Arm	R	Vertical	-85
+        22	Clavicle	R	Horizontal	-20
+        23	Clavicle	R	Vertical	15
+        24	Upper Leg (Thigh)	R	Horizontal	90
+        25	Upper Leg (Thigh)	R	Vertical	-40
+        26	Lower Leg (Shin)	R	Horizontal	-90
+        27	Lower Leg (Shin)	R	Vertical	-70
+        28	Foot	R	Horizontal	85
+        29	Foot	R	Vertical	0
+        30	Head	C	Flexion	90
+        31	Upper Neck	C	Flexion	90
+        32	Upper Neck	C	Rotation	0
+        33	Upper Neck	C	Lateral Bending	0
+        34	Lower Neck	C	Flexion	90
+        35	Lower Neck	C	Rotation	0
+        36	Lower Neck	C	Lateral Bending	0
+        37	Trunk	C	Flexion	40
+        38	Trunk	C	Rotation	-5
+        39	Trunk	C	Lateral Bending	10
+        40	Pelvis	C	Rotation	0
+        41	Pelvis	C	Lateral Bending	0
+        """
+        JOA = np.zeros((self.frame_number, 42))  # Joint Orientation Angles
+        start_id = [0, 15]
+        for i, side in enumerate(['left', 'right']):
+            HAND_angles = self.hand_3DSSPP_angle(side=side)
+            FOREARM_angles = self.forearm_3DSSPP_angle(side=side)
+            UPPER_ARM_angles = self.upper_arm_3DSSPP_angle(side=side)
+            CLAVICLE_angles = self.clavicle_3DSSPP_angle(side=side)
+            UPPER_LEG_angles = self.upper_leg_3DSSPP_angle(side=side)
+            LOWER_LEG_angles = self.lower_leg_3DSSPP_angle(side=side)
+            FOOT_angles = self.foot_3DSSPP_angle(side=side)
+            st = start_id[i]
+            JOA[:, st + 0] = HAND_angles.flexion
+            JOA[:, st + 1] = HAND_angles.abduction
+            JOA[:, st + 2] = HAND_angles.rotation
+            JOA[:, st + 3] = FOREARM_angles.flexion
+            JOA[:, st + 4] = FOREARM_angles.abduction
+            JOA[:, st + 5] = UPPER_ARM_angles.flexion
+            JOA[:, st + 6] = UPPER_ARM_angles.abduction
+            JOA[:, st + 7] = CLAVICLE_angles.flexion
+            JOA[:, st + 8] = CLAVICLE_angles.abduction
+            JOA[:, st + 9] = UPPER_LEG_angles.flexion
+            JOA[:, st + 10] = UPPER_LEG_angles.abduction
+            JOA[:, st + 11] = LOWER_LEG_angles.flexion
+            JOA[:, st + 12] = LOWER_LEG_angles.abduction
+            JOA[:, st + 13] = FOOT_angles.flexion
+            JOA[:, st + 14] = FOOT_angles.abduction
+
+
+        HEAD_angles = self.pelvic_3DSSPP_angle(skip=True)
+        UPPER_NECK_angles = self.pelvic_3DSSPP_angle(skip=True)
+        LOWER_NECK_angles = self.pelvic_3DSSPP_angle(skip=True)
+        TRUNK_angles = self.trunk_3DSSPP_angle()
+        PELVIC_angles = self.pelvic_3DSSPP_angle(skip=True)
+
+        JOA[:, 30] = HEAD_angles.flexion
+        JOA[:, 31] = UPPER_NECK_angles.flexion
+        JOA[:, 32] = UPPER_NECK_angles.rotation
+        JOA[:, 33] = UPPER_NECK_angles.abduction
+        JOA[:, 34] = LOWER_NECK_angles.flexion
+        JOA[:, 35] = LOWER_NECK_angles.rotation
+        JOA[:, 36] = LOWER_NECK_angles.abduction
+        JOA[:, 37] = TRUNK_angles.flexion
+        JOA[:, 38] = TRUNK_angles.rotation
+        JOA[:, 39] = TRUNK_angles.abduction
+        JOA[:, 40] = PELVIC_angles.rotation
+        JOA[:, 41] = PELVIC_angles.abduction
+
+        JOA = JOA/ np.pi * 180  # convert to degrees
+        JOA = np.clip(JOA, -180, 180)  # clip to -180 to 180 degrees
+        JOA = JOA.astype(int)  # convert to int
+        # angle = TRUNK_angles
+        # frame = 0
+        # print(f"frame {frame}: "
+        #       f"Trunk angles: flexion: {angle.flexion[frame] / np.pi * 180:.01f} degrees, "
+        #         f"lateral flexion: {angle.abduction[frame] / np.pi * 180:.01f} degrees, "
+        #         f"rotation: {angle.rotation[frame] / np.pi * 180:.01f} degrees")
+        # frame = 100
+        # print(f"frame {frame}: "
+        #       f"Trunk angles: flexion: {angle.flexion[frame] / np.pi * 180:.01f} degrees, "
+        #         f"lateral flexion: {angle.abduction[frame] / np.pi * 180:.01f} degrees, "
+        #         f"rotation: {angle.rotation[frame] / np.pi * 180:.01f} degrees")
+        self.JOA = JOA  # save to self for later use
+        return JOA
+
+    def trunk_3DSSPP_angle(self):
+        zero_frame = [0, 0, 0]
+
+        PELVIS = self.point_poses['PELVIS']
+
+        RSHOULDER = self.point_poses['right_upper_arm']
+        LSHOULDER = self.point_poses['left_upper_arm']
+        RHIP = self.point_poses['right_thigh']
+        LHIP = self.point_poses['left_thigh']
+
+
+        TRUNK_angles = JointAngles()
+        TRUNK_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'L-bending', 'rotation': 'axial rotation'}
+        TRUNK_angles.set_zero(zero_frame)
+
+        # 6.9.3.7 Trunk Flexion Angle
+        TRUNK_axis = Point.vector(self.point_poses['HIP_c'], self.point_poses['SHOULDER_c'])
+        TRUNK_angles.get_flex_abd(self.BACK_coord, TRUNK_axis, plane_seq=['yz', 'yz'], flip_sign=[1, 1])
+
+        # 6.9.3.8 Trunk Lateral Bending Angle
+        TRUNK_axis_l = Point.vector(PELVIS, self.point_poses['torso'])
+        TRUNK_angles.abduction = Point.angle(self.BACK_coord.yz_plane.normal_vector.xyz, TRUNK_axis_l.xyz)  # 0 -- 180 in rad now, convert to 90 -- -90 in rad
+        TRUNK_angles.abduction = np.pi/2 - TRUNK_angles.abduction  # convert to 90 -- -90 in rad
+        TRUNK_angles.abduction = np.clip(TRUNK_angles.abduction, -np.pi/4.5, np.pi/4.5)  # clamp to -40 to 40 degrees in rad
+        TRUNK_angles.abduction = TRUNK_angles.zero_by_idx(1)
+
+        # 6.9.3.9 Trunk Axial Rotation Angle
+        TRUNK_angles.get_rot(LSHOULDER, RSHOULDER, RHIP, LHIP, flip_sign=1)
+        TRUNK_angles.rotation = np.clip(TRUNK_angles.rotation, -np.pi/2, np.pi/2)  # clamp to -90 to 90 degrees in rad
+
+        return TRUNK_angles
+
+    def pelvic_3DSSPP_angle(self, skip=True):
+        if skip:
+            PELVIC_angles = JointAngles()
+            PELVIC_angles.flexion = np.zeros((self.frame_number))
+            PELVIC_angles.abduction = np.zeros((self.frame_number))
+            PELVIC_angles.rotation = np.zeros((self.frame_number))
+        else:
+            raise NotImplementedError
+        return PELVIC_angles
+
+    def vertical_3DSSPP_angle(self, base, limb):
+        """
+        vec(base, limb)
+        6.9.3.2 Vertical Angles
+        """
+        limb_vec = Point.vector(base, limb)
+        vertical_angle = np.pi/2 - Point.angle(self.BACK_coord.xy_plane.normal_vector.xyz, limb_vec.xyz)  # convert to 90 -- -90 in rad
+        return vertical_angle
+
+    def horizontal_3DSSPP_angle(self, base, limb, side='left'):
+        """
+        vec(base, limb)
+        6.9.3.1 Horizontal Angles
+        """
+        zero_frame = [0, -180, 0]
+        limb_vec = Point.vector(base, limb)
+        LIMB_angles = JointAngles()
+        LIMB_angles.ergo_name = {'flexion': 'R-Horizontal', 'abduction': 'L-Horizontal', 'rotation': 'rotation'}
+        LIMB_angles.set_zero(zero_frame)
+        LIMB_angles.get_flex_abd(self.BACK_coord, limb_vec, plane_seq=['xy', 'xy'], flip_sign=[1, -1])
+        if side == 'right':
+            return LIMB_angles.flexion
+        elif side == 'left':
+            return LIMB_angles.abduction
+        else:
+            raise ValueError("side must be 'left' or 'right'")
+
+    def hand_3DSSPP_angle(self, side):
+        HAND_angles = JointAngles()
+        HAND_angles.ergo_name = {'flexion': 'Horizontal', 'abduction': 'Vertical', 'rotation': 'Rotation'}
+        base = self.point_poses[f'{side}_hand']  # wrist
+        limb = self.point_poses[f'{side}_finger']  # finger base
+        HAND_angles.flexion = self.horizontal_3DSSPP_angle(base, limb, side=side)  # horizontal angle
+        HAND_angles.abduction = self.vertical_3DSSPP_angle(base, limb)  # vertical angle
+        HAND_angles.rotation = np.zeros((self.frame_number))  # TODO: add rotation
+        return HAND_angles
+
+    def forearm_3DSSPP_angle(self, side):
+        FOREARM_angles = JointAngles()
+        FOREARM_angles.ergo_name = {'flexion': 'Horizontal', 'abduction': 'Vertical', 'rotation': 'na'}
+        base = self.point_poses[f'{side}_lower_arm']  # elbow
+        limb = self.point_poses[f'{side}_hand']  # wrist
+        FOREARM_angles.flexion = self.horizontal_3DSSPP_angle(base, limb, side=side)  # horizontal angle
+        FOREARM_angles.abduction = self.vertical_3DSSPP_angle(base, limb)  # vertical angle
+        return FOREARM_angles
+
+    def upper_arm_3DSSPP_angle(self, side):
+        UPPER_ARM_angles = JointAngles()
+        UPPER_ARM_angles.ergo_name = {'flexion': 'Horizontal', 'abduction': 'Vertical', 'rotation': 'na'}
+        base = self.point_poses[f'{side}_upper_arm']
+        limb = self.point_poses[f'{side}_lower_arm']  # elbow
+        UPPER_ARM_angles.flexion = self.horizontal_3DSSPP_angle(base, limb, side=side)  # horizontal angle
+        UPPER_ARM_angles.abduction = self.vertical_3DSSPP_angle(base, limb)  # vertical angle
+        return UPPER_ARM_angles
+
+    def clavicle_3DSSPP_angle(self, side):
+        zero_frame = [0, 0, 0]
+        HEAD = self.point_poses[f'head']
+        PELVIS = self.point_poses['PELVIS']
+        SHOULDER = self.point_poses[f'{side}_upper_arm']  # shoulder joint
+
+        TORSO_rot_quat = self.rot_poses['torso']  # also try PELVIS
+        TORSO_rot = R.from_quat(TORSO_rot_quat)
+        TORSO_Z = NpPoints(TORSO_rot.apply(np.array([0.0, 0.0, 1.0])))
+        TORSO_X = NpPoints(TORSO_rot.apply(np.array([1.0, 0.0, 0.0])))
+
+        TORSO_plane = Plane()
+        TORSO_plane.set_by_vector(HEAD, TORSO_Z, direction=1)
+        TORSO_coord = CoordinateSystem3D()
+        TORSO_fwd = Point.translate_point(HEAD, TORSO_X, direction=100)
+        TORSO_coord.set_by_plane(TORSO_plane, HEAD, TORSO_fwd, sequence='yzx', axis_positive=True)
+
+
+        CLAVICLE_angles = JointAngles()
+        CLAVICLE_angles.ergo_name = {'flexion': 'Horizontal', 'abduction': 'Vertical', 'rotation': 'na'}
+        CLAVICLE_angles.set_zero(zero_frame)
+        # 6.9.3.5 Clavicle Horizontal Angle
+        # 6.9.3.6 Clavicle Vertical Angle
+        CLAVICLE_angles.get_flex_abd(TORSO_coord, Point.vector(HEAD, SHOULDER), plane_seq=['xy', 'xz'], flip_sign=[1, 1])
+
+        if side == "right":
+            pass
+        elif side == "left":
+            flexion = np.pi - np.abs(CLAVICLE_angles.flexion)
+            CLAVICLE_angles.flexion = np.sign(CLAVICLE_angles.flexion) * flexion
+            abduction = np.pi - np.abs(CLAVICLE_angles.abduction)
+            CLAVICLE_angles.abduction = np.sign(CLAVICLE_angles.abduction) * abduction
+        else:
+            raise ValueError("side must be 'left' or 'right'")
+
+
+        return CLAVICLE_angles
+
+    def upper_leg_3DSSPP_angle(self, side):
+        UPPER_LEG_angles = JointAngles()
+        UPPER_LEG_angles.ergo_name = {'flexion': 'Horizontal', 'abduction': 'Vertical', 'rotation': 'na'}
+        base = self.point_poses[f'{side}_thigh']
+        limb = self.point_poses[f'{side}_shin']  # knee
+        UPPER_LEG_angles.flexion = self.horizontal_3DSSPP_angle(base, limb, side=side)  # horizontal angle
+        UPPER_LEG_angles.abduction = self.vertical_3DSSPP_angle(base, limb)  # vertical angle
+        return UPPER_LEG_angles
+
+    def lower_leg_3DSSPP_angle(self, side):
+        LOWER_LEG_angles = JointAngles()
+        LOWER_LEG_angles.ergo_name = {'flexion': 'Horizontal', 'abduction': 'Vertical', 'rotation': 'na'}
+        base = self.point_poses[f'{side}_shin']
+        limb = self.point_poses[f'{side}_foot']  # ankle
+        LOWER_LEG_angles.flexion = self.horizontal_3DSSPP_angle(base, limb, side=side)  # horizontal angle
+        LOWER_LEG_angles.abduction = self.vertical_3DSSPP_angle(base, limb)  # vertical angle
+        return LOWER_LEG_angles
+
+    def foot_3DSSPP_angle(self, side):
+        FOOT_angles = JointAngles()
+        FOOT_angles.ergo_name = {'flexion': 'Horizontal', 'abduction': 'Vertical', 'rotation': 'na'}
+        base = self.point_poses[f'{side}_foot']
+        limb = self.point_poses[f'{side}_toe']
+        FOOT_angles.flexion = self.horizontal_3DSSPP_angle(base, limb, side=side)
+        FOOT_angles.abduction = self.vertical_3DSSPP_angle(base, limb)
+        return FOOT_angles
+
+
+
+
+        self.update_pose_from_point_pose()
+
+    def output_3DSSPP_loc(self, frame_range=None, loc_file=None):
+        """
+        # 3DSSPP format:
+        # LOC File filename.loc
+        # Value Anatomical Location Attribute
+        # 1 - 3 Top Head Skin Surface
+        # 4 - 6 L. Head Skin Surface
+        # 7 - 9 R. Head Skin Surface
+        # 10 - 12 Head origin Virtual point
+        # 13 - 15 Nasion Skin Surface
+        # 16 - 18 Sight end Virtual point
+        # 19 - 21 C7/T1 Joint Center
+        # 22 - 24 Sternoclavicular Joint Joint Center
+        # 25 - 27 Suprasternale Skin Surface
+        # 28 - 30 L5/S1 Joint Center
+        # 31 - 33 PSIS Joint Center
+        # 34 - 36 L. Shoulder Joint Center
+        # 37 - 39 L. Acromion Skin Surface
+        # 40 - 42 L. Elbow Joint Center
+        # 43 - 45 L. Lat. Epicon. of Humer. Skin Surface
+        # 46 - 48 L. Wrist Joint Center
+        # 49 - 51 L. Grip Center Virtual point
+        # 52 - 54 L. Hand Skin Surface
+        # 55 - 57 R. Shoulder Joint Center
+        # 58 - 60 R. Acromion Skin Surface
+        # 61 - 63 R. Elbow Joint Center
+        # 64 - 66 R. Lat. Epicon. of Humer. Skin Surface
+        # 67 - 69 R. Wrist Joint Center
+        # 70 - 72 R. Grip Center Virtual point
+        # 73 - 75 R. Hand Skin Surface
+        # 76 - 79 L. Hip Joint Center
+        # 79 - 81 L. Knee Joint Center
+        # 82 - 84 L. Lat. Epicon. of Femur Skin Surface
+        # 85 - 87 L. Ankle Joint Center
+        # 88 - 90 L. Lateral Malleolus Skin Surface
+        # 91 - 93 L. Ball of Foot Virtual point
+        # 94 - 96 L. Metatarsalphalangeal Skin Surface
+        # 97 - 99 R. Hip Joint Center
+        # 100 - 102 R. Knee Joint Center
+        # 103 - 105 R. Lat. Epicon. of Femur Skin Surface
+        # 106 - 108 R. Ankle Joint Center
+        # 109 - 111 R. Lateral Malleolus Skin Surface
+        # 112 - 114 R. Ball of Foot Virtual point
+        # 115 - 117 R. Metatarsalphalangeal Skin Surface
+        """
+        raise NotImplementedError
+        weight = getattr(self, 'weight', 60)
+        height = getattr(self, 'height', 180)
+        gender = getattr(self, 'gender', 'male')
+        # todo: find this out
+        gender_id = 0 if gender=='male' else 1  # male 0, female 1
+        if frame_range is not None:
+            start_frame = frame_range[0]
+            end_frame = frame_range[1]
+            step = frame_range[2]
+        else:
+            start_frame = 0
+            end_frame = self.frame_number
+            step = 1
+        if True:
+            loc = np.zeros((self.frame_number, 117))
+            loc[:, 9:12] = self.point_poses['HEAD'].xyz.T  # 10 - 12 Head origin Virtual point
+            head_plane = Plane(self.point_poses['HDTP'], self.point_poses['REAR'], self.point_poses['LEAR'])
+            loc[:, 12:15] = Point.translate_point(self.point_poses['HEAD'], head_plane.normal_vector, direction=100).xyz.T  # 13 - 15 Nasion Skin Surface
+            loc[:, 18:21] = self.point_poses['C7'].xyz.T  # 19 - 21 C7/T1 Joint Center
+            loc[:, 21:24] = self.point_poses['THORAX'].xyz.T  # 22 - 24 Sternoclavicular Joint Joint Center
+            loc[:, 27:30] = Point.mid_point(self.point_poses['PELVIS'], Point.mid_point(self.point_poses['T8'], self.point_poses['XP']), 0.7).xyz.T  # 28 - 30 L5/S1 Joint Center
+            loc[:, 33:36] = self.point_poses['LSHOULDER'].xyz.T  # 34 - 36 L. Shoulder Joint Center
+            loc[:, 39:42] = self.point_poses['LELBOW'].xyz.T  # 40 - 42 L. Elbow Joint Center
+            loc[:, 45:48] = self.point_poses['LWRIST'].xyz.T  # 46 - 48 L. Wrist Joint Center
+            loc[:, 48:51] = self.point_poses['LGRIP'].xyz.T  # 49 - 51 L. Grip Center Virtual point
+            loc[:, 51:54] = self.point_poses['LHAND'].xyz.T  # 52 - 54 L. Hand Skin Surface
+            loc[:, 54:57] = self.point_poses['RSHOULDER'].xyz.T  # 55 - 57 R. Shoulder Joint Center
+            loc[:, 60:63] = self.point_poses['RELBOW'].xyz.T  # 61 - 63 R. Elbow Joint Center
+            loc[:, 66:69] = self.point_poses['RWRIST'].xyz.T  # 67 - 69 R. Wrist Joint Center
+            loc[:, 69:72] = self.point_poses['RGRIP'].xyz.T  # 70 - 72 R. Grip Center Virtual point
+            loc[:, 72:75] = self.point_poses['RHAND'].xyz.T  # 73 - 75 R. Hand Skin Surface
+            loc[:, 75:78] = Point.mid_point(self.point_poses['LHIP'], self.point_poses['LKNEE'], 0.8).xyz.T  # 76 - 79 L. Hip Joint Center
+            loc[:, 78:81] = self.point_poses['LKNEE'].xyz.T  # 79 - 81 L. Knee Joint Center
+            loc[:, 84:87] = self.point_poses['LANKLE'].xyz.T  # 85 - 87 L. Ankle Joint Center
+            loc[:, 90:93] = Point.mid_point(self.point_poses['LFOOT'], self.point_poses['LHEEL'], 0.9).xyz.T  # 91 - 93 L. Ball of Foot Virtual point
+            loc[:, 96:99] = Point.mid_point(self.point_poses['RHIP'], self.point_poses['RKNEE'], 0.9).xyz.T
+            loc[:, 99:102] = self.point_poses['RKNEE'].xyz.T  # 100 - 102 R. Knee Joint Center
+            loc[:, 105:108] = self.point_poses['RANKLE'].xyz.T  # 106 - 108 R. Ankle Joint Center
+            loc[:, 111:114] = Point.mid_point(self.point_poses['RFOOT'], self.point_poses['RHEEL'], 0.9).xyz.T  # 112 - 114 R. Ball of Foot Virtual point
+        # set foot Z to zero at start
+        foot_z = Point.mid_point(self.point_poses['LHEEL'], self.point_poses['RHEEL'], 0.5).xyz.T
+        foot_z[:, :2] = 0
+        foot_z = foot_z.reshape(-1, 1, 3)
+        loc = loc.reshape(-1, 39, 3)
+        loc = loc - foot_z
+        loc = loc.reshape(-1, 117)
+
+        loc = loc / 1000  # convert to meters
+        # convert np list to space separated string
+        if loc_file is None:
+            loc_file = self.c3d_file.replace('.c3d', '-3DSSPP.txt')
+        pelvic_tilt_angles = self.get_pelvic_tilt(loc)
+        # write as txt file
+        with open(loc_file, 'w') as f:
+            f.write('3DSSPPBATCHFILE #\n')
+            f.write('COM #\n')
+            f.write('DES 1 "Task Name" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
+            f.write(f'ANT {gender_id} 3 {height} {weight} #\n')  # male 0, female 1, self-set-height-weight-values (not population percentile) 3, height  , weight
+            f.write('COM Enabling auto output #\n')  # comment
+            f.write('AUT 1 #\n')   # auto output when ANT, HAN, JOA, JOI, and PPR commands are called
+            for i, k in enumerate(np.arange(start_frame, end_frame, step)):
+                joint_locations = np.array2string(loc[k], separator=' ', max_line_width=1000000, precision=3, suppress_small=True)[1:-1].replace('0. ', '0 ')
+                f.write('FRM ' + str(i) + ' #\n')
+                f.write(f'LOC {joint_locations} #\n')
+                support_feet_max_height = 0.30  # m
+                left_foot_supported = True if self.poses['LFOOT'][k, 2] < support_feet_max_height else False  # todo: this only works in world coord
+                right_foot_supported = True if self.poses['RFOOT'][k, 2] < support_feet_max_height else False
+                if left_foot_supported and right_foot_supported:
+                    foot_support_parameter = 0
+                elif left_foot_supported and (not right_foot_supported):
+                    foot_support_parameter = 1
+                elif (not left_foot_supported) and right_foot_supported:
+                    foot_support_parameter = 2
+                else:
+                    foot_support_parameter = 0  # 3
+                pelvic_tilt = 0 #pelvic_tilt_angles[k]  # -15
+                f.write(f'SUP {foot_support_parameter} 0 0 0 20.0 {pelvic_tilt} #\n')  # set support: Feet Support (0=both, 1=left, 2=right, 3=none), Position (0=stand, 1=seated), Front Seat Pan Support (0=no, 1=yes), Seat Has Back Rest (0=no, 1=yes), and Back Rest Center Height (real number in cm, greater than 19.05).
+                hand_load = 0  # N
+                f.write(f'HAN {hand_load / 2} -90 0 {hand_load / 2} -90 0 #\n')  # HAN can trigger output write line
+            f.write(f'COM Task done #')
+        return loc
+
+    def output_3DSSPP_JOA(self, frame_range=None, loc_file=None, lift_mass=0.0):
+        """
+        # 3DSSPP format:
+        # LOC File filename.loc
+        # Value Anatomical Location Attribute
+        # 1 - 3 Top Head Skin Surface
+        # 4 - 6 L. Head Skin Surface
+        # 7 - 9 R. Head Skin Surface
+        # 10 - 12 Head origin Virtual point
+        # 13 - 15 Nasion Skin Surface
+        # 16 - 18 Sight end Virtual point
+        # 19 - 21 C7/T1 Joint Center
+        # 22 - 24 Sternoclavicular Joint Joint Center
+        # 25 - 27 Suprasternale Skin Surface
+        # 28 - 30 L5/S1 Joint Center
+        # 31 - 33 PSIS Joint Center
+        # 34 - 36 L. Shoulder Joint Center
+        # 37 - 39 L. Acromion Skin Surface
+        # 40 - 42 L. Elbow Joint Center
+        # 43 - 45 L. Lat. Epicon. of Humer. Skin Surface
+        # 46 - 48 L. Wrist Joint Center
+        # 49 - 51 L. Grip Center Virtual point
+        # 52 - 54 L. Hand Skin Surface
+        # 55 - 57 R. Shoulder Joint Center
+        # 58 - 60 R. Acromion Skin Surface
+        # 61 - 63 R. Elbow Joint Center
+        # 64 - 66 R. Lat. Epicon. of Humer. Skin Surface
+        # 67 - 69 R. Wrist Joint Center
+        # 70 - 72 R. Grip Center Virtual point
+        # 73 - 75 R. Hand Skin Surface
+        # 76 - 79 L. Hip Joint Center
+        # 79 - 81 L. Knee Joint Center
+        # 82 - 84 L. Lat. Epicon. of Femur Skin Surface
+        # 85 - 87 L. Ankle Joint Center
+        # 88 - 90 L. Lateral Malleolus Skin Surface
+        # 91 - 93 L. Ball of Foot Virtual point
+        # 94 - 96 L. Metatarsalphalangeal Skin Surface
+        # 97 - 99 R. Hip Joint Center
+        # 100 - 102 R. Knee Joint Center
+        # 103 - 105 R. Lat. Epicon. of Femur Skin Surface
+        # 106 - 108 R. Ankle Joint Center
+        # 109 - 111 R. Lateral Malleolus Skin Surface
+        # 112 - 114 R. Ball of Foot Virtual point
+        # 115 - 117 R. Metatarsalphalangeal Skin Surface
+        """
+        weight = getattr(self, 'weight', 55)
+        height = getattr(self, 'height', 160)
+        gender = getattr(self, 'gender', 'male')
+        # todo: find this out
+        gender_id = 0 if gender=='male' else 1  # male 0, female 1
+        if frame_range is not None:
+            frame_range = np.array(frame_range, dtype=int)
+            if frame_range.shape == (3,):
+                frame_range = [frame_range]
+        else:
+            frame_range = [0, self.frame_number, 1]  # default to all frames
+
+        JOA = self.JOA.copy()
+        # convert np list to space separated string
+        if loc_file is None:
+            loc_file = self.c3d_file.replace('.csv', '-3DSSPP.txt')
+        print(f"Writing 3DSSPP JOA to \n{loc_file}\n")
+        # write as txt file
+        with open(loc_file, 'w') as f:
+            f.write('3DSSPPBATCHFILE #\n')
+            f.write('COM #\n')
+            f.write('DES 1 "Task Name" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
+            f.write(f'ANT {gender_id} 3 {height} {weight} #\n')  # male 0, female 1, self-set-height-weight-values (not population percentile) 3, height  , weight
+            f.write('COM Enabling auto output #\n')  # comment
+            hand_load = lift_mass * 9.8  # N
+            f.write(f'HAN {hand_load / 2} -90 0 {hand_load / 2} -90 0 #\n')  # HAN can trigger output write line
+            f.write('AUT 1 #\n')   # auto output when ANT, HAN, JOA, JOI, and PPR commands are called
+            i = 0
+            task_id = 0
+            for f_range in frame_range:
+                start_frame = f_range[0]
+                end_frame = f_range[1]
+                step = f_range[2]
+                f.write(f'DES 1 "{task_id}" "Analyst Name" "Comments" "Company" #\n')  # English is 0 and metric is 1
+                task_id += 1
+                for k in np.arange(start_frame, end_frame, step):
+                    joint_rotations = np.array2string(JOA[k], separator=' ', max_line_width=1000000, precision=3, suppress_small=True)[1:-1].replace('0. ', '0 ')
+                    f.write('FRM ' + str(i) + ' #\n')
+                    support_feet_max_height = 0.15  # m
+                    left_foot_supported = True if self.poses['left_toe'][k, 2] < support_feet_max_height else False  # todo: this only works in world coord
+                    right_foot_supported = True if self.poses['right_toe'][k, 2] < support_feet_max_height else False
+                    if left_foot_supported and right_foot_supported:
+                        foot_support_parameter = 0
+                    elif left_foot_supported and (not right_foot_supported):
+                        foot_support_parameter = 1
+                    elif (not left_foot_supported) and right_foot_supported:
+                        foot_support_parameter = 2
+                    else:
+                        foot_support_parameter = 0  # 3
+                    pelvic_tilt = 0 #pelvic_tilt_angles[k]  # -15
+                    f.write(f'SUP {foot_support_parameter} 0 0 0 20.0 {pelvic_tilt} #\n')  # set support: Feet Support (0=both, 1=left, 2=right, 3=none), Position (0=stand, 1=seated), Front Seat Pan Support (0=no, 1=yes), Seat Has Back Rest (0=no, 1=yes), and Back Rest Center Height (real number in cm, greater than 19.05).
+                    f.write(f'JOA {joint_rotations} #\n')
+                    i+=1
+                i+=5
+            f.write(f'COM Task done #')
+        return
+
+
 class PulginGaitSkeleton(Skeleton):
     """A class for plugin gait skeleton"""
     def __init__(self, c3d_file, skeleton_file='config/Plugingait_info/plugingait_VEHS.yaml', acronym_file='config/Plugingait_info/acronym.yaml'):
@@ -1028,7 +1608,7 @@ class PulginGaitSkeleton(Skeleton):
         self.points = np.array(points)
         self.analog = np.array(analog)
         self.poses = self.get_poses(self.points, self.pose_idx)
-        self.frame_no = self.points.shape[0]
+        self.frame_number = self.points.shape[0]
 
     def plot_3d_pose_frame(self, frame=0):
         fig = plt.figure()
@@ -1163,11 +1743,11 @@ class PulginGaitSkeleton(Skeleton):
             step = frame_range[2]
         else:
             start_frame = 0
-            end_frame = self.frame_no
+            end_frame = self.frame_number
             step = 1
         if True:
             fill = 0
-            loc = np.zeros((self.frame_no, 117))
+            loc = np.zeros((self.frame_number, 117))
             # loc[:,0:3] = self.get_pose_from_acronym('HDTP', extract_pt='all', output_type='list_last')  # 1 - 3 Top Head Skin Surface
             # loc[:,3:6] = self.get_pose_from_acronym('LHEC', extract_pt='all', output_type='list_last')  # 4 - 6 L. Head Skin Surface
             # loc[:,6:9] = self.get_pose_from_acronym('RHEC', extract_pt='all', output_type='list_last')  # 7 - 9 R. Head Skin Surface
@@ -1276,7 +1856,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         C7_d = self.point_poses['C7_d']
         # PELVIS_b = Point.mid_point(self.point_poses['RPSIS'], self.point_poses['LPSIS'])
         PELVIS = self.point_poses['PELVIS']
-        SS = self.point_poses['SS']
+        SS = self.point_poses['THORAX']
         C7_m =Point.mid_point(C7_d, SS)
         RELBOW = self.point_poses['RELBOW']
         RAP_b = self.point_poses['RAP_b']
@@ -1317,7 +1897,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         C7_d = self.point_poses['C7_d']
         # PELVIS_b = Point.mid_point(self.point_poses['RPSIS'], self.point_poses['LPSIS'])
         PELVIS = self.point_poses['PELVIS']
-        SS = self.point_poses['SS']
+        SS = self.point_poses['THORAX']  # todo: rename, SS sometime not stable in RTMWv4
         C7_m = Point.mid_point(C7_d, SS)
         LELBOW = self.point_poses['LELBOW']
         LAP_b = self.point_poses['LAP_b']
