@@ -135,6 +135,12 @@ if __name__ == '__main__':
 
     lower_start = lower_start + 2
 
+    # skip #1
+    # lift_start = lift_start[1:]
+    # lift_end = lift_end[1:]
+    # lower_start = lower_start[1:]
+    # lower_end = lower_end[1:]
+
     assert len(lift_start) == len(lift_end), "Error: lift start and lower end not equal"
     assert len(lower_start) == len(lower_end), "Error: lift end and lower start not equal"
     for i in range(len(lift_start)):
@@ -179,15 +185,19 @@ if __name__ == '__main__':
     # Load Constant LC 23kg 51lb
     LC = 23.0  # kg
     # Horizontal Multiplier HM (25/H)
-    HM = 25/H
+    H_floor = 25
+    H_new = np.where(H < H_floor, H_floor, H)  # if H < 25cm, set to 25cm
+    HM = 25/H_new
     # Vertical Multiplier VM 1− (.003|V-75|)
     VM = 1 - (0.003 * np.abs(V - 75))  # 75cm
     # Distance Multiplier DM .82 + (4.5/D)
-    DM = 0.82 + (4.5/D)  # 4.5cm
+    D_floor = 25
+    D_new = np.where(D < D_floor, D_floor, D)  # if D < 25cm, set to 25cm
+    DM = 0.82 + (4.5/D_new)  # 4.5cm
     # Asymmetric Multiplier AM 1− (.0032A)
     AM = 1 - (0.0032 * np.abs(A))  # degree
     # Frequency Multiplier FM From Table 5 -- From Table and assumption, assume  1-2 hr, based on frequency
-    FM = 0.42
+    FM = 0.94
     # TODO: compound LI
     # Coupling Multiplier CM From Table 7 -- assume poor coupling because lifting box from side without handel
     CM = 0.9
@@ -226,14 +236,22 @@ if __name__ == '__main__':
     isaac_skeleton.c3d_file = args.estimate_file
     isaac_skeleton.calculate_joint_center()
     JOA = isaac_skeleton.calculate_3DSSPP_angles()
+    output_type = "lowest_frame"
+    if output_type == "lift_lower_motion":
+        lift_segments = np.vstack((lift_start, lift_end)).T
+        lower_segments = np.vstack((lower_start, lower_end)).T
 
+        all_segments = np.vstack((lift_segments, lower_segments))
+        all_segments = np.hstack((all_segments, np.ones((all_segments.shape[0], 1))))  # add a column for frame jump
+    elif output_type == "lowest_frame":
+        start = np.hstack((lift_start, lower_end)).T
+        end = start + 1
+        step = np.ones_like(start)
+        all_segments = np.hstack((start[:, np.newaxis], end[:, np.newaxis], step[:, np.newaxis]))
 
-    lift_segments = np.vstack((lift_start, lift_end)).T
-    lower_segments = np.vstack((lower_start, lower_end)).T
+        start_offset = 20 * 3
 
-    all_segments = np.vstack((lift_segments, lower_segments))
-    all_segments = np.hstack((all_segments, np.ones((all_segments.shape[0], 1))))  # add a column for frame number
-    isaac_skeleton.output_3DSSPP_JOA(frame_range=all_segments, lift_mass=args.mass)
+    isaac_skeleton.output_3DSSPP_JOA(frame_range=all_segments, lift_mass=args.mass, start_offset=start_offset)
 
 
 

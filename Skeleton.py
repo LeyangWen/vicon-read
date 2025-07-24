@@ -1344,7 +1344,7 @@ class IsaacSkeleton(VEHSErgoSkeleton):
             f.write(f'COM Task done #')
         return loc
 
-    def output_3DSSPP_JOA(self, frame_range=None, loc_file=None, lift_mass=0.0):
+    def output_3DSSPP_JOA(self, frame_range=None, loc_file=None, lift_mass=0.0, start_offset=0):
         """
         # 3DSSPP format:
         # LOC File filename.loc
@@ -1416,7 +1416,7 @@ class IsaacSkeleton(VEHSErgoSkeleton):
             hand_load = lift_mass * 9.8  # N
             f.write(f'HAN {hand_load / 2} -90 0 {hand_load / 2} -90 0 #\n')  # HAN can trigger output write line
             f.write('AUT 1 #\n')   # auto output when ANT, HAN, JOA, JOI, and PPR commands are called
-            i = 0
+            i = start_offset
             task_id = 0
             for f_range in frame_range:
                 start_frame = f_range[0]
@@ -1442,7 +1442,7 @@ class IsaacSkeleton(VEHSErgoSkeleton):
                     f.write(f'SUP {foot_support_parameter} 0 0 0 20.0 {pelvic_tilt} #\n')  # set support: Feet Support (0=both, 1=left, 2=right, 3=none), Position (0=stand, 1=seated), Front Seat Pan Support (0=no, 1=yes), Seat Has Back Rest (0=no, 1=yes), and Back Rest Center Height (real number in cm, greater than 19.05).
                     f.write(f'JOA {joint_rotations} #\n')
                     i+=1
-                i+=5
+                i+=1
             f.write(f'COM Task done #')
         return
 

@@ -12,15 +12,32 @@ name_list: ['PELVIS', 'torso', 'head', 'right_upper_arm', 'right_lower_arm',
 
 # compare 1
 fps: 10
-density: 100
-dim: [0.25, 0.30, 0.20]  # w l h
+#density: 100
+#dim: [0.25, 0.30, 0.20]  # w l h
+
+density: 156.25
+dim: [0.4, 0.4, 0.4]  # w l h
 #estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/joint_states.csv'
 
 
 #estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try2-1_new_motion/joint_states.csv'
-estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try1-10_og/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try1-10_og/joint_states.csv'
 
 #estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/compare_infer_weight/50-25-25_train_more/joint_states.csv'
 #estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/compare_infer_weight/20-40-40/joint_states.csv'
 #estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/compare_infer_weight/80-10-10/joint_states.csv'
 
+
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/compare_back_angle/5deg/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/compare_back_angle/10deg/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/compare_back_angle/30deg/joint_states.csv'
+
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/cube40_density_30_1-NoReward-NoMotion/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/cube40_density_200_2-NoReward-use/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/cube40_density_200_1/joint_states.csv'
+
+
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/back_limit/abdomen_y_30_1/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/back_limit/abdomen_y_45_1/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/back_limit/abdomen_y_45_2/joint_states.csv'
+estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/back_limit/abdomen_y_45_3/joint_states.csv'

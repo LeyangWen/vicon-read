@@ -63,6 +63,7 @@ def compute_elbow_ergo_reward(left_elbow_angle, right_elbow_angle, weight=1.0):
     exp_k = -5.0
     desired_angle = 5.0 / 9.0 * np.pi  # ~80 degrees
     angle_margin = 1.0 / 9.0 * np.pi   # ~20 degrees
+    # angle_margin = 0 / 9.0 * np.pi  # ~20 degrees
 
     left_diff = np.maximum(np.abs(left_elbow_angle - desired_angle) - angle_margin, 0.0)
     right_diff = np.maximum(np.abs(right_elbow_angle - desired_angle) - angle_margin, 0.0)

@@ -49,13 +49,23 @@ if __name__ == '__main__':
     _, unique_segment_len = result.cut_segment()
     eval_keys = result.show_category(subcategory='Summary')[:-3]
     # eval_keys = result.show_category(subcategory='Summary')[:2]
-    result.visualize_segment(result.all_segments, segment_eval_keys=eval_keys, verbose=True)
+    # result.visualize_segment(result.all_segments, segment_eval_keys=eval_keys, verbose=True)
 
-    eval_keys = result.show_category(subcategory='Strength Capability Percentile')
-    for segment in result.segments:
-        # segment = 4
-        print()
-        print("##################################################")
-        print(f"index: {segment}")
-        _, min_score, scores, _ = result.eval_segment(result.segments[segment], eval_keys, verbose=True, criteria='min_min')
-        print(f"min_score: {min_score}")
+    eval_keys_SCP = result.show_category(subcategory='Summary')[2:-3]
+    eval_keys_Compression = result.show_category(subcategory='Summary')[:2]
+    # write to csv
+    csv_file = args.export_file.replace('.txt', '.csv')
+    with open(csv_file, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["filename", csv_file])
+        writer.writerow(['Segment Index'] + eval_keys_Compression + eval_keys_SCP)
+        for segment in result.segments:
+            # segment = 4
+            print()
+            print("##################################################")
+            print(f"index: {segment}")
+            # eval_keys = result.show_category(subcategory='Strength Capability Percentile')
+
+            _, min_score, scores, _ = result.eval_segment(result.segments[segment], eval_keys_SCP, verbose=True, criteria='min_min')
+            _, _, compression_forces, _ = result.eval_segment(result.segments[segment], eval_keys_Compression, verbose=True, criteria='min_max')
+            writer.writerow([segment] + list(compression_forces) + list(scores))
