@@ -13,7 +13,7 @@ npy_dir = r'W:\VEHS\VEHS data collection round 3\RTM2D\RTMPose_VEHS7M_37kpts_v1\
 
 # motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2.pkl'
 motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2_pitch_correct.pkl'
-npy_dir = r'W:\VEHS\VEHS data collection round 3\RTM2D\RTMPose_VEHS7M_37kpts_freeze_v3\lab_videos_freeze_bacbone_20fps'
+npy_dir = r'W:\VEHS\VEHS data collection round 3\RTM2D\RTMWPose_VEHS7M_37kpts_v5_2-b'
 
 
 new_pkl_file = motionbert_pkl_file.replace('.pkl', '_RTM2D.pkl')
@@ -42,11 +42,12 @@ for key in motionbert_data_dict.keys():
         else:
             # print(f"Processing {store_source} with {old_clip_len} frames")
             subject_name = store_source.split('\\')[-3]
-            action_name = store_source.split('\\')[-1].split('.')[0].lower()
+            action_name = store_source.split('\\')[-1].split('.')[0].lower().capitalize()
             camera_id = store_source.split('\\')[-1].split('_')[-1]
 
             # npy_file = f"results_{subject_name}-{action_name}-{camera_id}_keypoints.npy"  # V1
-            npy_file = f"3-{int(subject_name.replace('S',''))}_jsons_npy\\results_{action_name}_1_{camera_id}_keypoints.npy"  # V3
+            # npy_file = f"3-{int(subject_name.replace('S',''))}_jsons_npy\\results_{action_name.lower()}_1_{camera_id}_keypoints.npy"  # V3
+            npy_file = f"3-{int(subject_name.replace('S', ''))}\\results_{action_name}_1_{camera_id}.npy"  # V5
             try:
                 with open(npy_dir + '\\' + npy_file, 'rb') as f:
                     det_2d_conf = np.load(f)
