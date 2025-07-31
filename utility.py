@@ -1,5 +1,3 @@
-import c3d
-# from spacepy import pycdf
 import os
 import matplotlib.pyplot as plt
 import numpy as np
