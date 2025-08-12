@@ -16,10 +16,11 @@ def parse_args():
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/H36M17kpts/VEHS-3D-MB.yaml')
     # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/H36M-17.yaml')
 
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-Industry.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
     parser.add_argument('--type', type=str, default='body')
-
+    parser.add_argument('--clip_fill', type=bool, default=False)
+    parser.add_argument('--rescale_25d', type=bool, default=False)
 
     parser.add_argument('--output_frame_folder', type=str, default=None)
     parser.add_argument('--output_GT_frame_folder', type=str, default=None)
@@ -56,7 +57,7 @@ def MB_output_pose_file_loader(args):
     return output_np_pose
 
 
-def MB_input_pose_file_loader(args, clip_fill=True, data_key='joint3d_image'):
+def MB_input_pose_file_loader(args, data_key='joint3d_image'):
     if args.GT_file=='None':
         return None
     with open(args.GT_file, "rb") as f:
@@ -64,8 +65,8 @@ def MB_input_pose_file_loader(args, clip_fill=True, data_key='joint3d_image'):
 
     print(f'2.5d_factor: {data[args.eval_key]["2.5d_factor"]}')
 
-    if not clip_fill:
-        return data[args.eval_key][data_key]
+    if not args.clip_fill:
+        return data[args.eval_key][data_key], data[args.eval_key]["2.5d_factor"]
     else:
         source = data[args.eval_key]['source']
         MB_clip_id = []
@@ -82,6 +83,7 @@ def MB_input_pose_file_loader(args, clip_fill=True, data_key='joint3d_image'):
                 k = 0
         # dict_keys(['joint_2d', 'confidence', 'joint3d_image', 'joints_2.5d_image', '2.5d_factor', 'camera_name', 'action', 'source', 'c3d_frame'])
         np_pose = data[args.eval_key][data_key][MB_clip_id]
+        factor_25d = data[args.eval_key]['2.5d_factor'][MB_clip_id]
         camera_name_store = ''
         for n in range(100000):
             if data[args.eval_key]['camera_name'][n] != camera_name_store:
@@ -90,7 +92,7 @@ def MB_input_pose_file_loader(args, clip_fill=True, data_key='joint3d_image'):
                 print(data[args.eval_key]['camera_name'][n])
                 print()
                 camera_name_store = data[args.eval_key]['camera_name'][n]
-        return np_pose
+        return np_pose, factor_25d
 
 
 def check_GT_file(args):
@@ -153,15 +155,20 @@ if __name__ == '__main__':
     # read arguments
     args = parse_args()
     estimate_pose = MB_output_pose_file_loader(args)
-    data_key = 'joint_2d'  # todo: only for 2D plot, maybe move in config
-    # data_key = 'joint3d_image'
-    GT_pose = MB_input_pose_file_loader(args, clip_fill=False, data_key=data_key)
-
+    # data_key = 'joint_2d'  # todo: only for 2D plot, maybe move in config
+    data_key = 'joint3d_image'
+    GT_pose, factor_25d = MB_input_pose_file_loader(args, data_key=data_key)
+    if args.rescale_25d:
+        if args.clip_fill:
+            print(f'rescale by 2.5d factor in GT file')
+        else:
+            assert len(factor_25d) == len(estimate_pose), f"Can not rescale without clip_fill: len(factor_25d): {len(factor_25d)}, len(estimate_pose): {len(estimate_pose)}, they should be the same"
+        estimate_pose = estimate_pose / factor_25d[:, None, None]
     if args.debug_mode:
         small_sample = 1200
         # small_sample = 16560
         estimate_pose = estimate_pose[:small_sample]
-        # GT_pose = GT_pose[:small_sample]
+        GT_pose = GT_pose[:small_sample]
 
     if False:  # for upper body visualization
         # name_list = ['PELVIS',
@@ -208,8 +215,11 @@ if __name__ == '__main__':
 
 
         ##### example of plotting 37 keypoints for industry and VEHS7M inference
-        # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=850, mode=args.plot_mode, center_key='PELVIS')
-        # GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, coord_system="camera-px", plot_range=750, mode=args.plot_mode, center_key='PELVIS')
+        plot_range = 850 # for VEHS7M - camera_side_view
+        # plot_range = 1200 # for VEHS7M
+        # plot_range = 1600 # for VEHS7M - camera_side_view
+        estimate_skeleton.plot_3d_pose(args.output_frame_folder, start_frame=14440, coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS')
+        # GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS')
 
         ###### example of plotting h36M 17 keypoints
         # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1200, mode=args.plot_mode, center_key='HIP_c')
@@ -222,7 +232,7 @@ if __name__ == '__main__':
 
         ###### example of plotting 2D with transparent background
         # GT_skeleton.plot_2d_pose_frame(frame=frame)
-        GT_skeleton.plot_2d_pose(foldername=args.output_2D_frame_folder)
+        # GT_skeleton.plot_2d_pose(foldername=args.output_2D_frame_folder)
 
 
         ###### example to get legend

@@ -1,4 +1,6 @@
-# for creating RTMPose inference file from json files (e.g., for industry vids)
+# for creating MotionBert input file from RTMPose inference json files (e.g., for industry vids)
+# Remember to rearrange file names first, see '/Volumes/Z/RTMPose/rename_rick.sh'
+
 
 import argparse
 import pickle
@@ -34,11 +36,9 @@ def read_input(json_path, type='rtm24'):
 def parse_args():
     parser = argparse.ArgumentParser()
     # parser.add_argument('--json_folder', type=str, default=r'W:\VEHS\Testing_Videos_and_rtmpose_results\OneDrive_2_9-4-2024\kps_133_fps_20')
-    parser.add_argument('--json_folder', type=str, default=r'/Volumes/Z/RTMPose/37kpts_rtmw_v4/Industry_2')
-                                                           # r'/Volumes/Z/RTMPose/37kpts_freeze_v3/20fps/Ricks_Videos_freeze_backbone_epoch_best_20fps')
-
+    parser.add_argument('--json_folder', type=str, default=r'/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-1-OG/Industry')
     parser.add_argument('--read_type', type=str, default='npy', help='json or npy')
-    parser.add_argument('--output_file', type=str, default=r'rtmpose_v3_20fps_industry_2_37kpts_v2.pkl')
+    parser.add_argument('--output_file', type=str, default=r'rtmpose_v5-2b_20fps_industry_37kpts_v2.pkl')
     parser.add_argument('--joint_num', type=int, default=37)
     parser.add_argument('--type', type=str, default='rtm37_from_37')
 
@@ -69,7 +69,9 @@ if __name__ == '__main__':
                 print(f"file: {file}, root: {root}")
                 with open(os.path.join(root, file), 'rb') as f:
                     all_keyps_rtm = np.load(f)
-
+            else:
+                print(f"Skipping file: {file}, not a valid {args.read_type} file")
+                continue
 
             assert all_keyps_rtm.shape[1] == args.joint_num, f"all_keyps_rtm.shape[1]: {all_keyps_rtm.shape[1]}, args.joint_num: {args.joint_num}, they should be the same"
             frame_no = all_keyps_rtm.shape[0]

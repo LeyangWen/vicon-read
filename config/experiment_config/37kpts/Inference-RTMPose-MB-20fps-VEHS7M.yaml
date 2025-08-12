@@ -11,7 +11,7 @@ name_list: ['PELVIS',
 #
 #GT_file: '/Users/leyangwen/Documents/Pose/paper/VEHS_6D_downsample2_keep1.pkl'  # 66 kpts, not matching
 
-estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20-fps-pretrain-normal/VEHS7M-validate-best-gt2d/X3D.npy'
+estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-1-OG/VEHS7M-Validate/X3D.npy'
 
 eval_key: 'validate'
 

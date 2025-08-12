@@ -186,7 +186,7 @@ class Skeleton:
             point_size = size[1]
         return point_type, point_size
 
-    def plot_3d_pose_frame(self, frame=0, filename=False, plot_range=1800, coord_system="world-mm", center_key='PELVIS', mode='normal_view', get_legend=False, plot_rot=False):
+    def plot_3d_pose_frame(self, frame=0, filename=False, plot_range=1800, coord_system="world-mm", center_key='PELVIS', mode='normal_view', get_legend=False, plot_rot=False, title=None):
         """
         plot 3d pose in 3d space
         coord_system: camera-px or world
@@ -268,7 +268,7 @@ class Skeleton:
 
         if mode == 'global_view':
             # global view
-            if True:
+            if False:
                 ax.set_xlim(0, plot_range)
                 ax.set_ylim(0, plot_range)
             else:
@@ -302,12 +302,12 @@ class Skeleton:
             plt.savefig(r'legend_new.png', dpi=250)
             raise NameError(r"Intentional break: legend.png saved to legend_new.png")  # break here
 
-        if True:  # no legend
-            pass
-        elif False:  # normal legends
+        if False:  # normal legends
             fig.subplots_adjust(right=0.65)
             ax.legend(loc='center left', bbox_to_anchor=(1.08, 0.5), fontsize=7, ncol=2)
 
+        if title:
+            ax.set_title(title, y=0.9)
         if filename:
             plt.savefig(filename, dpi=250)
             plt.close(fig)
@@ -363,10 +363,10 @@ class Skeleton:
             plt.show()
             return fig, ax
 
-    def plot_3d_pose(self, foldername=False, **kwargs):
+    def plot_3d_pose(self, foldername=False, start_frame=0, **kwargs):
         if foldername:
             create_dir(foldername)
-        for i in range(self.frame_number):
+        for i in range(start_frame, self.frame_number, 1):
             print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
             self.plot_3d_pose_frame(frame=i, filename=filename, **kwargs)
@@ -1442,7 +1442,6 @@ class IsaacSkeleton(VEHSErgoSkeleton):
                     f.write(f'SUP {foot_support_parameter} 0 0 0 20.0 {pelvic_tilt} #\n')  # set support: Feet Support (0=both, 1=left, 2=right, 3=none), Position (0=stand, 1=seated), Front Seat Pan Support (0=no, 1=yes), Seat Has Back Rest (0=no, 1=yes), and Back Rest Center Height (real number in cm, greater than 19.05).
                     f.write(f'JOA {joint_rotations} #\n')
                     i+=1
-                i+=1
             f.write(f'COM Task done #')
         return
 

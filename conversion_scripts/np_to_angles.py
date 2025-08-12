@@ -11,18 +11,19 @@ def parse_args():
     # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
     # parser.add_argument('--angle_mode', type=str, default='VEHS')
 
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/H36M17kpts/VEHS-3D-MB.yaml')
-    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/H36M-17.yaml')
-    parser.add_argument('--angle_mode', type=str, default='VEHS')
-
-    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
-    # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
+    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/H36M17kpts/VEHS-3D-MB.yaml')
+    # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/H36M-17.yaml')
     # parser.add_argument('--angle_mode', type=str, default='VEHS')
+
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
+    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
+    parser.add_argument('--angle_mode', type=str, default='VEHS')
+    parser.add_argument('--clip_fill', type=bool, default=False)
 
 
 
     parser.add_argument('--MB_data_stride', type=int, default=243)
-    parser.add_argument('--debug_mode', default=False)
+    parser.add_argument('--debug_mode', default=True)
     parser.add_argument('--merge_lr', default=True)
 
     # parser.add_argument('--name_list', type=list, default=[])
@@ -41,25 +42,6 @@ def parse_args():
         if not os.path.exists(args.output_dir):
             os.makedirs(args.output_dir)
     return args
-
-# def MB_input_pose_file_loader(args):
-#     with open(args.GT_file, "rb") as f:
-#         data = pickle.load(f)
-#     source = data[args.eval_key]['source']
-#     MB_clip_id = []
-#     k = 0
-#     for i in range(len(source)):  # MB clips each data into 243 frame segments, the last segment (<243) is discarded
-#         k += 1
-#         if k == args.MB_data_stride:
-#             k = 0
-#             good_id = list(range(i-args.MB_data_stride+1, i+1))
-#             MB_clip_id.extend(good_id)
-#         if i == len(source)-1:
-#             break
-#         if source[i] != source[i+1]:
-#             k = 0
-#     np_pose = data[args.eval_key]['joint3d_image'][MB_clip_id]
-#     return np_pose
 
 
 def MB_output_pose_file_loader(args):
@@ -83,18 +65,18 @@ if __name__ == '__main__':
             this_estimate_pose = MB_output_pose_file_loader(args)
             estimate_pose.append(this_estimate_pose)
 
-            this_gt_pose = MB_input_pose_file_loader(args)
+            this_gt_pose, _ = MB_input_pose_file_loader(args)
             GT_pose.append(this_gt_pose)
         estimate_pose = np.concatenate(estimate_pose, axis=0)
         GT_pose = np.concatenate(GT_pose, axis=0)
     else:
-        GT_pose = MB_input_pose_file_loader(args)
+        GT_pose, _ = MB_input_pose_file_loader(args)
         estimate_pose = MB_output_pose_file_loader(args)
     # assert GT_pose.shape == estimate_pose.shape, f"GT_pose.shape: {GT_pose.shape}, estimate_pose.shape: {estimate_pose.shape}, they should be the same"
     assert GT_pose.shape[0] == estimate_pose.shape[0], f"GT_pose.shape: {GT_pose.shape}, estimate_pose.shape: {estimate_pose.shape}, frame no should be the same"
 
     if args.debug_mode:
-        small_sample = 7500
+        small_sample = 1200
         GT_pose = GT_pose[:small_sample]
         estimate_pose = estimate_pose[:small_sample]
 
@@ -109,8 +91,8 @@ if __name__ == '__main__':
 
 
     # Step 2: calculate MB angles
-    # estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode)
-    estimate_skeleton = H36MSkeleton_angles(args.skeleton_file, mode=args.angle_mode)  # todo: remember to change this back to VEHSErgoSkeleton_angles
+    estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode)
+    # estimate_skeleton = H36MSkeleton_angles(args.skeleton_file, mode=args.angle_mode)  # todo: remember to change this back to VEHSErgoSkeleton_angles
     estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
     estimate_ergo_angles = {}
     for angle_name in GT_skeleton.angle_names:  # calling the angle calculation methods in skeleton class
@@ -128,7 +110,7 @@ if __name__ == '__main__':
     # GT_skeleton.plot_3d_pose_frame(frame)
     # estimate_skeleton.plot_3d_pose_frame(frame)
 
-    frame_range = [101800, 102200]
+    frame_range = [0, 1200]
     log = []
     anova_results = []
     average_error = {}

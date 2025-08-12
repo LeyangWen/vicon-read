@@ -3,7 +3,7 @@ import os.path
 import pickle
 from Skeleton import *
 import matplotlib
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
 from mpl_toolkits.mplot3d import Axes3D
 import csv
 
@@ -15,7 +15,7 @@ def parse_args():
 
     parser.add_argument('--output_frame_folder', type=str, default=None)
     parser.add_argument('--output_GT_frame_folder', type=str, default=None)
-    parser.add_argument('--plot_mode', type=str, default='paper_view', help='mode: camera_view, camera_side_view, 0_135_view, normal_view, paper_view, global_view')
+    parser.add_argument('--plot_mode', type=str, default='global_view', help='mode: camera_view, camera_side_view, 0_135_view, normal_view, paper_view, global_view')
     parser.add_argument('--MB_data_stride', type=int, default=243)
     parser.add_argument('--debug_mode', default=True, type=bool)
 
@@ -48,9 +48,12 @@ if __name__ == '__main__':
     isaac_skeleton.load_name_list_and_np_points(args.name_list, isaac_pose)
     isaac_skeleton.load_rot_quat(issac_rot)
 
-    frame = 0
+    frames = list(range(1626-2,1630+3, 1))
 
-    # issac_skeleton.plot_3d_pose_frame(frame=frame, coord_system="world-m", plot_range=1, mode=args.plot_mode, center_key='PELVIS', plot_rot=True)
+    for frame in frames:
+        # frame -= 3
+        # isaac_skeleton.plot_3d_pose_frame(frame=frame, coord_system="world-m", plot_range=10, mode=args.plot_mode, center_key='PELVIS', plot_rot=True, title='Frame {}'.format(frame))
+        isaac_skeleton.plot_3d_pose_frame(frame=frame, coord_system="world-m", plot_range=2, mode="paper_view", center_key='PELVIS', plot_rot=True, title='Frame {}'.format(frame))
 
     # issac_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="world-m", plot_range=2, mode=args.plot_mode, center_key='PELVIS')
 
