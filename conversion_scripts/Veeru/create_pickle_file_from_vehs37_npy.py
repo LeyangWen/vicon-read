@@ -12,7 +12,7 @@ import argparse
 # npy_dir = r'W:\VEHS\VEHS data collection round 3\RTM2D\RTMPose_VEHS7M_37kpts_v1\outputs_epoch_best_all'
 
 # motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2.pkl'
-motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2_modified.pkl'
+motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2_pitch_correct_modified.pkl'
 npy_dir = r'W:\VEHS\VEHS data collection round 3\RTM2D\RTMWPose_VEHS7M_37kpts_v5_2-b'
 
 
