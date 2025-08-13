@@ -9,10 +9,10 @@ import argparse
 # Step 2: create_pickle_file.py to overwrite with RTMPose 2D pose and confidence score
 
 # motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample20_keep10_37_v1.pkl'
-npy_dir = r'W:\VEHS\VEHS data collection round 3\RTM2D\RTMPose_VEHS7M_37kpts_v1\outputs_epoch_best_all'
+# npy_dir = r'W:\VEHS\VEHS data collection round 3\RTM2D\RTMPose_VEHS7M_37kpts_v1\outputs_epoch_best_all'
 
 # motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2.pkl'
-motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2_pitch_correct.pkl'
+motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2_modified.pkl'
 npy_dir = r'W:\VEHS\VEHS data collection round 3\RTM2D\RTMWPose_VEHS7M_37kpts_v5_2-b'
 
 
@@ -23,6 +23,7 @@ def read_pkl(data_url):
     content = pickle.load(file)
     file.close()
     return content
+
 
 
 motionbert_data_dict = read_pkl(motionbert_pkl_file)
@@ -86,25 +87,34 @@ pickle.dump(new_motionbert_dict, open(new_pkl_file, "wb"))
 print("Saved to:")
 print(new_pkl_file)
 
+with open(new_pkl_file, "rb") as f:
+    data = f.read()
+if b"numpy._core" in data:
+    print("✅ This pickle references numpy._core (old-format)")
+elif b"numpy.core" in data:
+    print("✅ This pickle references numpy.core (new-format)")
+else:
+    print("⚠️ No numpy module references found")
 
-## test visualize one frame to check fps alignment
-######## Good snipet to visualize det and gt 2D pose
-from Skeleton import *
-det_2d = det_2d_conf[:, :, :2]
-rtm_pose_37_keypoints_vicon_dataset_v1 = ['PELVIS', 'RWRIST', 'LWRIST', 'RHIP', 'LHIP', 'RKNEE', 'LKNEE', 'RANKLE', 'LANKLE', 'RFOOT', 'LFOOT', 'RHAND', 'LHAND', 'RELBOW', 'LELBOW', 'RSHOULDER',
-                                          'LSHOULDER', 'HEAD', 'THORAX', 'HDTP', 'REAR', 'LEAR', 'C7', 'C7_d', 'SS', 'RAP_b', 'RAP_f', 'LAP_b', 'LAP_f', 'RLE', 'RME', 'LLE', 'LME', 'RMCP2', 'RMCP5',
-                                          'LMCP2', 'LMCP5']
-det_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton-66.yaml')
-det_skeleton.load_name_list_and_np_points(rtm_pose_37_keypoints_vicon_dataset_v1, det_2d)
-gt_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton-66.yaml')
-gt_skeleton.load_name_list_and_np_points(rtm_pose_37_keypoints_vicon_dataset_v1, gt_2d)
 
-frame_no = 800
-base_image = f"W:\\VEHS\\VEHS-7M\\img\\20fps\\{key}\\{subject_name}-{action_name}-{camera_id}-{frame_no+1:06d}.jpg"
-# W:\VEHS\VEHS-7M\img\5fps\test\S09-activity00-51470934-000001.jpg
-
-gt_skeleton.plot_2d_pose_frame(frame=frame_no, baseimage=base_image)  #, filename=r'C:\Users\wenleyan1\Downloads\test')
-det_skeleton.plot_2d_pose_frame(frame=frame_no, baseimage=base_image)  #, filename=r'C:\Users\wenleyan1\Downloads\test')
+# ## test visualize one frame to check fps alignment
+# ######## Good snipet to visualize det and gt 2D pose
+# from Skeleton import *
+# det_2d = det_2d_conf[:, :, :2]
+# rtm_pose_37_keypoints_vicon_dataset_v1 = ['PELVIS', 'RWRIST', 'LWRIST', 'RHIP', 'LHIP', 'RKNEE', 'LKNEE', 'RANKLE', 'LANKLE', 'RFOOT', 'LFOOT', 'RHAND', 'LHAND', 'RELBOW', 'LELBOW', 'RSHOULDER',
+#                                           'LSHOULDER', 'HEAD', 'THORAX', 'HDTP', 'REAR', 'LEAR', 'C7', 'C7_d', 'SS', 'RAP_b', 'RAP_f', 'LAP_b', 'LAP_f', 'RLE', 'RME', 'LLE', 'LME', 'RMCP2', 'RMCP5',
+#                                           'LMCP2', 'LMCP5']
+# det_skeleton = VEHSErgoSkeleton(r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
+# det_skeleton.load_name_list_and_np_points(rtm_pose_37_keypoints_vicon_dataset_v1, det_2d)
+# gt_skeleton = VEHSErgoSkeleton(r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
+# gt_skeleton.load_name_list_and_np_points(rtm_pose_37_keypoints_vicon_dataset_v1, gt_2d)
+#
+# frame_no = 800
+# base_image = f"W:\\VEHS\\VEHS-7M\\img\\20fps\\{key}\\{subject_name}-{action_name}-{camera_id}-{frame_no+1:06d}.jpg"
+# # W:\VEHS\VEHS-7M\img\5fps\test\S09-activity00-51470934-000001.jpg
+#
+# gt_skeleton.plot_2d_pose_frame(frame=frame_no, baseimage=base_image)  #, filename=r'C:\Users\wenleyan1\Downloads\test')
+# det_skeleton.plot_2d_pose_frame(frame=frame_no, baseimage=base_image)  #, filename=r'C:\Users\wenleyan1\Downloads\test')
 
 
 
