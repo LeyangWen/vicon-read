@@ -67,16 +67,13 @@ if __name__ == '__main__':
 
     start_frame = parser.parse_args().start_frame
     swap_pairs = [
-        # ['RRS', 'RUS'], ['LRS', 'LUS'],
-        # ['RMCP2', 'RMCP5'], ['LMCP2', 'LMCP5'],
+
         ['RAP', 'RAP_f'],
         ['LAP', 'LAP_f'],
         ['RAP_f', 'RAP_b'],
         ['LAP_f', 'LAP_b'],
         ['RLE', 'RME'],
         ['LLE', 'LME'],
-        ['LIC', 'LGT'], ['RIC', 'RGT'],
-        ['LIC', 'LASIS'], ['RIC', 'RASIS'],
         ['SS', 'RAP_f'], ['SS', 'LAP_f'],
         ['SS', 'RAP'], ['SS', 'LAP'],
         ['LMFC', 'LLFC'], ['RMFC', 'RLFC'],
@@ -86,8 +83,7 @@ if __name__ == '__main__':
         ['LEAR', 'HDTP'], ['REAR', 'MDFH'],
         ['REAR', 'HDTP'], ['LEAR', 'MDFH'],
         ['C7_d', 'C7'], ['C7_d', 'SS'],
-        ['RMFC', 'LMFC']
-        # ['RMM', 'RLM']
+
     ]
     LR_pairs = [
         ['RRS', 'LRS'], ['RUS', 'LUS'],
@@ -99,7 +95,8 @@ if __name__ == '__main__':
         ['LMFC', 'RMFC'], ['LLFC', 'RLFC'],
         ['LMM', 'RMM'], ['LMTP5', 'RMTP5'],
         ['LMTP1', 'RMTP1'],
-        ['LEAR', 'REAR'],
+        ['LEAR', 'REAR'], ['RLM', 'LLM'],
+        ['RHEEL', 'LHEEL'], ['LLM', 'RLM'], ['RMM', 'LMM'], ['LMTP1', 'RMTP1'], ['LMTP5', 'RMTP5'],
     ]
     check_marker_pairs = swap_pairs
     name_tuple = ()
@@ -178,6 +175,14 @@ if __name__ == '__main__':
                                   ['LMFC', 'LME'], ['RMFC', 'RME'],
                                   ['LMFC', 'LLE'], ['RMFC', 'RLE'],
                                   ['XP', 'LME'], ['XP', 'RME'],
+                                  ['RRS', 'RUS'], ['LRS', 'LUS'],
+                                  ['RMCP2', 'RMCP5'], ['LMCP2', 'LMCP5'],
+                                  ['LIC', 'LGT'], ['RIC', 'RGT'],
+                                  ['LIC', 'LASIS'], ['RIC', 'RASIS'],
+                                  ['LGT', 'LASIS'], ['RGT', 'RASIS'],
+                                  ['RME', 'RIC'], ['LME', 'RIC'],
+                                  ['RME', 'RGT'], ['LME', 'LGT'],
+                                  ['RME', 'RASIS'], ['LME', 'LASIS'],
                                   # ['RMFC', 'LMFC']
                                  ]
         check_marker_pairs = check_marker_pairs_all + swap_pairs
