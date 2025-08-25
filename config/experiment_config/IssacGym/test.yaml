@@ -56,5 +56,5 @@ dim: [0.4, 0.4, 0.4]  # w l h
 # 30 repeat
 # Try 4 new ergo reward
 #estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/30_repeat/Try1-10_30_30density/joint_states.csv'
-estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/30_repeat/Try4-3_motion_30/joint_states.csv'
-#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/30_repeat/Try4-9-b_reward_motion_42/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/30_repeat/Try4-3_motion_30/joint_states.csv'
+estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/30_repeat/Try4-9-b_reward_motion_42/joint_states.csv'

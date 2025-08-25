@@ -9,14 +9,16 @@ from datetime import datetime
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')
-    # parser.add_argument('--overlay_GT', type=bool, default=True)
-    # parser.add_argument('--debug_mode', default=True)
 
     parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
     parser.add_argument('--overlay_GT', type=bool, default=False)
     parser.add_argument('--debug_mode', default=False)
     parser.add_argument('--clip_fill', type=bool, default=False)
+
+    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')
+    # parser.add_argument('--overlay_GT', type=bool, default=True)
+    # parser.add_argument('--debug_mode', default=True)
+    # parser.add_argument('--clip_fill', type=bool, default=True)
 
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
     parser.add_argument('--MB_data_stride', type=int, default=243)
@@ -100,11 +102,11 @@ if __name__ == '__main__':
     # estimate_skeleton.plot_3d_pose_frame(frame)
 
     frame_range = None #[0, 60*3*20]
-    target_angles = estimate_skeleton.angle_names  # ['neck', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'right_wrist', 'left_wrist', 'back', 'right_knee', 'left_knee']
+    # target_angles = estimate_skeleton.angle_names  # ['neck', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'right_wrist', 'left_wrist', 'back', 'right_knee', 'left_knee']
     # target_angles = ['neck', 'right_shoulder', 'left_shoulder']
-    target_angles = ['right_elbow', 'left_elbow', 'right_wrist', 'left_wrist']
+    # target_angles = ['right_elbow', 'left_elbow', 'right_wrist', 'left_wrist']
 
-    # target_angles = ['back', 'right_knee', 'left_knee']
+    target_angles = ['back', 'right_knee', 'left_knee']
 
     print(f"target angles: {target_angles}")
     # Single thread
@@ -124,6 +126,7 @@ if __name__ == '__main__':
             estimate_ergo_angles[this_angle_name].plot_angles_by_frame(render_dir, joint_name=f"{this_angle_name}", alpha=0.75, colors=['r', 'r', 'r'], frame_range=frame_range, frame_range_max=frame_range_max, label="Inference",
                                                                        angle_names=list(print_ergo_names.values()), overlay=GT_ergo_angles[this_angle_name], overlay_colors=['g', 'g', 'g'], fps=20, x_tick_s=15)
         else:
+            skip_first = False
             # frame_range_max = 243
             if "VEHS7M" in render_dir:
                 frame_range_max = None
@@ -133,9 +136,16 @@ if __name__ == '__main__':
                 frame_range_max = list(np.array([11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * 243)  # industry #2
             elif "Industry_both" in render_dir:
                 frame_range_max = list(np.array([2,2,1,2,1,2,2,2,1,2,2,2,11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * 243)  # industry #2
+
+                ## only 12 rick videos
+                frame_range_max = list(np.array([2,2,1,2,1,2,2,2,1,2,2,2])*243)
+
+                # ## only 11 long industry videos
+                # frame_range_max = list(np.array([21,11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * 243)  # industry #2
+                # skip_first = True
             else:
                 pass
                 raise ValueError(f"Make sure this is the right dataset")
-            estimate_ergo_angles[this_angle_name].plot_angles_by_frame(render_dir, joint_name=f"{this_angle_name}", alpha=0.75, colors=['r', 'r', 'r'], frame_range=frame_range, frame_range_max=frame_range_max,
+            estimate_ergo_angles[this_angle_name].plot_angles_by_frame(render_dir, joint_name=f"{this_angle_name}", alpha=0.75, colors=['r', 'r', 'r'], frame_range=frame_range, frame_range_max=frame_range_max, skip_first=skip_first,
                                                                        angle_names=list(print_ergo_names.values()), fps=20, x_tick_s=2)
 

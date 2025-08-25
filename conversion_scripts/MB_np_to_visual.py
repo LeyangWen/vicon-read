@@ -16,17 +16,27 @@ def parse_args():
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/H36M17kpts/VEHS-3D-MB.yaml')
     # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/H36M-17.yaml')
 
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry.yaml')
+    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-Industry.yaml')
+    # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
+    # parser.add_argument('--type', type=str, default='body')
+    # parser.add_argument('--clip_fill', type=bool, default=False)
+    # parser.add_argument('--rescale_25d', type=bool, default=False)
+    # parser.add_argument('--dynamic_plot_range', type=bool, default=True)
+    # parser.add_argument('--debug_mode', default=False, type=bool)
+
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
     parser.add_argument('--type', type=str, default='body')
-    parser.add_argument('--clip_fill', type=bool, default=False)
-    parser.add_argument('--rescale_25d', type=bool, default=False)
+    parser.add_argument('--clip_fill', type=bool, default=True)
+    parser.add_argument('--rescale_25d', type=bool, default=True)
+    parser.add_argument('--dynamic_plot_range', type=bool, default=False)
+    parser.add_argument('--debug_mode', default=True, type=bool)
 
     parser.add_argument('--output_frame_folder', type=str, default=None)
     parser.add_argument('--output_GT_frame_folder', type=str, default=None)
-    parser.add_argument('--plot_mode', type=str, default='paper_view', help='mode: paper_view, camera_side_view, camera_view, 0_135_view, normal_view')
+    parser.add_argument('--plot_mode', type=str, default='camera_side_view', help='mode: paper_view, camera_side_view, camera_view, 0_135_view, normal_view')
     parser.add_argument('--MB_data_stride', type=int, default=243)
-    parser.add_argument('--debug_mode', default=False, type=bool)
+
 
 
     # parser.add_argument('--name_list', type=list, default=[])
@@ -165,7 +175,8 @@ if __name__ == '__main__':
             assert len(factor_25d) == len(estimate_pose), f"Can not rescale without clip_fill: len(factor_25d): {len(factor_25d)}, len(estimate_pose): {len(estimate_pose)}, they should be the same"
         estimate_pose = estimate_pose / factor_25d[:, None, None]
     if args.debug_mode:
-        small_sample = 1200
+        small_sample = 11516
+        # small_sample = 5103  # industry rick
         # small_sample = 16560
         estimate_pose = estimate_pose[:small_sample]
         GT_pose = GT_pose[:small_sample]
@@ -215,11 +226,21 @@ if __name__ == '__main__':
 
 
         ##### example of plotting 37 keypoints for industry and VEHS7M inference
-        plot_range = 850 # for VEHS7M - camera_side_view
-        # plot_range = 1200 # for VEHS7M
-        # plot_range = 1600 # for VEHS7M - camera_side_view
-        estimate_skeleton.plot_3d_pose(args.output_frame_folder, start_frame=14440, coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS')
-        # GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS')
+        if args.dynamic_plot_range:
+            segment_count = estimate_skeleton.frame_number // 243
+            for segment_id in range(segment_count):
+                start_frame = segment_id * 243
+                end_frame = start_frame + 243
+                xyz_min = np.min(estimate_skeleton.points[start_frame:end_frame], axis=(0, 1))
+                xyz_max = np.max(estimate_skeleton.points[start_frame:end_frame], axis=(0, 1))
+                plot_range = np.max(xyz_max - xyz_min) * 1.1
+                estimate_skeleton.plot_3d_pose(args.output_frame_folder, start_frame=start_frame, end_frame=end_frame,
+                                               coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS')
+        else:
+            plot_range = 850  # for VEHS7M - camera_side_view
+            # estimate_skeleton.plot_3d_pose(args.output_frame_folder, start_frame=0, coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS')
+
+            GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, start_frame=1190, coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS')
 
         ###### example of plotting h36M 17 keypoints
         # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1200, mode=args.plot_mode, center_key='HIP_c')

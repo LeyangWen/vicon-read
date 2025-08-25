@@ -363,10 +363,12 @@ class Skeleton:
             plt.show()
             return fig, ax
 
-    def plot_3d_pose(self, foldername=False, start_frame=0, **kwargs):
+    def plot_3d_pose(self, foldername=False, start_frame=0, end_frame=None, **kwargs):
         if foldername:
             create_dir(foldername)
-        for i in range(start_frame, self.frame_number, 1):
+        if end_frame is None:
+            end_frame = self.frame_number
+        for i in range(start_frame, end_frame, 1):
             print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
             self.plot_3d_pose_frame(frame=i, filename=filename, **kwargs)

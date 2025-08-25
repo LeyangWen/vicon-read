@@ -18,12 +18,12 @@ def parse_args():
     parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
     parser.add_argument('--angle_mode', type=str, default='VEHS')
-    parser.add_argument('--clip_fill', type=bool, default=False)
+    parser.add_argument('--clip_fill', type=bool, default=True)
 
 
 
     parser.add_argument('--MB_data_stride', type=int, default=243)
-    parser.add_argument('--debug_mode', default=True)
+    parser.add_argument('--debug_mode', default=False)
     parser.add_argument('--merge_lr', default=True)
 
     # parser.add_argument('--name_list', type=list, default=[])
@@ -115,6 +115,8 @@ if __name__ == '__main__':
     anova_results = []
     average_error = {}
     target_angles = GT_skeleton.angle_names
+    all_ja1 = None
+    all_ja2 = None
     # target_angles = ['right_shoulder']
     for angle_index, this_angle_name in enumerate(target_angles):
         # plot angles
@@ -122,9 +124,10 @@ if __name__ == '__main__':
         estimate_fig, _ = estimate_ergo_angles[this_angle_name].plot_angles(joint_name=f"Est-{this_angle_name}", frame_range=frame_range, alpha=0.75, colors=['r', 'r', 'r'], overlay=[GT_fig, GT_ax])
         # plt.show()
         # GT_fig.savefig(f'frames/MB_angles/GT-{this_angle_name}.png')
+        if not os.path.exists(os.path.join(args.output_dir, 'angle_plots', args.eval_key)):
+            os.makedirs(os.path.join(args.output_dir, 'angle_plots', args.eval_key))
         if estimate_fig:
-            estimate_fig.savefig(f'frames/MB_angles/Est-{this_angle_name}.png')
-
+            estimate_fig.savefig(os.path.join(args.output_dir, 'angle_plots', args.eval_key, f'Est-{this_angle_name}.png'))
 
         ergo_angle_name = ['flexion', 'abduction', 'rotation']
         print_ergo_names = getattr(GT_ergo_angles[this_angle_name], 'ergo_name')
@@ -135,7 +138,6 @@ if __name__ == '__main__':
         for this_ergo_angle in ergo_angle_name:
             ja1 = getattr(estimate_ergo_angles[this_angle_name], this_ergo_angle)
             ja2 = getattr(GT_ergo_angles[this_angle_name], this_ergo_angle)
-
             if args.merge_lr:
                 if 'right' in this_angle_name:
                     ja1_l = getattr(estimate_ergo_angles[this_angle_name.replace('right', 'left')], this_ergo_angle)
@@ -152,6 +154,9 @@ if __name__ == '__main__':
             if ja1 is not None:
                 print("=====================================")
                 print(f'{this_angle_name} - {this_ergo_angle}')
+                all_ja1 = ja1 if all_ja1 is None else np.concatenate([all_ja1, ja1])
+                all_ja2 = ja2 if all_ja2 is None else np.concatenate([all_ja2, ja2])
+                # raise NotImplementedError
                 # bland-Altman plot
                 if not os.path.exists(os.path.join(args.output_dir, 'BA_plots', args.eval_key)):
                     os.makedirs(os.path.join(args.output_dir, 'BA_plots', args.eval_key))
@@ -168,10 +173,13 @@ if __name__ == '__main__':
 
                 angle_compare = AngleCompare(ja1, ja2)
                 # 1,435,236 frames in test set, use Rice rule --> approx 225 bins
+                # 	•	For n = 267{,}300: 128 bins
+                # 	•	For n = 534{,}600: 162 bins --> 150
+                bin_no = 150
                 # make folder if not exits
                 if not os.path.exists(os.path.join(args.output_dir, 'histograms', args.eval_key)):
                     os.makedirs(os.path.join(args.output_dir, 'histograms', args.eval_key))
-                plot_error_histogram(angle_compare.diff_deg, bins=225, title=f'{print_angle_name}: {print_ergo_name}',
+                plot_error_histogram(angle_compare.diff_deg, bins=bin_no, title=f'{print_angle_name}: {print_ergo_name}',
                                      save_path=os.path.join(args.output_dir, f'histograms/{args.eval_key}/{angle_index}-{this_angle_name}-{this_ergo_angle}_hist.png'),
                                      plot_normal_curve=angle_compare.plot_normal_curve)
                                      # save_path=f'frames/MB_angles/histograms/{angle_index}-{this_angle_name}-{this_ergo_angle}_hist.png',
@@ -180,9 +188,6 @@ if __name__ == '__main__':
 
                 # error_dist = analyze_error_distribution(angle_compare.diff_inliers_deg)
                 # print(f'Error distribution: {error_dist}')
-
-                np.nanstd(ja1, axis=0)
-                np.nanstd(ja1)
 
                 # Calculate errors
                 errors = ja1 - ja2
@@ -206,6 +211,30 @@ if __name__ == '__main__':
         #     anova_results.append((this_angle_name, f_stat, p_value))
         # else:
         #     f_stat, p_value = np.nan, np.nan
+
+    # for all angles
+    print("=====================================")
+    print(f'All Angles')
+    md, sd = bland_altman_plot(all_ja1, all_ja2, title=f'All Angles',
+                               save_path=os.path.join(args.output_dir, f'BA_plots/{args.eval_key}/All.png'))
+    RMSE = root_mean_squared_error(all_ja1, all_ja2)
+    MAE = mean_absolute_error(all_ja1, all_ja2)
+    median_AE = median_absolute_error(all_ja1, all_ja2)
+    merge_name = f"{print_angle_name}-{print_ergo_name}"
+    average_error[merge_name] = angle_diff(all_ja1, all_ja2, input_rad=True, output_rad=False)
+
+    angle_compare = AngleCompare(all_ja1, all_ja2)
+    plot_error_histogram(angle_compare.diff_deg, bins=bin_no, title=f'All Angles',
+                         save_path=os.path.join(args.output_dir, f'histograms/{args.eval_key}/All_hist.png'),
+                         plot_normal_curve=angle_compare.plot_normal_curve)
+    # save_path=f'frames/MB_angles/histograms/{angle_index}-{this_angle_name}-{this_ergo_angle}_hist.png',
+    error_dist = analyze_error_distribution(angle_compare.diff_deg)
+    print(f'Error distribution: {error_dist}')
+    print(f'MAE: {MAE:.2f}, RMSE: {RMSE:.2f}, median: {angle_compare.median_deg:.2f}')
+    # this_log = [this_angle_name, this_ergo_angle, md, sd, MAE, RMSE]
+    this_log = ["All", "-", MAE, median_AE, RMSE, md, sd, error_dist['skewness'], error_dist['kurtosis'], angle_compare.median_deg, error_dist['IQR']]
+    log.append(this_log)
+
 
 
 
