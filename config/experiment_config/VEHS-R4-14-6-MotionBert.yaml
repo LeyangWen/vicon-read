@@ -1,0 +1,7 @@
+train_ratio: 0.7
+val_ratio: 0.3
+test_ratio: 0.0
+
+base_folders: ['W:\VEHS\VEHS data collection round 3\processed', 'W:\VEHS\VEHS data collection round 4\processed']
+val_keyword: ['S01', 'S04', 'S05', 'S09', 'S10', 'S11']
+test_keyword: []

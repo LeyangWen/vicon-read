@@ -20,7 +20,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/VEHS-R3-622-MotionBert.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton-66.yaml')
-    parser.add_argument('--downsample', type=int, default=2)
+    parser.add_argument('--downsample', type=int, default=5)
     parser.add_argument('--downsample_keep', type=int, default=1)
     parser.add_argument('--split_output', action='store_false')  # not implemented yet
     parser.add_argument('--output_type', type=list, default=[True, False, False, False], help='3D, 6D, SMPL, 3DSSPP')
@@ -33,11 +33,19 @@ if __name__ == '__main__':
     with open(split_config_file, 'r') as stream:
         try:
             data = yaml.safe_load(stream)
-            base_folder = data['base_folder']
+            if 'base_folder' in data:
+                base_folders = [data['base_folder']]
+            else:
+                base_folders = data['base_folders']
+                base_folders.sort()
+            base_folder = base_folders[-1]
+            print('base_folder', base_folder, 'from', base_folders)
+            # base_folder = os.path.join(base_folder, 'LeyangWen')  # for testing
             val_keyword = data['val_keyword']
             test_keyword = data['test_keyword']
         except yaml.YAMLError as exc:
             print(split_config_file, exc)
+            raise ValueError
 
 
     skeleton_file = args.skeleton_file
@@ -54,62 +62,68 @@ if __name__ == '__main__':
     pkl_filenames = {'3D': [], '6D': [], 'SMPL': []}  # if split_output, save intermediate results
     dataset_statistics = {}
     total_frame_number = 0
-    for root, dirs, files in os.walk(base_folder):
-        for file in files:
-            if file.endswith('.c3d') and root[-6:] != 'backup' and (not file.startswith('ROM')) and (not file.endswith('_bad.c3d')):
-                # val_keyword is a list of string, if any of them is in the root, then it is val set
-                if any(keyword in root for keyword in val_keyword):
-                    train_val_test = 'validate'
-                elif any(keyword in root for keyword in test_keyword):
-                    train_val_test = 'test'
-                else:
-                    train_val_test = 'train'
+    for base_folder in base_folders:
+        for root, dirs, files in os.walk(base_folder):
+            for file in files:
+                if (
+                        file.endswith('.c3d')
+                        and not root.endswith('backup')
+                        and not file.endswith('_bad.c3d')
+                        and (file.startswith('Activity') or file.startswith('activity'))
+                ):
+                    # val_keyword is a list of string, if any of them is in the root, then it is val set
+                    if any(keyword in root for keyword in val_keyword):
+                        train_val_test = 'validate'
+                    elif any(keyword in root for keyword in test_keyword):
+                        train_val_test = 'test'
+                    else:
+                        train_val_test = 'train'
 
-                c3d_file = os.path.join(root, file)
-                count += 1
-                # if count > 1:  # give a very small file for testing
-                #     if train_val_test == 'train':
-                #         train_val_test = 'test'
-                #         count = 0
-                #     else:
-                #         break
+                    c3d_file = os.path.join(root, file)
+                    count += 1
+                    # if count > 1:  # give a very small file for testing
+                    #     if train_val_test == 'train':
+                    #         train_val_test = 'test'
+                    #         count = 0
+                    #     else:
+                    #         break
 
-                print(f'{count}: Starting on {c3d_file} as {train_val_test} set')
-                frames = np.linspace(start_frame / fps_ratio, end_frame / fps_ratio, int((end_frame - start_frame) / fps_ratio), dtype=int)
-                world3D_filename = os.path.join(cdf_output_dir, '3D_Pose_World', activity_name, f'{activity_name}_{rep}.world.cdf')
-                store_cdf(world3D_filename, world3D, TaskID=activity_name, kp_names=kpt_names)
-                # world3D_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml')
-                # world3D_skeleton.load_name_list_and_np_points(kpt_names, world3D)
-                # world3D_skeleton.plot_3d_pose(os.path.join(frame_output_dir, '3D_Pose_World'))
+                    print(f'{count}: Starting on {c3d_file} as {train_val_test} set')
+                    frames = np.linspace(start_frame / fps_ratio, end_frame / fps_ratio, int((end_frame - start_frame) / fps_ratio), dtype=int)
+                    world3D_filename = os.path.join(cdf_output_dir, '3D_Pose_World', activity_name, f'{activity_name}_{rep}.world.cdf')
+                    store_cdf(world3D_filename, world3D, TaskID=activity_name, kp_names=kpt_names)
+                    # world3D_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml')
+                    # world3D_skeleton.load_name_list_and_np_points(kpt_names, world3D)
+                    # world3D_skeleton.plot_3d_pose(os.path.join(frame_output_dir, '3D_Pose_World'))
 
-                xcp_filename = c3d_file.replace('.c3d', '.xcp')
-                cameras = batch_load_from_xcp(xcp_filename)
-                for cam_idx, camera in enumerate(cameras):
-                    print(f'Processing camera {cam_idx}: {camera.DEVICEID}')
+                    xcp_filename = c3d_file.replace('.c3d', '.xcp')
+                    cameras = batch_load_from_xcp(xcp_filename)
+                    for cam_idx, camera in enumerate(cameras):
+                        print(f'Processing camera {cam_idx}: {camera.DEVICEID}')
 
-                    points_2d_list = []
-                    points_3d_camera_list = []
-                    points_2d_bbox_list = []
-                    for frame_idx, frame_no in enumerate(frames):
-                        frame_idx = int(frame_idx * fps_ratio)  # todo: bug if fps_ratio is not an 1
-                        print(f'Processing frame {frame_no}/{frames[-1]} of {activity_name}.{camera.DEVICEID}.timestamp.avi',
-                              end='\r')
-                        points_3d = world3D[frame_idx, :, :].reshape(-1, 3) / 1000
-                        points_3d_camera = camera.project_w_depth(points_3d)  # todo: test if transpose is still needed
-                        points_2d = camera.project(points_3d)
-                        points_2d = camera.distort(points_2d)
-                        bbox_top_left, bbox_bottom_right = points_2d.min(axis=0) - 20, points_2d.max(axis=0) + 20
-                        points_2d_list.append(points_2d)
-                        points_3d_camera_list.append(points_3d_camera)
-                        points_2d_bbox_list.append([bbox_top_left, bbox_bottom_right])
+                        points_2d_list = []
+                        points_3d_camera_list = []
+                        points_2d_bbox_list = []
+                        for frame_idx, frame_no in enumerate(frames):
+                            frame_idx = int(frame_idx * fps_ratio)  # todo: bug if fps_ratio is not an 1
+                            print(f'Processing frame {frame_no}/{frames[-1]} of {activity_name}.{camera.DEVICEID}.timestamp.avi',
+                                  end='\r')
+                            points_3d = world3D[frame_idx, :, :].reshape(-1, 3) / 1000
+                            points_3d_camera = camera.project_w_depth(points_3d)  # todo: test if transpose is still needed
+                            points_2d = camera.project(points_3d)
+                            points_2d = camera.distort(points_2d)
+                            bbox_top_left, bbox_bottom_right = points_2d.min(axis=0) - 20, points_2d.max(axis=0) + 20
+                            points_2d_list.append(points_2d)
+                            points_3d_camera_list.append(points_3d_camera)
+                            points_2d_bbox_list.append([bbox_top_left, bbox_bottom_right])
 
-                    points_2d_list = np.array(points_2d_list)
-                    # points_3d_camera_list = np.swapaxes(np.array(points_3d_camera_list), 1, 2)
-                    world2D_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml')
-                    world2D_skeleton.load_name_list_and_np_points(kpt_names, points_2d_list)
-                    world2D_skeleton.plot_2d_pose(os.path.join(frame_output_dir, f'2D_Pose_Camera{camera.DEVICEID}'))
+                        points_2d_list = np.array(points_2d_list)
+                        # points_3d_camera_list = np.swapaxes(np.array(points_3d_camera_list), 1, 2)
+                        world2D_skeleton = VEHSErgoSkeleton(r'config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml')
+                        world2D_skeleton.load_name_list_and_np_points(kpt_names, points_2d_list)
+                        world2D_skeleton.plot_2d_pose(os.path.join(frame_output_dir, f'2D_Pose_Camera{camera.DEVICEID}'))
 
-                raise NotImplementedError  # break for testing
-                # del this_skeleton
-                # del ergo_angles
+                    raise NotImplementedError  # break for testing
+                    # del this_skeleton
+                    # del ergo_angles
 

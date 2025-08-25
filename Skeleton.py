@@ -453,7 +453,7 @@ class VEHSErgoSkeleton(Skeleton):
 
         self.update_pose_from_point_pose()
 
-    def calculate_camera_projection(self, args, camera_xcp_file, kpts_of_interest_name='all', rootIdx=0):
+    def calculate_camera_projection(self, args, camera_xcp_file, kpts_of_interest_name='all', rootIdx=0, rgb_frame_rate = 100):
         if kpts_of_interest_name == 'all':  # get all points
             kpts_of_interest = self.point_poses.values()
         else:
@@ -466,7 +466,6 @@ class VEHSErgoSkeleton(Skeleton):
         cameras = batch_load_from_xcp(camera_xcp_file)
         start_frame = 0
         end_frame = self.frame_number
-        rgb_frame_rate = 100
         fps_ratio = 100 / rgb_frame_rate
         frames = np.linspace(start_frame / fps_ratio, end_frame / fps_ratio, int((end_frame - start_frame) / fps_ratio), dtype=int)
         set_vis = 2

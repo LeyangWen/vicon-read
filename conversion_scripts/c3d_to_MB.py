@@ -31,13 +31,19 @@ if __name__ == '__main__':
     with open(split_config_file, 'r') as stream:
         try:
             data = yaml.safe_load(stream)
-            base_folder = data['base_folder']
+            if 'base_folder' in data:
+                base_folders = [data['base_folder']]
+            else:
+                base_folders = data['base_folders']
+                base_folders.sort()
+            base_folder = base_folders[-1]
+            print('base_folder', base_folder, 'from', base_folders)
             # base_folder = os.path.join(base_folder, 'LeyangWen')  # for testing
             val_keyword = data['val_keyword']
             test_keyword = data['test_keyword']
         except yaml.YAMLError as exc:
             print(split_config_file, exc)
-
+            raise ValueError
 
     skeleton_file = args.skeleton_file
     downsample = args.downsample
@@ -80,75 +86,81 @@ if __name__ == '__main__':
     pkl_filenames = {'3D': [], '6D': [], 'SMPL': []}  # if split_output, save intermediate results
     dataset_statistics = {}
     total_frame_number = 0
-    for root, dirs, files in os.walk(base_folder):
-        dirs.sort()  # Sort directories in-place --> important, will change walk sequence
-        files.sort(key=str.lower)  # Sort files in-place
-        for file in files:
-            if file.endswith('.c3d') and root[-6:] != 'backup' and (not file.startswith('ROM')) and (not file.endswith('_bad.c3d')):
-                # val_keyword is a list of string, if any of them is in the root, then it is val set
-                if any(keyword in root for keyword in val_keyword):
-                    train_val_test = 'validate'
-                elif any(keyword in root for keyword in test_keyword):
-                    train_val_test = 'test'
-                else:
-                    train_val_test = 'train'
+    for base_folder in base_folders:
+        for root, dirs, files in os.walk(base_folder):
+            dirs.sort()  # Sort directories in-place --> important, will change walk sequence
+            files.sort(key=str.lower)  # Sort files in-place
+            for file in files:
+                if (
+                        file.endswith('.c3d')
+                        and not root.endswith('backup')
+                        and not file.endswith('_bad.c3d')
+                        and (file.startswith('Activity') or file.startswith('activity'))
+                ):
+                    # val_keyword is a list of string, if any of them is in the root, then it is val set
+                    if any(keyword in root for keyword in val_keyword):
+                        train_val_test = 'validate'
+                    elif any(keyword in root for keyword in test_keyword):
+                        train_val_test = 'test'
+                    else:
+                        train_val_test = 'train'
 
-                print(f"file: {file}, root: {root}, train_val_test: {train_val_test}")
+                    print(f"file: {file}, root: {root}, train_val_test: {train_val_test}")
 
-                c3d_file = os.path.join(root, file)
-                count += 1
-                # if count > 1:  # give a very small file for testing
-                #     if train_val_test == 'train':
-                #         train_val_test = 'test'
-                #         count = 0
-                #     else:
-                #         break
+                    c3d_file = os.path.join(root, file)
+                    count += 1
+                    # if count > 1:  # give a very small file for testing
+                    #     if train_val_test == 'train':
+                    #         train_val_test = 'test'
+                    #         count = 0
+                    #     else:
+                    #         break
 
-                print(f'{count}: Starting on {c3d_file} as {train_val_test} set')
-                this_skeleton = VEHSErgoSkeleton(skeleton_file)
-                this_skeleton.load_c3d(c3d_file, analog_read=False)
-                this_frame_number = this_skeleton.frame_number
-                dataset_statistics[c3d_file] = this_frame_number
-                total_frame_number += this_frame_number
+                    print(f'{count}: Starting on {c3d_file} as {train_val_test} set')
+                    this_skeleton = VEHSErgoSkeleton(skeleton_file)
+                    this_skeleton.load_c3d(c3d_file, analog_read=False)
+                    this_frame_number = this_skeleton.frame_number
+                    dataset_statistics[c3d_file] = this_frame_number
+                    total_frame_number += this_frame_number
 
-                this_skeleton.calculate_joint_center()
-                camera_xcp_file = c3d_file.replace('.c3d', '.xcp')
+                    this_skeleton.calculate_joint_center()
+                    camera_xcp_file = c3d_file.replace('.c3d', '.xcp')
 
-                # this_skeleton.plot_3d_pose_frame(frame=0, coord_system="world")
+                    # this_skeleton.plot_3d_pose_frame(frame=0, coord_system="world")
 
-                if args.output_type[0]:  # calculate 3D pose first
-                    this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=h36m_joint_names, rootIdx=0)
-                    output3D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep)
-                    output_3D_dataset = append_output_xD_dataset(output_3D_dataset, train_val_test, output3D)
-                if args.output_type[1]:  # calculate 6D pose
-                    this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=custom_6D_joint_names, rootIdx=args.rootIdx)  # Pelvis index
-                    output6D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep)
+                    if args.output_type[0]:  # calculate 3D pose first
+                        this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=h36m_joint_names, rootIdx=0)
+                        output3D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep)
+                        output_3D_dataset = append_output_xD_dataset(output_3D_dataset, train_val_test, output3D)
+                    if args.output_type[1]:  # calculate 6D pose
+                        this_skeleton.calculate_camera_projection(args, camera_xcp_file, kpts_of_interest_name=custom_6D_joint_names, rootIdx=args.rootIdx)  # Pelvis index
+                        output6D = this_skeleton.output_MotionBert_pose(downsample=downsample, downsample_keep=downsample_keep)
 
-                    output_6D_dataset = append_output_xD_dataset(output_6D_dataset, train_val_test, output6D)
-                if args.output_type[2]:
-                    raise NotImplementedError('Implemented using moshpp+soma in separate repo')
-                    pass
-                    # output_smpl_dataset =
-                if args.output_type[3]:  # GT 3DSSPP output
-                    batch_3DSSPP_batch_filename = c3d_file.replace('.c3d', '-3DSSPP.txt')
-                    this_skeleton.output_3DSSPP_loc(frame_range=[0, 3000, 5], loc_file=batch_3DSSPP_batch_filename)
-                    break  # self = this_skeleton
-                del this_skeleton
-                if args.split_output:
-                    if 'activity08' in root or 'Activity08' in file:  # save intermediate results, Not in use
-                        print(f'Saving intermediate results for {c3d_file}')
-                        if args.output_type[0]:  # 3D pose
-                            with open(f'{output_3d_filename}_segment{count}.pkl', 'wb') as f:
-                                pickle.dump(output_3D_dataset, f)
-                            pkl_filenames['3D'].append(f'{output_3d_filename}_segment{count}.pkl')
-                        if args.output_type[1]:  # 6D pose
-                            with open(f'{output_6d_filename}_segment{count}.pkl', 'wb') as f:
-                                pickle.dump(output_6D_dataset, f)
-                            pkl_filenames['6D'].append(f'{output_6d_filename}_segment{count}.pkl')
-                        # empty the dataset, else it is too big for memory and make it slow
-                        output_3D_dataset = empty_MotionBert_dataset_dict(len(h36m_joint_names))  # 17
-                        output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names))  # 66
+                        output_6D_dataset = append_output_xD_dataset(output_6D_dataset, train_val_test, output6D)
+                    if args.output_type[2]:
+                        raise NotImplementedError('Implemented using moshpp+soma in separate repo')
+                        pass
                         # output_smpl_dataset =
+                    if args.output_type[3]:  # GT 3DSSPP output
+                        batch_3DSSPP_batch_filename = c3d_file.replace('.c3d', '-3DSSPP.txt')
+                        this_skeleton.output_3DSSPP_loc(frame_range=[0, 3000, 5], loc_file=batch_3DSSPP_batch_filename)
+                        break  # self = this_skeleton
+                    del this_skeleton
+                    if args.split_output:
+                        if 'activity08' in root or 'Activity08' in file:  # save intermediate results, Not in use
+                            print(f'Saving intermediate results for {c3d_file}')
+                            if args.output_type[0]:  # 3D pose
+                                with open(f'{output_3d_filename}_segment{count}.pkl', 'wb') as f:
+                                    pickle.dump(output_3D_dataset, f)
+                                pkl_filenames['3D'].append(f'{output_3d_filename}_segment{count}.pkl')
+                            if args.output_type[1]:  # 6D pose
+                                with open(f'{output_6d_filename}_segment{count}.pkl', 'wb') as f:
+                                    pickle.dump(output_6D_dataset, f)
+                                pkl_filenames['6D'].append(f'{output_6d_filename}_segment{count}.pkl')
+                            # empty the dataset, else it is too big for memory and make it slow
+                            output_3D_dataset = empty_MotionBert_dataset_dict(len(h36m_joint_names))  # 17
+                            output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names))  # 66
+                            # output_smpl_dataset =
     # # export: h36M 17 joint center, 6D pose 49 keypoints, SMPL-related, GT-Vicon to 3DSSPP
     if args.split_output:  #read and merge
         raise NotImplementedError  # need to merge the multilayer dict in the pkl files
