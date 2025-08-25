@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument('--output_GT_frame_folder', type=str, default=None)
     parser.add_argument('--plot_mode', type=str, default='paper_view', help='mode: camera_view, camera_side_view, 0_135_view, normal_view, paper_view, global_view')
     parser.add_argument('--debug_mode', default=True, type=bool)
-    parser.add_argument('--output_type', type=list, default=[False, True, False], help='LI, plot, 3DSSPP')
+    parser.add_argument('--output_type', type=list, default=[True, False, True], help='LI, plot, 3DSSPP')
 
     # parser.add_argument('--name_list', type=list, default=[])
     args = parser.parse_args()
@@ -321,6 +321,10 @@ if __name__ == '__main__':
                 isaac_skeleton.plot_3d_pose_frame(frame=frame, coord_system="world-m", plot_range=2, mode=args.plot_mode, center_key='PELVIS', plot_rot=True, title=title)
 
     ######################## REBA ########################
+
+    ######################## Back Angle ########################
+
+
 
     ######################## 3DSSPP batch file output ########################
 
