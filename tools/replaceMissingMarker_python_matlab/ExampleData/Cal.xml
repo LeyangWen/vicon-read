@@ -1,0 +1,115 @@
+<DigitalDevices>
+	<DeviceDefinition manufacturer="AMTI" type="464508" version="V1.00" description="This device represents an AMTI force plate/signal conditioner pair" standard-device-category="ForcePlate">
+		<SyncInput name="Sync Port"/>
+		<Parameter name="Connected" display-name="Connected" description="Indicates whether the device is connected" group="Status" persistent="false" change-group-key="0">
+			<InitialValue type="Bool" read-only="true" advanced="true" value="false"/>
+		</Parameter>
+		<Parameter name="StandardDimension_X" display-name="X" description="Length of force plate in the X Axis (meters)" group="Dimensions" persistent="true" change-group-key="6">
+			<InitialValue type="Double" read-only="true" advanced="true" value="0.46400000000000002"/>
+		</Parameter>
+		<Parameter name="StandardDimension_Y" display-name="Y" description="Length of force plate in the Y Axis (meters)" group="Dimensions" persistent="true" change-group-key="0">
+			<InitialValue type="Double" read-only="true" advanced="true" value="0.50800000000000001"/>
+		</Parameter>
+		<Parameter name="ParameterA" display-name="a" description="X displacement from sensor origin to force plate origin." group="Origin" persistent="true" change-group-key="6">
+			<InitialValue type="Double" read-only="true" advanced="true" value="0"/>
+		</Parameter>
+		<Parameter name="ParameterB" display-name="b" description="Y displacement from sensor origin to force plate origin." group="Origin" persistent="true" change-group-key="6">
+			<InitialValue type="Double" read-only="true" advanced="true" value="0"/>
+		</Parameter>
+		<Parameter name="ParameterAZ0" display-name="az0" description="Negative Z displacement from sensor origin to force plate surface." group="Origin" persistent="true" change-group-key="6">
+			<InitialValue type="Double" read-only="true" advanced="true" value="0"/>
+		</Parameter>
+		<Parameter name="AmplifierModel" display-name="Amplifier Model" description="Amplifier Model" group="Amplifier" persistent="true" change-group-key="1">
+			<InitialValue type="String" read-only="true" advanced="true" value=""/>
+		</Parameter>
+		<Parameter name="AmplifierSerial" display-name="Amplifier Serial" description="Amplifier Serial" group="Amplifier" persistent="true" change-group-key="2">
+			<InitialValue type="String" read-only="true" advanced="true" value=""/>
+		</Parameter>
+		<Parameter name="PlatformModel" display-name="Platform Model" description="Platform Model" group="Platform" persistent="true" change-group-key="3">
+			<InitialValue type="String" read-only="true" advanced="true" value=""/>
+		</Parameter>
+		<Parameter name="PlatformSerial" display-name="Platform Serial" description="Platform Serial" group="Platform" persistent="true" change-group-key="4">
+			<InitialValue type="String" read-only="true" advanced="true" value=""/>
+		</Parameter>
+		<Parameter name="FirmwareVersion" display-name="Firmware Version" description="Firmware Version" group="Amplifier" persistent="true" change-group-key="0">
+			<InitialValue type="String" read-only="true" advanced="true" value=""/>
+		</Parameter>
+		<Parameter name="BlinkAction" display-name="Blink" description="Make the selected signal conditioner blink. The amber light will blink for ten seconds. " group="Amplifier" persistent="true" change-group-key="5">
+			<InitialValue type="Action" value="0"/>
+		</Parameter>
+		<Output name="Force" quantity="Force">
+			<Component name="Fx"/>
+			<Component name="Fy"/>
+			<Component name="Fz"/>
+		</Output>
+		<Output name="Moment" quantity="Moment">
+			<Component name="Mx"/>
+			<Component name="My"/>
+			<Component name="Mz"/>
+		</Output>
+		<Output name="CoP" quantity="Length">
+			<Component name="Cx"/>
+			<Component name="Cy"/>
+			<Component name="Cz"/>
+		</Output>
+	</DeviceDefinition>
+	<DeviceDefinition manufacturer="AMTI" type="Digital device common settings" version="V1.04" description="This is a placeholder device controlling settings       common to all AMTI devices" manual-instantiation-text="Add AMTI Gen5/Optima devices" standard-device-category="Shared Configuration">
+		<Parameter name="SampleRate" display-name="Acquisition rate" description="Broadcasts an acquisition rate, in datasets per second, to all connected signal conditioners." group="Device collection" persistent="true" change-group-key="4">
+			<InitialValue type="Enum" value="1000">
+				<Enumeration value="2000"/>
+				<Enumeration value="1800"/>
+				<Enumeration value="1500"/>
+				<Enumeration value="1200"/>
+				<Enumeration value="1000"/>
+				<Enumeration value="900"/>
+				<Enumeration value="800"/>
+				<Enumeration value="600"/>
+				<Enumeration value="500"/>
+				<Enumeration value="450"/>
+				<Enumeration value="400"/>
+				<Enumeration value="360"/>
+				<Enumeration value="300"/>
+				<Enumeration value="250"/>
+				<Enumeration value="240"/>
+				<Enumeration value="225"/>
+				<Enumeration value="200"/>
+				<Enumeration value="180"/>
+				<Enumeration value="150"/>
+				<Enumeration value="125"/>
+				<Enumeration value="120"/>
+				<Enumeration value="100"/>
+				<Enumeration value="90"/>
+				<Enumeration value="80"/>
+				<Enumeration value="75"/>
+				<Enumeration value="60"/>
+				<Enumeration value="50"/>
+				<Enumeration value="45"/>
+				<Enumeration value="40"/>
+				<Enumeration value="30"/>
+				<Enumeration value="25"/>
+				<Enumeration value="20"/>
+				<Enumeration value="15"/>
+				<Enumeration value="10"/>
+			</InitialValue>
+		</Parameter>
+		<Parameter name="SyncMode" display-name="Synchronization mode" description="Synchronization mode" group="Device collection" persistent="true" change-group-key="3">
+			<InitialValue type="Enum" value="Software trigger">
+				<Enumeration value="Software trigger"/>
+				<Enumeration value="Hardware trigger"/>
+			</InitialValue>
+		</Parameter>
+		<Parameter name="DataThreshold" display-name="Fz Threshold" description="Fz limit below which data are not collected." group="Device collection" persistent="true" change-group-key="5">
+			<InitialValue type="Double" value="20" min-value="0" max-value="50" slider-mode="true"/>
+		</Parameter>
+		<Parameter name="BroadcastZero" display-name="Zero digital platforms" description="Send a 'Zero' command to all of the signal conditioners. Calling this function doesn't interrupt data acquisition." group="Actions" persistent="true" change-group-key="2">
+			<InitialValue type="Action" value="0"/>
+		</Parameter>
+		<Parameter name="BroadcastResetUSB" display-name="Reset USB" description="This function resets the USB pipes from the PC to the signal conditioner for all connect signal conditioners.     Its only current use is resetting the data collection after a two second  data collection pause caused by an extended Genlock timeout." group="Device collection" persistent="true" change-group-key="0">
+			<InitialValue type="Action" hidden="true" value="0"/>
+		</Parameter>
+		<Parameter name="ScanForHardware" display-name="Detect AMTI digital devices" description="Search for additional signal conditioners" group="Plug-in" persistent="true" change-group-key="1">
+			<InitialValue type="Action" value="0"/>
+		</Parameter>
+	</DeviceDefinition>
+</DigitalDevices>
+

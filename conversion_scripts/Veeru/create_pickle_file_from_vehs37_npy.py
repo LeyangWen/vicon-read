@@ -90,9 +90,9 @@ print(new_pkl_file)
 with open(new_pkl_file, "rb") as f:
     data = f.read()
 if b"numpy._core" in data:
-    print("✅ This pickle references numpy._core (old-format)")
+    print("⚠️ This pickle references numpy._core (not working in current slurm env, use older numpy version: conda vicon-read)")
 elif b"numpy.core" in data:
-    print("✅ This pickle references numpy.core (new-format)")
+    print("✅ This pickle references numpy.core")
 else:
     print("⚠️ No numpy module references found")
 
