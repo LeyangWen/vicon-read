@@ -11,7 +11,13 @@ name_list: ['PELVIS',
 #
 #GT_file: '/Users/leyangwen/Documents/Pose/paper/VEHS_6D_downsample2_keep1.pkl'  # 66 kpts, not matching
 
-estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20-fps-pretrain-normal/VEHS7M-validate-best-gt2d/X3D.npy'
+
+
+#estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-1-OG/VEHS7M-Validate/X3D.npy'
+#estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-normal-1-OG/VEHS7M-Validate/X3D.npy'
+#estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-2-limbLoss/VEHS7M-Validate/X3D.npy'
+#estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-normal-2-limbLoss/VEHS7M-Validate/X3D.npy'
+estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-3-angleLoss/VEHS7M-Validate/X3D.npy'
 
 eval_key: 'validate'
 
@@ -24,6 +30,7 @@ eval_key: 'validate'
 
 ## pitch-correct
 GT_file: '/Volumes/Z/RTMPose/37kpts_freeze_v3/20fps/MB_GT/VEHS_6D_downsample5_keep1_37_v2_pitch_correct_RTM2D.pkl'
+#GT_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/GT3D/pitch-correct/VEHS_6D_downsample5_keep1_37_v2_pitch_correct_modified_RTM2D.pkl'
 # limb loss added
 #estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20-fps-finetune-pitch-correct-6/VEHS7M-validate/X3D.npy'
 

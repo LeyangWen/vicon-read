@@ -9,7 +9,8 @@ import numpy as np
 #
 ######################################
 
-pkl_file = r"W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_config6_tilt_corrected.pkl"
+pkl_file = r"W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2_pitch_correct.pkl"
+# pkl_file = r"W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2.pkl"
 # pkl_file = r"W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample20_keep1_37_v1.pkl"  # no need actually
 
 

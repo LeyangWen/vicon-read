@@ -1,19 +1,24 @@
 import argparse
 import os.path
 import pickle
+
 from Skeleton import *
 from scipy.stats import f_oneway
 from MB_np_to_visual import MB_input_pose_file_loader
+from datetime import datetime
 
 def parse_args():
     parser = argparse.ArgumentParser()
+
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
+    parser.add_argument('--overlay_GT', type=bool, default=False)
+    parser.add_argument('--debug_mode', default=False)
+    parser.add_argument('--clip_fill', type=bool, default=False)
+
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')
     # parser.add_argument('--overlay_GT', type=bool, default=True)
     # parser.add_argument('--debug_mode', default=True)
-
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-Industry.yaml')
-    parser.add_argument('--overlay_GT', type=bool, default=False)
-    parser.add_argument('--debug_mode', default=True)
+    # parser.add_argument('--clip_fill', type=bool, default=True)
 
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
     parser.add_argument('--MB_data_stride', type=int, default=243)
@@ -32,25 +37,6 @@ def parse_args():
             os.makedirs(args.output_dir)
     return args
 
-# def MB_input_pose_file_loader(args):
-#     with open(args.GT_file, "rb") as f:
-#         data = pickle.load(f)
-#     source = data[args.eval_key]['source']
-#     MB_clip_id = []
-#     k = 0
-#     for i in range(len(source)):  # MB clips each data into 243 frame segments, the last segment (<243) is discarded
-#         k += 1
-#         if k == args.MB_data_stride:
-#             k = 0
-#             good_id = list(range(i-args.MB_data_stride+1, i+1))
-#             MB_clip_id.extend(good_id)
-#         if i == len(source)-1:
-#             break
-#         if source[i] != source[i+1]:
-#             k = 0
-#     np_pose = data[args.eval_key]['joint3d_image'][MB_clip_id]
-#     return np_pose
-
 
 def MB_output_pose_file_loader(args):
     with open(args.estimate_file, "rb") as f:
@@ -63,7 +49,8 @@ def MB_output_pose_file_loader(args):
 if __name__ == '__main__':
     # read arguments
     args = parse_args()
-
+    now = datetime.now()
+    print(f"Start Time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
     if args.eval_key == 'dict':
         estimate_pose = []
         GT_pose = []
@@ -73,7 +60,7 @@ if __name__ == '__main__':
             this_estimate_pose = MB_output_pose_file_loader(args)
             estimate_pose.append(this_estimate_pose)
 
-            this_gt_pose = MB_input_pose_file_loader(args)
+            this_gt_pose, _ = MB_input_pose_file_loader(args)
             GT_pose.append(this_gt_pose)
         estimate_pose = np.concatenate(estimate_pose, axis=0)
         GT_pose = np.concatenate(GT_pose, axis=0)
@@ -81,12 +68,12 @@ if __name__ == '__main__':
         assert estimate_pose.shape == GT_pose.shape, f"GT_pose.shape: {GT_pose.shape}, estimate_pose.shape: {estimate_pose.shape}, they should be the same"
     else:
         estimate_pose = MB_output_pose_file_loader(args)
-        GT_pose = MB_input_pose_file_loader(args)
+        GT_pose, _ = MB_input_pose_file_loader(args)
         if args.overlay_GT:
             assert GT_pose.shape == estimate_pose.shape, f"GT_pose.shape: {GT_pose.shape}, estimate_pose.shape: {estimate_pose.shape}, they should be the same"
 
     if args.debug_mode:
-        small_sample = 1000 #243*6
+        small_sample = 1200 #243*6
         GT_pose = GT_pose[:small_sample] if GT_pose is not None else None
         estimate_pose = estimate_pose[:small_sample]
 
@@ -106,7 +93,7 @@ if __name__ == '__main__':
     estimate_ergo_angles = {}
     for angle_name in estimate_skeleton.angle_names:  # calling the angle calculation methods in skeleton class
         class_method_name = f'{angle_name}_angles'
-        print(class_method_name)
+        # print(class_method_name)
         estimate_ergo_angles[angle_name] = getattr(estimate_skeleton, class_method_name)()
     # Step 3: visualize
     # frame = 10210
@@ -115,12 +102,12 @@ if __name__ == '__main__':
     # estimate_skeleton.plot_3d_pose_frame(frame)
 
     frame_range = None #[0, 60*3*20]
-    target_angles = estimate_skeleton.angle_names  # ['neck', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'right_wrist', 'left_wrist', 'back', 'right_knee', 'left_knee']
-    target_angles = ['back']
-    # target_angles = ['left_knee', 'right_knee']
-    target_angles = ['left_shoulder']
-    # target_angles = ['left_wrist', 'right_wrist']
-    # target_angles = []
+    # target_angles = estimate_skeleton.angle_names  # ['neck', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'right_wrist', 'left_wrist', 'back', 'right_knee', 'left_knee']
+    # target_angles = ['neck', 'right_shoulder', 'left_shoulder']
+    # target_angles = ['right_elbow', 'left_elbow', 'right_wrist', 'left_wrist']
+
+    target_angles = ['back', 'right_knee', 'left_knee']
+
     print(f"target angles: {target_angles}")
     # Single thread
     for angle_index, this_angle_name in enumerate(target_angles):
@@ -139,6 +126,7 @@ if __name__ == '__main__':
             estimate_ergo_angles[this_angle_name].plot_angles_by_frame(render_dir, joint_name=f"{this_angle_name}", alpha=0.75, colors=['r', 'r', 'r'], frame_range=frame_range, frame_range_max=frame_range_max, label="Inference",
                                                                        angle_names=list(print_ergo_names.values()), overlay=GT_ergo_angles[this_angle_name], overlay_colors=['g', 'g', 'g'], fps=20, x_tick_s=15)
         else:
+            skip_first = False
             # frame_range_max = 243
             if "VEHS7M" in render_dir:
                 frame_range_max = None
@@ -146,9 +134,18 @@ if __name__ == '__main__':
                 frame_range_max = list(np.array([2,2,1,2,1,2,2,2,1,2,2,2])*243)  # industry
             elif "Industry_2" in render_dir:
                 frame_range_max = list(np.array([11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * 243)  # industry #2
+            elif "Industry_both" in render_dir:
+                frame_range_max = list(np.array([2,2,1,2,1,2,2,2,1,2,2,2,11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * 243)  # industry #2
+
+                ## only 12 rick videos
+                frame_range_max = list(np.array([2,2,1,2,1,2,2,2,1,2,2,2])*243)
+
+                # ## only 11 long industry videos
+                # frame_range_max = list(np.array([21,11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * 243)  # industry #2
+                # skip_first = True
             else:
                 pass
                 raise ValueError(f"Make sure this is the right dataset")
-            estimate_ergo_angles[this_angle_name].plot_angles_by_frame(render_dir, joint_name=f"{this_angle_name}", alpha=0.75, colors=['r', 'r', 'r'], frame_range=frame_range, frame_range_max=frame_range_max,
+            estimate_ergo_angles[this_angle_name].plot_angles_by_frame(render_dir, joint_name=f"{this_angle_name}", alpha=0.75, colors=['r', 'r', 'r'], frame_range=frame_range, frame_range_max=frame_range_max, skip_first=skip_first,
                                                                        angle_names=list(print_ergo_names.values()), fps=20, x_tick_s=2)
 

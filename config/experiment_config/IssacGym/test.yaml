@@ -6,7 +6,55 @@ name_list: ['PELVIS', 'torso', 'head', 'right_upper_arm', 'right_lower_arm',
 
 #estimate_file: '/Users/leyangwen/Documents/Isaac/terrain_default/joint_states.csv'
 # estimate_file: '/Users/leyangwen/Documents/Isaac/terrain_model/download/pipeline-construction-site/motion/joint_states.csv'
-estimate_file: '/Users/leyangwen/Documents/Isaac/motion_output/ergo_debug/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Documents/Isaac/motion_output/ergo_debug/joint_states.csv'
+
+start_positions:
+  - [-4.0, -4.0, 0.2]
+  - [4.0, -4.0, 0.4]
+  - [4.0,  4.0, 0.8]
+end_positions:
+  - [0.5, 0.5, 0.2]
+  - [-0.5, 0.5, 0.4]
+  - [-0.5, -0.5, 0.8]
+
+# compare 1
+fps: 10
+#density: 100
+#dim: [0.25, 0.30, 0.20]  # w l h
+
+density: 156.25
+dim: [0.4, 0.4, 0.4]  # w l h
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/joint_states.csv'
 
 
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try2-1_new_motion/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try1-10_og/joint_states.csv'
 
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/compare_infer_weight/50-25-25_train_more/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/compare_infer_weight/20-40-40/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/compare_infer_weight/80-10-10/joint_states.csv'
+
+
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/compare_back_angle/5deg/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/compare_back_angle/10deg/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/compare_back_angle/30deg/joint_states.csv'
+
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/cube40_density_30_1-NoReward-NoMotion/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/cube40_density_200_2-NoReward-use/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/cube40_density_200_1/joint_states.csv'
+
+
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/back_limit/abdomen_y_30_1/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/back_limit/abdomen_y_45_1/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/back_limit/abdomen_y_45_2/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/back_limit/abdomen_y_45_3/joint_states.csv'
+
+# Try 4 new ergo reward
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/Try4-9_reward_motion_10kg/joint_states.csv'
+
+
+# 30 repeat
+# Try 4 new ergo reward
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/30_repeat/Try1-10_30_30density/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/30_repeat/Try4-3_motion_30/joint_states.csv'
+estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/30_repeat/Try4-9-b_reward_motion_42/joint_states.csv'

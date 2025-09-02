@@ -3,7 +3,8 @@ import os.path
 import pickle
 from Skeleton import *
 import matplotlib
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
+from mpl_toolkits.mplot3d import Axes3D
 import csv
 
 def parse_args():
@@ -14,7 +15,7 @@ def parse_args():
 
     parser.add_argument('--output_frame_folder', type=str, default=None)
     parser.add_argument('--output_GT_frame_folder', type=str, default=None)
-    parser.add_argument('--plot_mode', type=str, default='paper_view', help='mode: camera_view, camera_side_view, 0_135_view, normal_view, paper_view, global_view')
+    parser.add_argument('--plot_mode', type=str, default='global_view', help='mode: camera_view, camera_side_view, 0_135_view, normal_view, paper_view, global_view')
     parser.add_argument('--MB_data_stride', type=int, default=243)
     parser.add_argument('--debug_mode', default=True, type=bool)
 
@@ -37,24 +38,28 @@ if __name__ == '__main__':
     args = parse_args()
     # read est file csv as a numpy array
     n = 18
-    estimate_pose = np.loadtxt(args.estimate_file, delimiter=',', usecols=range(13*n)) # (frame, 234)
-    estimate_pose = estimate_pose.reshape(estimate_pose.shape[0], -1, 13)  # shape: (num_frames, 18, 13) 3 pos, 4 rot, 3 linear vel, 3 angular vel
-    estimate_pose = estimate_pose[:,:n, 0:3]  # shape: (num_frames, 15 + extra, 3)
+    isaac_pose_all = np.loadtxt(args.estimate_file, delimiter=',', usecols=range(13 * n)) # (frame, 234)
+    isaac_pose_all = isaac_pose_all.reshape(isaac_pose_all.shape[0], -1, 13)  # shape: (num_frames, 18, 13) 3 pos, 4 rot, 3 linear vel, 3 angular vel
+    isaac_pose = isaac_pose_all[:, :n, 0:3]  # shape: (num_frames, 15 + extra, 3)
+    issac_rot = isaac_pose_all[:, :n, 3:7]  # shape: (num_frames, 15 + extra, 4)  # quaternion
 
-    if args.debug_mode:
-        small_sample = 1000
-        estimate_pose = estimate_pose[:small_sample]
+    ### 3D pose
+    isaac_skeleton = IsaacSkeleton(args.skeleton_file)
+    isaac_skeleton.load_name_list_and_np_points(args.name_list, isaac_pose)
+    isaac_skeleton.load_rot_quat(issac_rot)
 
-    estimate_pose = estimate_pose # convert to mm
-    estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
-    estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
+    frames = list(range(1626-2,1630+3, 1))
 
-    # estimate_skeleton.plot_3d_pose_frame(frame=600, coord_system="world-m", plot_range=1, mode=args.plot_mode, center_key='PELVIS')
+    for frame in frames:
+        # frame -= 3
+        # isaac_skeleton.plot_3d_pose_frame(frame=frame, coord_system="world-m", plot_range=10, mode=args.plot_mode, center_key='PELVIS', plot_rot=True, title='Frame {}'.format(frame))
+        isaac_skeleton.plot_3d_pose_frame(frame=frame, coord_system="world-m", plot_range=2, mode="paper_view", center_key='PELVIS', plot_rot=True, title='Frame {}'.format(frame))
 
-    estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="world-m", plot_range=2, mode=args.plot_mode, center_key='PELVIS')
+    # issac_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="world-m", plot_range=2, mode=args.plot_mode, center_key='PELVIS')
 
     # get legend
-    # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='PELVIS')
+    # issac_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='PELVIS')
+
 
 
 

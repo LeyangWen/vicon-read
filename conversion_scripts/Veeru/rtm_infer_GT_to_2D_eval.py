@@ -16,6 +16,8 @@ from utility import *
 #
 # Used to evaluate RTM pose inference results
 # PCK, MPJPE, MPJPE_norm
+# data in Z drive /RTMPose
+# CSV in /Volumes/Z/RTMPose/og_vs_v1_vs_v2.xlsx
 #
 ###############################################
 
@@ -27,9 +29,9 @@ def phrase_args():
     # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_freeze_v3/lab_videos_freeze_backbone_epoch_best')
     # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_v1/best_epoch_40/outputs_epoch_best')
     # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/original_rtmpose/outputs_rtmpose_old')
+    # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_rtmw_v4/lab_videos_RTMW_freeze_backbone_neck_merged_epoch_best')
 
-    parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_rtmw_v4/lab_videos_RTMW_freeze_backbone_neck_merged_epoch_best')
-
+    parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_rtmw_v5/5fps/VEHS7M/exp_1b_new_freeze_jsons_npys')
     parser.add_argument('--infer_pose_type', type=str, choices=['rtm37_from_coco133', 'rtm37_from_37'], default='rtm37_from_37')
     parser.add_argument('--GT_ann_file', type=str, default='/Volumes/Z/RTMPose/37kpts_v1/GT/VEHS_6DCOCO_downsample20_keep1_validate.json')
     parser.add_argument('--number_of_keypoints', type=int, default=37)

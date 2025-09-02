@@ -52,8 +52,8 @@ if __name__ == '__main__':
     parser.add_argument('--swap', type=int, default=0, help='swap and fix marker pairs in list, mode 1: swap by comparing distance, mode 2: swap by checking speed')
     parser.add_argument('--swap_threshold', type=int, default=35, help='swap movement threshold for one frame in mm, not the main threshold')
     parser.add_argument('--mark', action='store_true', help='mark high speed markers with event')
-    parser.add_argument('--mark_threshold', type=int, default=45, help='mark movement threshold for one frame in mm, smaller value is more sensitive')
-    parser.add_argument('--mark_swap_threshold', type=int, default=25, help='mark swap movement threshold for one frame in mm, bigger value is more sensitive')
+    parser.add_argument('--mark_threshold', type=int, default=65, help='mark movement threshold for one frame in mm, smaller value is more sensitive')
+    parser.add_argument('--mark_swap_threshold', type=int, default=15, help='mark swap movement threshold for one frame in mm, bigger value is more sensitive')
     parser.add_argument('--mark_frame_interval', type=int, default=1, help='mark frame interval')
     parser.add_argument('--clear', action='store_true', help='clear all events')
     parser.add_argument('--start_frame', type=int, default=0, help='dont swap before this frame')
@@ -67,16 +67,13 @@ if __name__ == '__main__':
 
     start_frame = parser.parse_args().start_frame
     swap_pairs = [
-        # ['RRS', 'RUS'], ['LRS', 'LUS'],
-        # ['RMCP2', 'RMCP5'], ['LMCP2', 'LMCP5'],
+
         ['RAP', 'RAP_f'],
         ['LAP', 'LAP_f'],
         ['RAP_f', 'RAP_b'],
         ['LAP_f', 'LAP_b'],
         ['RLE', 'RME'],
         ['LLE', 'LME'],
-        ['LIC', 'LGT'], ['RIC', 'RGT'],
-        ['LIC', 'LASIS'], ['RIC', 'RASIS'],
         ['SS', 'RAP_f'], ['SS', 'LAP_f'],
         ['SS', 'RAP'], ['SS', 'LAP'],
         ['LMFC', 'LLFC'], ['RMFC', 'RLFC'],
@@ -86,8 +83,7 @@ if __name__ == '__main__':
         ['LEAR', 'HDTP'], ['REAR', 'MDFH'],
         ['REAR', 'HDTP'], ['LEAR', 'MDFH'],
         ['C7_d', 'C7'], ['C7_d', 'SS'],
-        ['RMFC', 'LMFC']
-        # ['RMM', 'RLM']
+
     ]
     LR_pairs = [
         ['RRS', 'LRS'], ['RUS', 'LUS'],
@@ -99,7 +95,8 @@ if __name__ == '__main__':
         ['LMFC', 'RMFC'], ['LLFC', 'RLFC'],
         ['LMM', 'RMM'], ['LMTP5', 'RMTP5'],
         ['LMTP1', 'RMTP1'],
-        ['LEAR', 'REAR'],
+        ['LEAR', 'REAR'], ['RLM', 'LLM'],
+        ['RHEEL', 'LHEEL'], ['LLM', 'RLM'], ['RMM', 'LMM'], ['LMTP1', 'RMTP1'], ['LMTP5', 'RMTP5'],
     ]
     check_marker_pairs = swap_pairs
     name_tuple = ()
@@ -157,7 +154,6 @@ if __name__ == '__main__':
                                   ['RAP', 'RAP_f'],
                                   ['LAP', 'LAP_f'],
                                   ['RAP_f', 'RAP_b'], ['LAP_f', 'LAP_b'],
-
                                   ['RAP', 'RAP_b'], ['LAP', 'LAP_b'],
                                   ['RLE', 'RME'],
                                   ['LLE', 'LME'],
@@ -178,6 +174,15 @@ if __name__ == '__main__':
                                   ['LMFC', 'LME'], ['RMFC', 'RME'],
                                   ['LMFC', 'LLE'], ['RMFC', 'RLE'],
                                   ['XP', 'LME'], ['XP', 'RME'],
+                                  ['RRS', 'RUS'], ['LRS', 'LUS'],
+                                  ['RMCP2', 'RMCP5'], ['LMCP2', 'LMCP5'],
+                                  ['LIC', 'LGT'], ['RIC', 'RGT'],
+                                  ['LIC', 'LASIS'], ['RIC', 'RASIS'],
+                                  ['LGT', 'LASIS'], ['RGT', 'RASIS'],
+                                  ['RME', 'RIC'], ['LME', 'RIC'],
+                                  ['RME', 'RGT'], ['LME', 'LGT'],
+                                  ['RME', 'RASIS'], ['LME', 'LASIS'],
+                                  ['LEAR', 'LAP_f'],['REAR', 'LAP_f'],['REAR', 'RAP_f'],['LEAR', 'LAP_f'], ['RAP_f', 'LAP_f']
                                   # ['RMFC', 'LMFC']
                                  ]
         check_marker_pairs = check_marker_pairs_all + swap_pairs

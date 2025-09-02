@@ -50,26 +50,45 @@ if __name__ == '__main__':
     # frame = 14578
     # target_markers = None
     #
-    # joints_dict = {}
-    # for marker in target_markers:
-    #     LR_markers = []
-    #     for LR in ['L', 'R']:
-    #         LR_marker = LR + marker
-    #         joints_dict[LR_marker] = MarkerPoint(vicon.GetTrajectory(subject_names[0], LR_marker))
-    #         LR_markers.append(LR_marker)
-    #     L_marker, R_marker = LR_markers
-    #     joints_dict[L_marker], joints_dict[R_marker] = Point.swap_trajectory(joints_dict[L_marker], joints_dict[R_marker], frame-1)
+    if False:  # swap left right
+        target_markers = foot + leg
+        frame = 16435
+        joints_dict = {}
+        for marker in target_markers:
+            LR_markers = []
+            for LR in ['L', 'R']:
+                LR_marker = LR + marker
+                joints_dict[LR_marker] = MarkerPoint(vicon.GetTrajectory(subject_names[0], LR_marker))
+                LR_markers.append(LR_marker)
+            L_marker, R_marker = LR_markers
+            joints_dict[L_marker], joints_dict[R_marker] = Point.swap_trajectory(joints_dict[L_marker], joints_dict[R_marker], frame-1)
 
-    # output back to Vicon
-    # for joint_name, value in joints_dict.items():
-    #     vicon.SetTrajectory(subject_names[0], joint_name, joints_dict[joint_name].x, joints_dict[joint_name].y, joints_dict[joint_name].z, joints_dict[joint_name].exist)
-    #     print(f'{joint_name} trajectory updated')
+        # output back to Vicon
+        for joint_name, value in joints_dict.items():
+            vicon.SetTrajectory(subject_names[0], joint_name, joints_dict[joint_name].x, joints_dict[joint_name].y, joints_dict[joint_name].z, joints_dict[joint_name].exist)
+            print(f'{joint_name} trajectory updated')
+
+    if False:
+        C7_d = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'C7_d'))
+        T8 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'T8'))
+        mid = Point.mid_point(C7_d, T8, 0.2)
+        vicon.SetTrajectory(subject_names[0], 'T8', mid.x, mid.y, mid.z, mid.exist)
+
+    if False:
+        RRS = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RRS'))
+        RMCP5 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RMCP5'))
+        RMCP2 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'RMCP2'))
+        mid = Point.mid_point(RMCP5, RRS)
+        RUS = Point.translate_point(mid, Point.vector(RMCP2, mid))
+        vicon.SetTrajectory(subject_names[0], 'RUS', RUS.x, RUS.y, RUS.z, RUS.exist)
 
     if True:
-        C7 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'C7'))
-        T8 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'T8'))
-        C7_d = Point.mid_point(C7, T8, precentage=0.85)
-        vicon.SetTrajectory(subject_names[0], 'C7_d', C7_d.x, C7_d.y, C7_d.z, C7_d.exist)
+        LRS = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LRS'))
+        LUS = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LUS'))
+        LMCP2 = MarkerPoint(vicon.GetTrajectory(subject_names[0], 'LMCP2'))
+        mid = Point.mid_point(LMCP2, LUS)
+        LMCP5 = Point.translate_point(mid, Point.vector(LRS, mid))
+        vicon.SetTrajectory(subject_names[0], 'LMCP5', LMCP5.x, LMCP5.y, LMCP5.z, LMCP5.exist)
 
     if False:
         target_markers = ['RUS', 'RRS', 'RMCP2']

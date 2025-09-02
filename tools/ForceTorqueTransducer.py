@@ -68,13 +68,21 @@ class ATIMini45(ForceTorqueTransducer):
             gain_voltage.append(ViconNexusObject.GetDeviceChannel(device_ID, 1, i)[0])
         self.gain_voltage = np.array(gain_voltage).T
         self.fps = ViconNexusObject.GetDeviceChannel(device_ID, 1, 1)[2]
-        self.load_voltage(self.gain_voltage)
+        try:
+            bias_voltage = []
+            for i in range(1, 8):
+                bias_voltage.append(ViconNexusObject.GetDeviceChannel(device_ID, 2, i)[0])
+            self.bias_voltage = np.array(bias_voltage).T
+        except:
+            self.bias_voltage = None
+            print("Cant load bias voltage, using mean of gain")
+        self.load_voltage()
 
-    def load_voltage(self, gain_voltage):
+    def load_voltage(self):
         self.tool_transform = self.assign_tool_transform()
         self.transformed_ft_cal = self.get_transformed_ft_cal()
-        self.gain_voltage = gain_voltage
-        self.bias_voltage = np.mean(gain_voltage[self.zero_frame[0]:self.zero_frame[1]], axis=0).reshape(1,-1)
+        if self.bias_voltage is not None:
+            self.bias_voltage = np.mean(self.gain_voltage[self.zero_frame[0]:self.zero_frame[1]], axis=0).reshape(1,-1)
         self.force_torque_values = self.convert_to_ft()
         self.assign_values()
 
