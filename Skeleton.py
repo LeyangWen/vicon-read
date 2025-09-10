@@ -1447,6 +1447,65 @@ class IsaacSkeleton(VEHSErgoSkeleton):
             f.write(f'COM Task done #')
         return
 
+    def simple_knee_angle(self, side='left'):
+        if side == 'left':
+            thigh = self.point_poses['left_thigh']
+            shin = self.point_poses['left_shin']
+            foot = self.point_poses['left_foot']
+        elif side == 'right':
+            thigh = self.point_poses['right_thigh']
+            shin = self.point_poses['right_shin']
+            foot = self.point_poses['right_foot']
+        knee_angle = Point.angle(Point.vector(thigh, shin).xyz, Point.vector(shin, foot).xyz)
+        return knee_angle
+
+    def simple_elbow_angle(self, side='left'):
+        if side == 'left':
+            upper_arm = self.point_poses['left_upper_arm']
+            lower_arm = self.point_poses['left_lower_arm']
+            hand = self.point_poses['left_hand']
+        elif side == 'right':
+            upper_arm = self.point_poses['right_upper_arm']
+            lower_arm = self.point_poses['right_lower_arm']
+            hand = self.point_poses['right_hand']
+        elbow_angle = Point.angle(Point.vector(upper_arm, lower_arm).xyz, Point.vector(lower_arm, hand).xyz)
+        return elbow_angle
+
+    def simple_back_angle(self, up_axis=[0, 0, 1]):
+        torso = self.point_poses['torso']
+        head = self.point_poses['head']
+        pelvis = self.point_poses['PELVIS']
+
+        up_axis_vec = Point.create_const_vector(*up_axis, examplePt=pelvis)
+        back_angle = Point.angle(Point.vector(pelvis, torso).xyz, up_axis_vec.xyz)
+        return back_angle
+
+    def back_angles(self, up_axis=[0, 0, 1]):
+        BACK_angles = JointAngles()
+        BACK_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'L-bending', 'rotation': 'axial rotation'}
+        zero_frame = [0, 0, 0]
+        BACK_angles.set_zero(zero_frame)
+
+        pelvis = self.point_poses['PELVIS']
+        torso = self.point_poses['torso']
+        left_shin = self.point_poses['left_shin']
+        right_shin = self.point_poses['right_shin']
+        left_upper_arm= self.point_poses['left_upper_arm']
+        right_upper_arm= self.point_poses['right_upper_arm']
+
+        BACK_plane = Plane()
+        BACK_plane.set_by_vector(pelvis, Point.create_const_vector(*up_axis, examplePt=pelvis), direction=1)
+        BACK_coord = CoordinateSystem3D()
+        # BACK_RPSIS_PROJECT = BACK_plane.project_point(RPSIS)
+        BACK_RHIP_PROJECT = BACK_plane.project_point(right_shin)
+        BACK_coord.set_by_plane(BACK_plane, pelvis, BACK_RHIP_PROJECT, sequence='xzy', axis_positive=True) # x to right, z to up, y to forward
+        BACK_angles = JointAngles()
+        BACK_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'L-flexion', 'rotation': 'rotation'}  #lateral flexion
+        BACK_angles.set_zero(zero_frame)
+        BACK_angles.get_flex_abd(BACK_coord, Point.vector(pelvis, torso), plane_seq=['yz', 'xz'], flip_sign=[1, -1])  # right to be positive for lateral bend --> not tested
+        # BACK_angles.get_rot(RSHOULDER, LSHOULDER, RPSIS, LPSIS, flip_sign=1)
+        BACK_angles.get_rot(right_upper_arm, left_upper_arm, right_shin, left_shin, flip_sign=1)
+        return BACK_angles
 
 class PulginGaitSkeleton(Skeleton):
     """A class for plugin gait skeleton"""

@@ -3,6 +3,8 @@ import numpy as np
 import copy
 import argparse
 
+from conversion_scripts.Veeru.veeru_format_snippet import pkl_file
+
 # File from Veeru to overwrite Vicon-MB pkl files with the RTMPose 2D pose and confidence score
 ####### For RMTpose - custom train v1 - 37kpts - sepearted npy files (2025 Jan)
 # Step 1: c3d_to_MB.py to generate Vicon GT pkl file

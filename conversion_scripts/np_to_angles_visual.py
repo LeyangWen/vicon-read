@@ -6,6 +6,7 @@ from Skeleton import *
 from scipy.stats import f_oneway
 from MB_np_to_visual import MB_input_pose_file_loader
 from datetime import datetime
+import copy
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -103,10 +104,10 @@ if __name__ == '__main__':
 
     frame_range = None #[0, 60*3*20]
     # target_angles = estimate_skeleton.angle_names  # ['neck', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'right_wrist', 'left_wrist', 'back', 'right_knee', 'left_knee']
-    # target_angles = ['neck', 'right_shoulder', 'left_shoulder']
+    target_angles = ['neck', 'right_shoulder', 'left_shoulder']
     # target_angles = ['right_elbow', 'left_elbow', 'right_wrist', 'left_wrist']
 
-    target_angles = ['back', 'right_knee', 'left_knee']
+    # target_angles = ['back', 'right_knee', 'left_knee']
 
     print(f"target angles: {target_angles}")
     # Single thread
@@ -138,7 +139,7 @@ if __name__ == '__main__':
                 frame_range_max = list(np.array([2,2,1,2,1,2,2,2,1,2,2,2,11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * 243)  # industry #2
 
                 ## only 12 rick videos
-                frame_range_max = list(np.array([2,2,1,2,1,2,2,2,1,2,2,2])*243)
+                # frame_range_max = list(np.array([2,2,1,2,1,2,2,2,1,2,2,2])*243)
 
                 # ## only 11 long industry videos
                 # frame_range_max = list(np.array([21,11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * 243)  # industry #2
