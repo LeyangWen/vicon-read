@@ -1483,7 +1483,7 @@ class IsaacSkeleton(VEHSErgoSkeleton):
     def back_angles(self, up_axis=[0, 0, 1]):
         BACK_angles = JointAngles()
         BACK_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'L-bending', 'rotation': 'axial rotation'}
-        zero_frame = [0, 0, 0]
+        zero_frame = [90, 0, 0]
         BACK_angles.set_zero(zero_frame)
 
         pelvis = self.point_poses['PELVIS']

@@ -57,8 +57,7 @@ if __name__ == '__main__':
     csv_file = args.export_file.replace('.txt', '.csv')
     n = len(result.segments)//2
     lift_lower = ['Lift', 'Lower']
-    start_heights = [0.2, 0.4, 0.8, 0.2, 0.4, 0.8, 0.2, 0.4, 0.8, 0.2, 0.4, 0.8, 0.2, 0.4, 0.8, 0.2, 0.4, 0.8, 0.2, 0.4, 0.8, 0.2, 0.4, 0.8, 0.2, 0.4, 0.8, 0.2, 0.4, 0.8]
-
+    start_heights = [0.2, 0.4, 0.6, 0.8]
     with open(csv_file, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["filename", csv_file])
@@ -72,6 +71,6 @@ if __name__ == '__main__':
 
             _, min_score, scores, _ = result.eval_segment(result.segments[segment], eval_keys_SCP, verbose=True, criteria='min_min')
             _, _, compression_forces, _ = result.eval_segment(result.segments[segment], eval_keys_Compression, verbose=True, criteria='min_max')
-            writer.writerow([segment, lift_lower[segment//n], start_heights[segment%n]] + list(compression_forces) + list(scores))
+            writer.writerow([segment, lift_lower[segment//n], "start_heights[segment%n]"] + list(compression_forces) + list(scores))
 
 

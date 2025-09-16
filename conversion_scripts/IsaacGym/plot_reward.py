@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
 
 def compute_back_ergo_reward(back_angle, knee_angle, weight=1.0):
     exp_k = -5.0
@@ -25,9 +25,9 @@ fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 ax.plot_trisurf(B_vals, K_vals, Z_vals, cmap='viridis')
 ax.set_xlabel("Back Angle (deg)")
-ax.set_ylabel("Mean Knee Angle (deg)")
+ax.set_ylabel("Min Knee Angle (deg)")
 ax.set_zlabel("Reward")
-ax.set_title("Back Ergonomics Reward")
+ax.set_title("Back Reward")
 plt.tight_layout()
 plt.show()
 
@@ -53,7 +53,7 @@ ax.plot_surface(X, Y, Z, cmap='viridis')
 ax.set_xlabel("Box Distance from Body (m)")
 ax.set_ylabel("Box Size (m)")
 ax.set_zlabel("Reward")
-ax.set_title("Box Ergonomics Reward")
+ax.set_title("Box Reward")
 
 plt.tight_layout()
 plt.show()
@@ -81,11 +81,15 @@ Z = compute_elbow_ergo_reward(L, R)
 # Plot
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-ax.plot_surface(L * 180 / np.pi, R * 180 / np.pi, Z, cmap='viridis')
+surf = ax.plot_surface(L * 180 / np.pi, R * 180 / np.pi, Z, cmap='viridis')
 ax.set_xlabel("Left Elbow Angle (deg)")
 ax.set_ylabel("Right Elbow Angle (deg)")
 ax.set_zlabel("Reward")
-ax.set_title("Elbow Ergonomics Reward")
+ax.set_title("Elbow Reward")
 
-plt.tight_layout()
+# show color legend
+fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10, label="Reward Value")
+
+
+# plt.tight_layout()
 plt.show()

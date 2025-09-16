@@ -61,9 +61,28 @@ dim: [0.4, 0.4, 0.4]  # w l h
 
 
 # 50 repeat flat
-start_offset: 0
-estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/50_repeat/OG-Try1-10_flat/joint_states.csv'
+#start_offset: 0
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/50_repeat/OG-Try1-10_flat/joint_states.csv'
 #start_offset: 150
 #estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/50_repeat/Try4-9_flat/joint_states.csv'
 
 
+# 50 repeat flat handle
+#start_offset: 0
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/box_handle_45_repeat/OG-Try1-10_flat_handle/joint_states.csv'
+#start_offset: 150
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try4-3_correct_motion_and reward/box_handle_45_repeat/Try4-11_flat_handle/joint_states.csv'
+
+# CRC
+start_offset: 0
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/CRC/Flat_4_heights/OG-Try1-10_flat/joint_states.csv'
+#start_offset: 20
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/CRC/Flat_4_heights/Try4-11_flat/joint_states.csv'
+#start_offset: 40
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/CRC/Flat_4_heights/Try4-11_flat_45_repeat/joint_states.csv'
+#start_offset: 40
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/CRC/Flat_4_heights/Try4-11_flat_45_repeat_rand/joint_states.csv'
+
+
+# lab:
+estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/CRC/lab_1_loc/joint_states.csv'

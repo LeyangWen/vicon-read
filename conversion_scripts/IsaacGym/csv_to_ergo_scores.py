@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument('--output_GT_frame_folder', type=str, default=None)
     parser.add_argument('--plot_mode', type=str, default='paper_view', help='mode: camera_view, camera_side_view, 0_135_view, normal_view, paper_view, global_view')
     parser.add_argument('--debug_mode', default=True, type=bool)
-    parser.add_argument('--output_type', type=list, default=[True, False, False], help='LI, plot, 3DSSPP')
+    parser.add_argument('--output_type', type=list, default=[True, False, True], help='LI, plot, 3DSSPP')
 
     # parser.add_argument('--name_list', type=list, default=[])
     args = parser.parse_args()
@@ -141,7 +141,9 @@ def get_MMH_start_end(args, segment):
     lift_start_seg, lower_end_seg = box_movement_segments
     lift_end_seg, lower_start_seg = box2init_xy_near_segments
 
+    max_frame = segment.shape[0] - 1
     lower_start_seg = lower_start_seg + 2
+    lower_start_seg = np.clip(lower_start_seg, 0, max_frame)
 
     if len(lift_start_seg) == 0 or len(lift_end_seg) == 0 or len(lower_start_seg) == 0 or len(lower_end_seg) == 0:
         print("No lift or lower segments found, returning empty segments.")
@@ -225,8 +227,8 @@ if __name__ == '__main__':
     box = isaac_pose[:, box_id]
 
     # Horizontal location (box center to pelvis xy)
-    H = (np.sum((box[all_id, :2] - pelvis[all_id, :2]) ** 2, axis=1) ** 0.5) * 100  # cm
-    # H = (np.sum((box[all_id, :2] - foot_center[all_id, :2])**2, axis=1)**0.5)*100  # cm
+    # H = (np.sum((box[all_id, :2] - pelvis[all_id, :2]) ** 2, axis=1) ** 0.5) * 100  # cm
+    H = (np.sum((box[all_id, :2] - foot_center[all_id, :2])**2, axis=1)**0.5)*100  # cm
     # Vertical location (box center to floor z)
     V = box[all_id, 2]*100  # cm
     # Vertical Travel Distance (D)
@@ -264,8 +266,8 @@ if __name__ == '__main__':
     FM = 0.94
     # TODO: compound LI
     # Coupling Multiplier CM From Table 7 -- assume poor coupling because lifting box from side without handel
-    CM = 0.9
-
+    CM = 0.9 # -- assume poor coupling because lifting box from side without handel
+    # CM = 1.0  # -- assume good coupling because lifting box  with handel
     # RWL recommended weight limit
     RWL = LC * HM * VM * DM * AM * FM * CM
 
@@ -275,8 +277,10 @@ if __name__ == '__main__':
     ####### reshape back to lift and lower
     LI = LI.reshape(4, -1)
     # keep max of row 1 and 2, keep max of row 3 and 4
-    LI_lift = np.max(LI[:2], axis=0)
-    LI_lower = np.max(LI[2:], axis=0)
+    # LI_lift = np.max(LI[:2], axis=0)
+    # LI_lower = np.max(LI[2:], axis=0)
+    LI_lift = LI[0]
+    LI_lower = LI[3]
 
     bad_lift_id_LI = np.where(LI_lift>3)[0]
     bad_lower_id_LI = np.where(LI_lower>3)[0]
@@ -384,7 +388,7 @@ if __name__ == '__main__':
                 frame = int(frame)
                 title = f"{start_height}m - {four_type[j]} - {segment_id}:{frame}"
                 isaac_skeleton.plot_3d_pose_frame(frame=frame, coord_system="world-m", plot_range=2, mode=args.plot_mode, center_key='PELVIS', plot_rot=True, title=title)
-            raise NotImplementedError
+            # raise NotImplementedError
     ######################## REBA ########################
 
 
