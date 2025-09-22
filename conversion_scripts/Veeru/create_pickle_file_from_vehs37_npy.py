@@ -17,6 +17,9 @@ from conversion_scripts.Veeru.veeru_format_snippet import pkl_file
 motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2_pitch_correct_modified.pkl'
 npy_dir = r'W:\VEHS\VEHS data collection round 3\RTM2D\RTMWPose_VEHS7M_37kpts_v5_2-b'
 
+# 4D
+npy_dir =  '/Users/leyangwen/Downloads/From_Veeru/exp_2b_industry_videos_20fps_with_visibility'
+
 
 new_pkl_file = motionbert_pkl_file.replace('.pkl', '_RTM2D.pkl')
 

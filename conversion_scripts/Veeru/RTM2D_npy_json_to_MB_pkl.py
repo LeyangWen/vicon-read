@@ -36,13 +36,15 @@ def read_input(json_path, type='rtm24'):
 def parse_args():
     parser = argparse.ArgumentParser()
     # parser.add_argument('--json_folder', type=str, default=r'W:\VEHS\Testing_Videos_and_rtmpose_results\OneDrive_2_9-4-2024\kps_133_fps_20')
-    parser.add_argument('--json_folder', type=str, default=r'/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-1-OG/Industry')
+    parser.add_argument('--json_folder', type=str, default=r'/Users/leyangwen/Downloads/From_Veeru/exp_2b_industry_videos_20fps_with_visibility')
     parser.add_argument('--read_type', type=str, default='npy', help='json or npy')
     parser.add_argument('--output_file', type=str, default=r'rtmpose_v5-2b_20fps_industry_37kpts_v2.pkl')
     parser.add_argument('--joint_num', type=int, default=37)
     parser.add_argument('--type', type=str, default='rtm37_from_37')
+    parser.add_argument('--score_2d', type=str, default='visibility', help='confidence or visibility')
 
     args = parser.parse_args()
+    args.output_file = args.output_file.replace('.pkl', f'_{args.score_2d}.pkl')
     return args
 
 if __name__ == '__main__':
@@ -75,6 +77,16 @@ if __name__ == '__main__':
 
             assert all_keyps_rtm.shape[1] == args.joint_num, f"all_keyps_rtm.shape[1]: {all_keyps_rtm.shape[1]}, args.joint_num: {args.joint_num}, they should be the same"
             frame_no = all_keyps_rtm.shape[0]
+            if args.score_2d == 'visibility':
+                assert all_keyps_rtm.shape[2] == 4, f"all_keyps_rtm.shape[2]: {all_keyps_rtm.shape[2]}, should be 4 for x,y,conf,visibility"
+                all_keyps_rtm[:, :, 2] = all_keyps_rtm[:, :, -1]
+                all_keyps_rtm = all_keyps_rtm[:, :, :3]
+            elif args.score_2d == 'confidence':
+                all_keyps_rtm = all_keyps_rtm[:, :, :3]
+            else:
+                raise NotImplementedError
+
+
             print(f"frame_no: {frame_no}, %243: {frame_no%243}")
             this_segment = frame_no//243
             seg_length.append(this_segment)
