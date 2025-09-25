@@ -218,9 +218,9 @@ def process_csv(csv_path: Path, video_root: Path, out_root: Path, reencode: bool
 
 def main():
     parser = argparse.ArgumentParser(description="Split videos into clips using CSV marker files.")
-    parser.add_argument("--csv-dir", default='/Volumes/Z/Isaac/imitation_motions/Lift/good/markers')
-    parser.add_argument("--video-root", default='/Volumes/Z/Isaac/imitation_motions/Lift/good/raw')
-    parser.add_argument("--out-root", default="/Volumes/Z/Isaac/imitation_motions/Lift/good/clips")
+    parser.add_argument("--csv-dir", default=   '//Users/leyangwen/Documents/Isaac/MMH/imitation_motions/Terrain_lift/markers')
+    parser.add_argument("--video-root", default='/Users/leyangwen/Documents/Isaac/MMH/imitation_motions/Terrain_lift/good/raw')
+    parser.add_argument("--out-root", default=  "/Users/leyangwen/Documents/Isaac/MMH/imitation_motions/Terrain_lift/good/clips")
     parser.add_argument("--crf", type=int, default=18, help="x264 CRF quality (default: 18). Lower = better.")
     parser.add_argument("--preset", default="veryfast", help="x264 preset (default: veryfast).")
     parser.add_argument("--copy-video", action="store_true",
