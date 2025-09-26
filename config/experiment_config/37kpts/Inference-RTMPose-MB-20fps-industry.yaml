@@ -38,7 +38,7 @@ GT_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v4/20fps/Ricks_Videos_RTMW_freeze_backb
 #estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-normal-2-limbLoss/Industry_both/X3D.npy'
 #estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-3-angleLoss/Industry_both/X3D.npy'
 
-estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/Industry_both/X3D.npy'
+estimate_file: 'Z:/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/Industry_both/X3D.npy'
 #estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/Industry_both_noflip/X3D.npy'
 #estimate_file: '/Users/leyangwen/Downloads/scratch_pose/smoothed/X3D_smooth.npy'
 #estimate_file: '/Users/leyangwen/Downloads/scratch_pose/RTMW37kpts_v2_20fps-finetune-pitch-correct-6-center-angleLoss/Industry_both/X3D.npy'

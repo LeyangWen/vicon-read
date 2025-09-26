@@ -4,7 +4,7 @@ import pickle
 from Skeleton import *
 import matplotlib
 import copy
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
 
 def parse_args():
     parser = argparse.ArgumentParser()
