@@ -24,6 +24,7 @@ def parse_args():
         args.GT_file = data['GT_file']
         args.eval_key = data['eval_key']
         args.estimate_file = data['estimate_file']
+        args.output_dir = os.path.join(os.path.dirname(args.estimate_file), 'support_kpts_score')
     return args
 
 
@@ -205,7 +206,7 @@ def plot_normalized_scores(
 
     time = np.arange(normalized_score.shape[0]) / fps / 60
 
-    # 1) Smooth for visualization
+    # 1) Smooth
     normalized_score = smooth_scores(np.asarray(normalized_score, dtype=float), smooth_window)
 
     # 2) Build segment map (filtered by duration)
@@ -271,6 +272,131 @@ def plot_normalized_scores(
     plt.tight_layout()
     plt.show()
 
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter, MultipleLocator
+
+def plot_normalized_scores_by_frame(
+        normalized_score,
+        thresholds,
+        render_dir,
+        fps=20,
+        frame_interval=243,
+        frame_range=None,
+        frame_range_max=None,
+        smooth_window=40,
+        skip_first=False
+):
+    """
+    Save a sequence of images, each showing the 6 normalized scores up to the current frame.
+    - No legends.
+    - "Time (s)" only on the bottom row (plots 5 and 6).
+    - "Normalized score" only on the left column (plots 1, 3, 5).
+    - Vertical dotted markers every `frame_interval` frames (blue).
+    - Threshold line: thick red.
+    - Score line: blue.
+    - Current frame: black dot.
+    """
+    if normalized_score is None or len(normalized_score) == 0:
+        raise ValueError("normalized_score is empty")
+
+    normalized_score = smooth_scores(np.asarray(normalized_score, dtype=float), smooth_window)
+    T = normalized_score.shape[0]
+    num_series = normalized_score.shape[1]
+    assert num_series == 6, f"Expected 6 columns (LSHOULDER..RHAND), got {num_series}"
+    assert thresholds.size == 6, f"thresholds must have 6 values, got {thresholds.size}"
+
+    joint_names = ["LSHOULDER", "RSHOULDER", "LELBOW", "RELBOW", "LHAND", "RHAND"]
+
+    if frame_range is None:
+        frame_range = [0, T]
+
+    # split into segments
+    if frame_range_max is None:
+        frame_ranges = [frame_range]
+    elif isinstance(frame_range_max, int):
+        frame_ranges = []
+        total = frame_range[1] - frame_range[0]
+        n_segs = int(np.floor(total / frame_range_max))
+        for seg_id in range(n_segs):
+            s = frame_range[0] + seg_id * frame_range_max
+            e = frame_range[0] + (seg_id + 1) * frame_range_max
+            frame_ranges.append([s, e])
+    elif isinstance(frame_range_max, list):
+        frame_ranges = []
+        left = 0
+        fr_list = frame_range_max[:]
+        if skip_first and len(fr_list) > 0:
+            left = fr_list[0]
+            fr_list = fr_list[1:]
+        for segment_frame_len in fr_list:
+            right = left + segment_frame_len
+            frame_ranges.append([left, right])
+            left = right
+    else:
+        raise ValueError(f'frame_range_max must be None, int or list, not {type(frame_range_max)}')
+
+    def seconds_formatter(x, pos):
+        return f'{x / fps:.0f}'  # whole seconds
+
+    os.makedirs(render_dir, exist_ok=True)
+
+    for seg_id, fr in enumerate(frame_ranges):
+        left, right = fr
+        print(f'[{seg_id+1}/{len(frame_ranges)}] Saving normalized scores frames to {render_dir}')
+        data_len = right - left
+
+        # Instead of ~12 ticks, target ~6 ticks → about one every data_len/6
+        tick_interval = max(1, data_len // 6)
+
+        for frame_id in range(left, right):
+            if frame_id < right-10:
+                continue
+            fig, axes = plt.subplots(3, 2, figsize=(14, 8), sharex=False)
+            axes = axes.ravel()
+
+            for i in range(6):
+                ax = axes[i]
+                in_left_col = (i % 2 == 0)
+                in_bottom_row = (i // 2 == 2)
+
+                # threshold: thicker red line
+                ax.axhline(float(thresholds[i]), linestyle='--', linewidth=1.5, color='red')
+
+
+                # vertical dotted blue lines every frame_interval
+                for xline in range(left, right, frame_interval):
+                    ax.axvline(xline, linestyle='dotted', linewidth=0.8, alpha=0.6, color='blue')
+
+                y = normalized_score[:, i]
+                # faint full series (blue)
+                ax.plot(range(left, right), y[left:right], alpha=0.25, linewidth=1.0, color='blue')
+                # up-to-frame (stronger blue)
+                ax.plot(range(left, frame_id + 1), y[left:frame_id + 1], alpha=0.9, linewidth=1.5, color='blue')
+
+                # current frame marker (black dot + vertical line)
+                ax.axvline(frame_id, linestyle='--', linewidth=0.6, alpha=0.6, color='k')
+                ax.plot(frame_id, y[frame_id], marker='o', markersize=3, color='black')
+                ax.text(frame_id, y[frame_id], f'{y[frame_id]:.2f}', fontsize=9,
+                        ha='left', va='bottom')
+
+                ax.set_xlim(left, right)
+                ax.set_ylim(0, 0.6)
+                ax.set_title(joint_names[i], fontsize=18, weight='bold')
+
+                if in_left_col:
+                    ax.set_ylabel('Normalized score', fontsize=16)
+                if in_bottom_row:
+                    ax.set_xlabel('Time (s)', fontsize=16)
+
+                ax.xaxis.set_major_formatter(FuncFormatter(seconds_formatter))
+                ax.xaxis.set_major_locator(MultipleLocator(tick_interval))
+                ax.grid(True, alpha=0.3)
+
+            plt.tight_layout()
+            out_path = os.path.join(render_dir, f'support_kpt_score_{frame_id:06d}.png')
+            plt.savefig(out_path, dpi=150)
+            plt.close()
+
 
 if __name__ == '__main__':
     # read arguments
@@ -308,3 +434,26 @@ if __name__ == '__main__':
 
 
     plot_normalized_scores(normalized_score, thresholds, fps=20)
+
+    render_dir = os.path.join(args.output_dir)
+    if "VEHS7M" in render_dir:
+        frame_range_max = None
+    elif "Industry/angles" in render_dir:
+        frame_range_max = list(np.array([2, 2, 1, 2, 1, 2, 2, 2, 1, 2, 2, 2]) * 243)  # industry
+    elif "Industry_2" in render_dir:
+        frame_range_max = list(np.array([11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * 243)  # industry #2
+    elif "Industry_both" in render_dir:
+        frame_range_max = list(np.array([2, 2, 1, 2, 1, 2, 2, 2, 1, 2, 2, 2, 11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * 243)  # industry #2
+
+    plot_normalized_scores_by_frame(
+        normalized_score=normalized_score,
+        thresholds=thresholds,
+        render_dir=render_dir,
+        fps=20,
+        frame_interval=args.MB_data_stride,  # 243 by default
+        frame_range=[0, normalized_score.shape[0]],
+        frame_range_max=frame_range_max,  # your per-segment list or int/None
+        smooth_window=40,
+        skip_first=False
+    )
+
