@@ -18,14 +18,17 @@ if __name__ == '__main__':
     parser.add_argument('--downsample', type=int, default=5)
     parser.add_argument('--downsample_keep', type=int, default=1)
     parser.add_argument('--split_output', action='store_true')  # not implemented yet
-    parser.add_argument('--output_type', type=list, default=[False, False, False, False], help='3D, 6D, SMPL, 3DSSPP')
-    parser.add_argument('--output_file_name_end', type=str, default='_37_v2_pitch_correct')  # v2
+    parser.add_argument('--output_type', type=list, default=[False, True, False, False], help='3D, 6D, SMPL, 3DSSPP')
+    # parser.add_argument('--output_file_name_end', type=str, default='_37_v2_pitch_correct')  # v2
+    parser.add_argument('--output_file_name_end', type=str, default='_66_v2_pitch_correct')  # v2
+
     parser.add_argument('--distort', action='store_false', help='consider camera distortion in the output 2D pose')
     parser.add_argument('--rootIdx', type=int, default=0, help='root index for 2D pose output')  # 21: pelvis for 66 kpts
     parser.add_argument('--MB_dict_version', type=str, default='normal', help='select from "normal", "diversity_metric"')
     parser.add_argument('--zero_camera_pitch', type=bool, default=True)
     args = parser.parse_args()
-
+    if args.MB_dict_version == 'diversity_metric':
+        args.output_file_name_end += "_" + args.MB_dict_version
 
     # base_folder = r'C:\Users\Public\Documents\Vicon\data\Vicon_F\Round3\LeyangWen'
     split_config_file = args.split_config_file
@@ -80,7 +83,9 @@ if __name__ == '__main__':
                                               'LSHOULDER', 'HEAD', 'THORAX', 'HDTP', 'REAR', 'LEAR', 'C7', 'C7_d', 'RMCP2', 'RMCP5', 'LMCP2', 'LMCP5']
 
     ####### change output keypoints here
-    custom_6D_joint_names = rtm_pose_37_keypoints_vicon_dataset_v1
+    custom_6D_joint_names = paper_custom_6D_joint_names
+    if args.MB_dict_version == "diversity_metric":
+        custom_6D_joint_names = diversity_metric_keypointset
 
     output_6D_dataset = empty_MotionBert_dataset_dict(len(custom_6D_joint_names), version=args.MB_dict_version)  # 66
     output_smpl_dataset = {}
@@ -108,15 +113,8 @@ if __name__ == '__main__':
                         train_val_test = 'train'
 
                     print(f"file: {file}, root: {root}, train_val_test: {train_val_test}")
-
                     c3d_file = os.path.join(root, file)
                     count += 1
-                    # if count > 1:  # give a very small file for testing
-                    #     if train_val_test == 'train':
-                    #         train_val_test = 'test'
-                    #         count = 0
-                    #     else:
-                    #         break
 
                     print(f'{count}: Starting on {c3d_file} as {train_val_test} set')
                     this_skeleton = VEHSErgoSkeleton(skeleton_file)
