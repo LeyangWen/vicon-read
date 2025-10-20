@@ -188,76 +188,98 @@ def smooth_scores(scores, window=10):
     return out
 
 
-def plot_normalized_scores(
+# ---------- 1) Data preparation ----------
+def prepare_score_data(
         normalized_score,
         thresholds,
         fps=20,
         smooth_window=40,
-        min_segment_sec=0.0
+        min_segment_sec=0.0,
+        args=None
 ):
     """
-    normalized_score: (num_frames, 6) array
-    thresholds: array-like of length 6
-    bad_frame_dict: dict {joint_name: frame_indices}
-    smooth_window: odd int for moving-average smoothing (display only)
-    min_segment_sec: only highlight bad-frame segments >= this duration (seconds)
+    Returns a dict with:
+      - 'smoothed': (T,6) smoothed scores
+      - 'mask': (T,6) boolean, True where score > threshold
+      - 'bad_frame_dict': {joint_name: np.array(frame_ids)}
+      - 'segs_map': {joint_name: [(start,end), ...]} with min length filter
     """
-    joint_names = ["LSHOULDER", "RSHOULDER", "LELBOW", "RELBOW", "LHAND", "RHAND"]  # plot left on left
+    joint_names = ["LSHOULDER", "RSHOULDER", "LELBOW", "RELBOW", "LHAND", "RHAND"]
 
-    time = np.arange(normalized_score.shape[0]) / fps / 60
+    # Smooth for visualization
+    smoothed = smooth_scores(np.asarray(normalized_score, dtype=float), smooth_window)
 
-    # 1) Smooth
-    normalized_score = smooth_scores(np.asarray(normalized_score, dtype=float), smooth_window)
+    # Over-threshold mask
+    thresholds = np.asarray(thresholds, dtype=float)
+    mask = smoothed > thresholds[np.newaxis, :]
 
-    # 2) Build segment map (filtered by duration)
-    segs_map = {}
-
-    mask = normalized_score > thresholds[np.newaxis, :]  # shape (28431, 6)
+    # Build segments per joint
+    if args is None:
+        raise ValueError("prepare_score_data requires args for frame_id_from_mask naming.")
     bad_frame_dict = frame_id_from_mask(mask, args)
+
     min_len_frames = max(1, int(np.ceil(min_segment_sec * fps)))
+    segs_map = {}
     for joint in joint_names:
         idxs = np.asarray(bad_frame_dict.get(joint, []), dtype=int)
         idxs.sort()
-        segs = consecutive_segments(idxs, min_length=min_len_frames)
-        segs_map[joint] = segs
-    plot_end_time = 23.5*60 #s
-    for joint in joint_names:
-        segments = segs_map.get(joint, [])
-        if not segments:
-            continue
-        print(f"{joint}: {len(segments)} segments (dur >= {min_segment_sec:.3f}s)")
-        for s, e in segments:
-            start_t = s / fps
-            end_t = (e + 1) / fps  # inclusive end -> next frame boundary
-            dur = (e - s + 1) / fps
+        segs_map[joint] = consecutive_segments(idxs, min_length=min_len_frames)
 
-            if start_t < plot_end_time:
-                print(f"    {fmt_hms(start_t)} – {fmt_hms(end_t)}  "
-                  f"(dur {dur:.3f}s)  | frames [{s}, {e}]")
+    return {
+        "smoothed": smoothed,
+        "mask": mask,
+        "bad_frame_dict": bad_frame_dict,
+        "segs_map": segs_map,
+        "joint_names": joint_names,
+        "thresholds": thresholds,
+        "fps": fps
+    }
 
-    # 3) Plot
+# ---------- 2) Full-sequence plot (minutes on x) ----------
+def plot_normalized_scores(
+        processed,
+        plot_end_time_sec=23.5 * 60
+):
+    """
+    Uses output from prepare_score_data to produce a full-sequence plot.
+    - x in minutes (keeps your original)
+    - red threshold line
+    - light-blue fill where score > threshold
+    - segment spans shown
+    """
+    smoothed = processed["smoothed"]
+    thresholds = processed["thresholds"]
+    joint_names = processed["joint_names"]
+    fps = processed["fps"]
+    segs_map = processed["segs_map"]
+
+    # x in minutes for this overview plot
+    T = smoothed.shape[0]
+    time_min = (np.arange(T) / fps) / 60.0
+
     plt.figure(figsize=(14, 8))
     for i, joint in enumerate(joint_names):
         ax = plt.subplot(3, 2, i + 1)
 
-        # line: smoothed score
-        ax.plot(time, normalized_score[:, i], label=f"{joint} score", alpha=0.60)
+        # line
+        ax.plot(time_min, smoothed[:, i], label=f"{joint} score", alpha=0.60, color="blue")
 
         # threshold
         thr = float(thresholds[i])
-        ax.axhline(thr, linestyle="--", label="Threshold", color="red")
+        ax.axhline(thr, linestyle="--", linewidth=1.5, color="red", label="Threshold")
+
+        # light-blue shading where over threshold
+        ax.fill_between(time_min, 0, smoothed[:, i], where=(smoothed[:, i] > thr),
+                        color="lightblue", alpha=0.30, step="pre")
 
         # highlight segments
         for s, e in segs_map.get(joint, []):
-            start_t = s / fps /60
-            end_t = (e + 1) / fps / 60
+            start_t = s / fps / 60.0
+            end_t = (e + 1) / fps / 60.0
             ax.axvspan(start_t, end_t, alpha=0.20, label="Segments to remove")
 
-        # fixed y-limits as you had
         ax.set_ylim(0, 0.6)
-        ax.set_xlim(0, plot_end_time/60) #1400/60
-
-
+        ax.set_xlim(0, plot_end_time_sec / 60.0)
         ax.set_title(joint)
         ax.set_xlabel("Time (min)")
         ax.set_ylabel("Normalized score")
@@ -268,49 +290,58 @@ def plot_normalized_scores(
         uniq = dict(zip(labels, handles))
         ax.legend(uniq.values(), uniq.keys(), loc="upper right")
 
-
     plt.tight_layout()
     plt.show()
 
+# ---------- 3) Per-frame render (seconds on x) ----------
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter, MultipleLocator
 
 def plot_normalized_scores_by_frame(
-        normalized_score,
-        thresholds,
+        processed,
         render_dir,
-        fps=20,
         frame_interval=243,
         frame_range=None,
         frame_range_max=None,
-        smooth_window=40,
-        skip_first=False
+        skip_first=False,
+        tick_targets_per_seg=6,
+        title_fs=18,
+        axis_label_fs=16
 ):
     """
-    Save a sequence of images, each showing the 6 normalized scores up to the current frame.
-    - No legends.
-    - "Time (s)" only on the bottom row (plots 5 and 6).
-    - "Normalized score" only on the left column (plots 1, 3, 5).
-    - Vertical dotted markers every `frame_interval` frames (blue).
-    - Threshold line: thick red.
-    - Score line: blue.
-    - Current frame: black dot.
+    Per-frame sequence of images using processed data from prepare_score_data.
+    - seconds on x
+    - thicker red threshold
+    - blue dotted vertical lines every frame_interval
+    - blue score line (faint full, strong up-to-frame)
+    - bigger black current-frame dot
+    - black number label (hidden if too close to axis limits)
+    - light-blue fill where score > threshold
+    - no legends
+    - Titles formatted like "<Joint Name>'s supporting keypoints"
     """
-    if normalized_score is None or len(normalized_score) == 0:
-        raise ValueError("normalized_score is empty")
+    import os
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import FuncFormatter, MultipleLocator
 
-    normalized_score = smooth_scores(np.asarray(normalized_score, dtype=float), smooth_window)
-    T = normalized_score.shape[0]
-    num_series = normalized_score.shape[1]
-    assert num_series == 6, f"Expected 6 columns (LSHOULDER..RHAND), got {num_series}"
-    assert thresholds.size == 6, f"thresholds must have 6 values, got {thresholds.size}"
+    smoothed = processed["smoothed"]
+    thresholds = processed["thresholds"]
+    joint_names = processed["joint_names"]
+    fps = processed["fps"]
 
-    joint_names = ["LSHOULDER", "RSHOULDER", "LELBOW", "RELBOW", "LHAND", "RHAND"]
+    if smoothed is None or len(smoothed) == 0:
+        raise ValueError("processed['smoothed'] is empty")
 
+    T = smoothed.shape[0]
+    num_series = smoothed.shape[1]
+    assert num_series == 6, f"Expected 6 columns, got {num_series}"
+
+    # default frame range
     if frame_range is None:
         frame_range = [0, T]
 
-    # split into segments
+    # build segment ranges from frame_range_max
     if frame_range_max is None:
         frame_ranges = [frame_range]
     elif isinstance(frame_range_max, int):
@@ -333,75 +364,102 @@ def plot_normalized_scores_by_frame(
             frame_ranges.append([left, right])
             left = right
     else:
-        raise ValueError(f'frame_range_max must be None, int or list, not {type(frame_range_max)}')
-
-    def seconds_formatter(x, pos):
-        return f'{x / fps:.0f}'  # whole seconds
+        raise ValueError(f"frame_range_max must be None, int or list, not {type(frame_range_max)}")
 
     os.makedirs(render_dir, exist_ok=True)
 
+    # seconds formatter for ticks
+    def seconds_formatter(x, pos):
+        return f"{x / fps:.0f}"
+
+    y_lo, y_hi = 0.0, 0.6
+    margin_frac = 0.02
+    y_margin = (y_hi - y_lo) * margin_frac
+
+    def pretty_title(name: str) -> str:
+        base = (name or "").replace("_", " ").strip()
+        return f"{base}'s supporting keypoints"
+
     for seg_id, fr in enumerate(frame_ranges):
         left, right = fr
-        print(f'[{seg_id+1}/{len(frame_ranges)}] Saving normalized scores frames to {render_dir}')
-        data_len = right - left
-
-        # Instead of ~12 ticks, target ~6 ticks → about one every data_len/6
-        tick_interval = max(1, data_len // 6)
+        print(f"[{seg_id+1}/{len(frame_ranges)}] Saving normalized scores frames to {render_dir}")
+        data_len = max(1, right - left)
+        tick_interval = max(1, data_len // max(1, tick_targets_per_seg))
 
         for frame_id in range(left, right):
-            if frame_id < right-10:
+            if frame_id % 20 != 0:
                 continue
+
             fig, axes = plt.subplots(3, 2, figsize=(14, 8), sharex=False)
             axes = axes.ravel()
 
-            for i in range(6):
-                ax = axes[i]
+            for i, ax in enumerate(axes):
                 in_left_col = (i % 2 == 0)
                 in_bottom_row = (i // 2 == 2)
 
-                # threshold: thicker red line
-                ax.axhline(float(thresholds[i]), linestyle='--', linewidth=1.5, color='red')
+                y = smoothed[:, i]
+                thr = float(thresholds[i])
 
+                # threshold line
+                ax.axhline(thr, linestyle="--", linewidth=1.8, color="red")
 
-                # vertical dotted blue lines every frame_interval
+                # 243-frame markers
                 for xline in range(left, right, frame_interval):
-                    ax.axvline(xline, linestyle='dotted', linewidth=0.8, alpha=0.6, color='blue')
+                    ax.axvline(xline, linestyle="dotted", linewidth=0.8, alpha=0.6, color="blue")
 
-                y = normalized_score[:, i]
-                # faint full series (blue)
-                ax.plot(range(left, right), y[left:right], alpha=0.25, linewidth=1.0, color='blue')
-                # up-to-frame (stronger blue)
-                ax.plot(range(left, frame_id + 1), y[left:frame_id + 1], alpha=0.9, linewidth=1.5, color='blue')
+                # full series (faint) and up-to-frame (strong)
+                ax.plot(range(left, right), y[left:right], alpha=0.25, linewidth=1.0, color="blue")
+                ax.plot(range(left, frame_id + 1), y[left:frame_id + 1], alpha=0.95, linewidth=1.5, color="blue")
 
-                # current frame marker (black dot + vertical line)
-                ax.axvline(frame_id, linestyle='--', linewidth=0.6, alpha=0.6, color='k')
-                ax.plot(frame_id, y[frame_id], marker='o', markersize=3, color='black')
-                ax.text(frame_id, y[frame_id], f'{y[frame_id]:.2f}', fontsize=9,
-                        ha='left', va='bottom')
+                # light-blue shading
+                ax.fill_between(
+                    np.arange(left, right), y_lo, y[left:right],
+                    where=(y[left:right] > thr),
+                    color="lightblue", alpha=0.30, step="pre"
+                )
 
+                # current frame marker
+                ax.axvline(frame_id, linestyle="--", linewidth=0.7, alpha=0.75, color="k")
+                y_val = float(y[frame_id])
+                ax.plot(frame_id, y_val, marker="o", markersize=4, color="black", zorder=5)
+
+                # label only if comfortably inside
+                if (y_lo + y_margin) <= y_val <= (y_hi - y_margin):
+                    ax.text(frame_id, y_val, f"{y_val:.2f}",
+                            fontsize=12, ha="left", va="bottom", clip_on=True)
+
+                # cosmetics
                 ax.set_xlim(left, right)
-                ax.set_ylim(0, 0.6)
-                ax.set_title(joint_names[i], fontsize=18, weight='bold')
+                ax.set_ylim(y_lo, y_hi)
+                ax.set_title(pretty_title(joint_names[i]), fontsize=title_fs, weight="bold")
 
                 if in_left_col:
-                    ax.set_ylabel('Normalized score', fontsize=16)
+                    ax.set_ylabel("Normalized score", fontsize=axis_label_fs)
                 if in_bottom_row:
-                    ax.set_xlabel('Time (s)', fontsize=16)
+                    ax.set_xlabel("Time (s)", fontsize=axis_label_fs)
 
                 ax.xaxis.set_major_formatter(FuncFormatter(seconds_formatter))
                 ax.xaxis.set_major_locator(MultipleLocator(tick_interval))
                 ax.grid(True, alpha=0.3)
 
             plt.tight_layout()
-            out_path = os.path.join(render_dir, f'support_kpt_score_{frame_id:06d}.png')
+            out_path = os.path.join(render_dir, f"support_kpt_score_{frame_id:06d}.png")
             plt.savefig(out_path, dpi=150)
             plt.close()
+
+
 
 
 if __name__ == '__main__':
     # read arguments
     args = parse_args()
+    # args.estimate_file = '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/Industry_both/X3D.npy'
     estimate_pose = MB_output_pose_file_loader(args)
+
+    # estimate_pose = estimate_pose_2[:243 * 21]
+    # estimate_pose= estimate_pose_1[:243 * 21]
+
+
     data_key = 'joint3d_image'
 
     args.joint_format = 'RTM-37'
@@ -431,29 +489,41 @@ if __name__ == '__main__':
     assert normalized_score.shape[1] == thresholds.size, \
         f"score has {normalized_score.shape[1]} cols but thresholds has {thresholds.size}"
 
+    # 1) Prepare once
+    processed = prepare_score_data(
+        normalized_score=normalized_score,
+        thresholds=thresholds,
+        fps=20,
+        smooth_window=40,
+        min_segment_sec=0.0,
+        args=args  # needed for naming in frame_id_from_mask
+    )
 
+    # 2) Full-sequence overview (minutes on x)
+    plot_normalized_scores(processed, plot_end_time_sec=23.5 * 60)
 
-    plot_normalized_scores(normalized_score, thresholds, fps=20)
-
+    # 3) Per-frame rendering (seconds on x), same processed data
     render_dir = os.path.join(args.output_dir)
     if "VEHS7M" in render_dir:
         frame_range_max = None
     elif "Industry/angles" in render_dir:
-        frame_range_max = list(np.array([2, 2, 1, 2, 1, 2, 2, 2, 1, 2, 2, 2]) * 243)  # industry
+        frame_range_max = list(np.array([2, 2, 1, 2, 1, 2, 2, 2, 1, 2, 2, 2]) * args.MB_data_stride)
     elif "Industry_2" in render_dir:
-        frame_range_max = list(np.array([11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * 243)  # industry #2
+        frame_range_max = list(np.array([11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * args.MB_data_stride)
     elif "Industry_both" in render_dir:
-        frame_range_max = list(np.array([2, 2, 1, 2, 1, 2, 2, 2, 1, 2, 2, 2, 11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * 243)  # industry #2
+        frame_range_max = list(np.array([2, 2, 1, 2, 1, 2, 2, 2, 1, 2, 2, 2, 11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * args.MB_data_stride)
 
-    plot_normalized_scores_by_frame(
-        normalized_score=normalized_score,
-        thresholds=thresholds,
-        render_dir=render_dir,
-        fps=20,
-        frame_interval=args.MB_data_stride,  # 243 by default
-        frame_range=[0, normalized_score.shape[0]],
-        frame_range_max=frame_range_max,  # your per-segment list or int/None
-        smooth_window=40,
-        skip_first=False
-    )
-
+    # plot_normalized_scores_by_frame(
+    #     processed=processed,
+    #     render_dir=render_dir,
+    #     frame_interval=args.MB_data_stride,  # 243 by default
+    #     frame_range=[0, processed["smoothed"].shape[0]],
+    #     frame_range_max=frame_range_max,
+    #     skip_first=False,
+    #     tick_targets_per_seg=6,  # fewer ticks
+    #     title_fs=18,
+    #     axis_label_fs=16
+    # )
+    fps = 1
+    print(f"Copy command to merge frames into video at {fps} fps:")
+    print(f"python conversion_scripts/video.py --imgs_dir {render_dir} --fps {fps}")  # --delete_imgs
