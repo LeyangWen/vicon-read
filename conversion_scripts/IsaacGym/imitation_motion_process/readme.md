@@ -76,12 +76,17 @@ If multiple cameras are used and each video contains multiple motion clips:
    ```bash
    python tokenhsi/data/dataset_carry/preprocess_smplest.py
    ```
-
-3. Remember to modify the dataset configuration file before running:
+Remember to modify the dataset configuration file before running:
 
    ```
    tokenhsi/data/dataset_carry/config/dataset_cfg_MMH.yaml
    ```
+
+3. Run
+   ```
+   python tokenhsi/data/dataset_carry/generate_motion.py
+   ```
+Remember to modify `all_files` before running
 
 4. The processed human motion files will be saved under:
 

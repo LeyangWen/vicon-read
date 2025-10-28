@@ -10,6 +10,9 @@ from ergo3d import Point
 # matplotlib.use('Qt5Agg')
 import csv
 
+# in vscode
+# PYTHONPATH=$(pwd) python conversion_scripts/IsaacGym/csv_to_ergo_scores.py
+
 
 ####################################################
 # From isaac inference output, csv file
@@ -20,7 +23,7 @@ import csv
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/test.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/generated.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/IssacGym/15kpts-Skeleton.yaml')
 
 
@@ -28,7 +31,7 @@ def parse_args():
     parser.add_argument('--output_GT_frame_folder', type=str, default=None)
     parser.add_argument('--plot_mode', type=str, default='paper_view', help='mode: camera_view, camera_side_view, 0_135_view, normal_view, paper_view, global_view')
     parser.add_argument('--debug_mode', default=True, type=bool)
-    parser.add_argument('--output_type', type=list, default=[True, False, True], help='LI, plot, 3DSSPP')
+    parser.add_argument('--output_type', type=list, default=[True, True, True], help='LI, plot, 3DSSPP')
 
     # parser.add_argument('--name_list', type=list, default=[])
     args = parser.parse_args()
@@ -42,6 +45,21 @@ def parse_args():
         args.start_positions = data["start_positions"]
         args.end_positions = data["end_positions"]
         args.start_offset = data.get("start_offset", 0)
+        args.keyframe_detect = data["keyframe_detect"]
+        if not args.keyframe_detect:
+            print("*"*10,"Warning: keyframe_detect is set to False, please specify lift start and end frames in the yaml file!","*"*10)
+            keyframe_dict = {}
+            no_experiments = data['no_experiments']
+            keyframe_dict['lift_start'] = data.get("lift_start", [-1]*no_experiments)
+            keyframe_dict['lift_end'] = data.get("lift_end", [-1]*no_experiments)
+            keyframe_dict['lower_start'] = data.get("lower_start", [-1]*no_experiments)
+            keyframe_dict['lower_end'] = data.get("lower_end", [-1]*no_experiments)
+            keyframe_dict['start_heights'] = np.array(args.start_positions)[:, 2].T.tolist()
+            if len(keyframe_dict['start_heights']) == 1:
+                keyframe_dict['start_heights'] = keyframe_dict['start_heights'] * no_experiments
+            args.keyframe_dict = keyframe_dict
+            print(f"keyframe_dict: {keyframe_dict}")
+
     print(args.plot_mode)
     print(args.estimate_file)
     args.mass = args.density * args.dim[0] * args.dim[1] * args.dim[2]  # kg
@@ -184,53 +202,64 @@ if __name__ == '__main__':
     ######################## NIOSH lifting equation ########################
 
     # Step 1: detect key events in frame no: each lift start, lift end, lower start, lower end
+    if args.keyframe_detect:
+        start_ids, start_heights = identify_start(args, isaac_pose)
+        end_ids = start_ids.copy()
+        end_ids[:-1] = start_ids[1:]
+        end_ids[-1] = frame_no - 1  # last end id is the last frame
+        print(f"End ids: {end_ids}")
+        bad_id = []
+        lift_start, lift_end, lower_end, lower_start = [[], [], [], []]
+        for i in range(len(start_ids)):
+            print(f"Start: {start_ids[i]}, End: {end_ids[i]}")
+            segment = isaac_pose[start_ids[i]:end_ids[i], :, :]
 
-    start_ids, start_heights = identify_start(args, isaac_pose)
-    end_ids = start_ids.copy()
-    end_ids[:-1] = start_ids[1:]
-    end_ids[-1] = frame_no - 1  # last end id is the last frame
-    print(f"End ids: {end_ids}")
-    bad_id = []
-    lift_start, lift_end, lower_end, lower_start = [[], [], [], []]
-    for i in range(len(start_ids)):
-        print(f"Start: {start_ids[i]}, End: {end_ids[i]}")
-        segment = isaac_pose[start_ids[i]:end_ids[i], :, :]
+            a,b,c,d = get_MMH_start_end(args, segment)
+            if not d:
+                bad_id.append(i)
+                print(f"Bad segment {i}, skipping")
+            lift_start.append(a + start_ids[i])
+            lift_end.append(b + start_ids[i])
+            lower_start.append(c + start_ids[i])
+            lower_end.append(d + start_ids[i])
+        # if len(bad_id) > 0:
+        #     bad_id.reverse()
+        #     for i in bad_id:
+        #         start_ids.pop(i)
+        #         end_ids.pop(i)
+        #         start_heights.pop(i)
 
-        a,b,c,d = get_MMH_start_end(args, segment)
-        if not d:
-            bad_id.append(i)
-            print(f"Bad segment {i}, skipping")
-        lift_start.append(a + start_ids[i])
-        lift_end.append(b + start_ids[i])
-        lower_start.append(c + start_ids[i])
-        lower_end.append(d + start_ids[i])
-    # if len(bad_id) > 0:
-    #     bad_id.reverse()
-    #     for i in bad_id:
-    #         start_ids.pop(i)
-    #         end_ids.pop(i)
-    #         start_heights.pop(i)
+
+    else:
+        start_heights = args.keyframe_dict['start_heights']
+        lift_start = args.keyframe_dict['lift_start']
+        lift_end = args.keyframe_dict['lift_end']
+        lower_start = args.keyframe_dict['lower_start']
+        lower_end = args.keyframe_dict['lower_end']
 
     low_id = np.concatenate((lift_start, lift_start, lower_end, lower_end))
     high_id = np.concatenate((lift_end, lift_end, lower_start, lower_start))
     all_id = np.concatenate((lift_start, lift_end, lower_start, lower_end))
-
     # Step 2: calculate NIOSH elements
     #################
     pelvis_id = 0
     foot_id = [11, 14]
     shoulder_id = [3, 6]
+    hand_id = [5, 8]
     box_id = 15
     #################
     foot_center = (isaac_pose[:, foot_id[0]] + isaac_pose[:, foot_id[1]]) / 2
+    hand_center = (isaac_pose[:, hand_id[0]] + isaac_pose[:, hand_id[1]]) / 2
     pelvis = isaac_pose[:, pelvis_id]
     box = isaac_pose[:, box_id]
 
     # Horizontal location (box center to pelvis xy)
     # H = (np.sum((box[all_id, :2] - pelvis[all_id, :2]) ** 2, axis=1) ** 0.5) * 100  # cm
-    H = (np.sum((box[all_id, :2] - foot_center[all_id, :2])**2, axis=1)**0.5)*100  # cm
+    # H = (np.sum((box[all_id, :2] - foot_center[all_id, :2])**2, axis=1)**0.5)*100  # cm
+    H = (np.sum((hand_center[all_id, :2] - foot_center[all_id, :2])**2, axis=1)**0.5)*100  # cm
     # Vertical location (box center to floor z)
     V = box[all_id, 2]*100  # cm
+    # TODO: >175cm VM = 0
     # Vertical Travel Distance (D)
     D = (box[high_id, 2] - box[low_id, 2])*100  # cm shape: (2no,)
     # Asymmetric angle (A) in degrees
@@ -253,12 +282,15 @@ if __name__ == '__main__':
     # Horizontal Multiplier HM (25/H)
     H_floor = 25
     H_new = np.where(H < H_floor, H_floor, H)  # if H < 25cm, set to 25cm
+    # TODO: > 63 --> HM=0
     HM = 25/H_new
     # Vertical Multiplier VM 1− (.003|V-75|)
     VM = 1 - (0.003 * np.abs(V - 75))  # 75cm
+    
     # Distance Multiplier DM .82 + (4.5/D)
     D_floor = 25
     D_new = np.where(D < D_floor, D_floor, D)  # if D < 25cm, set to 25cm
+    # TODO: > 175 --> DM=0
     DM = 0.82 + (4.5/D_new)  # 4.5cm
     # Asymmetric Multiplier AM 1− (.0032A)
     AM = 1 - (0.0032 * np.abs(A))  # degree
@@ -270,11 +302,17 @@ if __name__ == '__main__':
     # CM = 1.0  # -- assume good coupling because lifting box  with handel
     # RWL recommended weight limit
     RWL = LC * HM * VM * DM * AM * FM * CM
-
+    print("#"*40)
+    print(f"H: {H} cm \nV: {V} cm\nD: {D} cm\nA: {A} deg\nFreq: {frequency} Hz\nCount: {count}\nTotal time: {total_time*60:.1f} min")
+    print(f"LC: {LC} \nHM: {HM}\nVM: {VM}\nDM: {DM}\nAM: {AM}\nFM: {FM}\nCM: {CM}\nRWL: {RWL}") 
     LI = args.mass/RWL  # lifting index
 
 
     ####### reshape back to lift and lower
+    
+    print("LI", LI)
+    print("all_id", all_id)
+    print("#"*40)
     LI = LI.reshape(4, -1)
     # keep max of row 1 and 2, keep max of row 3 and 4
     # LI_lift = np.max(LI[:2], axis=0)
@@ -387,7 +425,8 @@ if __name__ == '__main__':
             for j, frame in enumerate(frame_4):
                 frame = int(frame)
                 title = f"{start_height}m - {four_type[j]} - {segment_id}:{frame}"
-                isaac_skeleton.plot_3d_pose_frame(frame=frame, coord_system="world-m", plot_range=2, mode=args.plot_mode, center_key='PELVIS', plot_rot=True, title=title)
+                isaac_skeleton.plot_3d_pose_frame(filename=f'frames/{frame}', frame=frame, coord_system="world-m", plot_range=2, mode=args.plot_mode, center_key='PELVIS', plot_rot=True, title=title)
+        
             # raise NotImplementedError
     ######################## REBA ########################
 

@@ -1,0 +1,29 @@
+
+name_list: ['PELVIS', 'torso', 'head', 'right_upper_arm', 'right_lower_arm',
+ 'right_hand', 'left_upper_arm', 'left_lower_arm', 'left_hand',
+ 'right_thigh', 'right_shin', 'right_foot', 'left_thigh', 'left_shin', 'left_foot', '1', '2', '3']
+
+
+start_positions:
+  - [8.5, 4, 0.25]
+
+end_positions:
+  - [2.5, 2.5, 0.25]
+
+fps: 30
+density: 156.25
+dim: [0.4, 0.4, 0.4]  # w l h
+
+keyframe_detect: True
+# estimate_file: '/home/leyang/Documents/TokenHSI/output/imgs/dashboard_30fps/joint_states.csv'
+# estimate_file: '/home/leyang/Documents/TokenHSI/output/imgs/dashboard_30fps_10cmHigher/joint_states.csv'
+# estimate_file: '/home/leyang/Documents/TokenHSI/output/imgs/dashboard_30fps_20cmHigher/joint_states.csv'
+
+
+keyframe_detect: False
+no_experiments: 1
+estimate_file: '/home/leyang/Documents/TokenHSI/output/imgs/dashboard_30fps/joint_states.csv'
+lift_start: [46]
+lift_end: [63]
+
+

@@ -24,6 +24,7 @@ fps: 10
 
 density: 156.25
 dim: [0.4, 0.4, 0.4]  # w l h
+keyframe_detect: True
 #estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/Try3-2_new_motion_and_reward/joint_states.csv'
 
 
