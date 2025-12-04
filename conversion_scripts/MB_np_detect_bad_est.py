@@ -5,7 +5,7 @@ import numpy as np
 from Skeleton import *
 import matplotlib
 import copy
-# matplotlib.use('Qt5Agg')
+matplotlib.use('Qt5Agg')
 from MB_np_to_visual import MB_input_pose_file_loader, MB_output_pose_file_loader, flip_data
 import matplotlib.ticker as ticker
 
@@ -13,7 +13,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-Industry.yaml')
-    parser.add_argument('--clip_fill', type=bool, default=False)
+    parser.add_argument('--clip_fill', type=bool, default=True)
     parser.add_argument('--rescale_25d', type=bool, default=False)
     parser.add_argument('--debug_mode', default=False, type=bool)
     parser.add_argument('--MB_data_stride', type=int, default=243)
@@ -306,7 +306,9 @@ def plot_normalized_scores_by_frame(
         skip_first=False,
         tick_targets_per_seg=6,
         title_fs=18,
-        axis_label_fs=16
+        axis_label_fs=16,
+        downsample = 20,
+        y_hi=0.6
 ):
     """
     Per-frame sequence of images using processed data from prepare_score_data.
@@ -372,13 +374,15 @@ def plot_normalized_scores_by_frame(
     def seconds_formatter(x, pos):
         return f"{x / fps:.0f}"
 
-    y_lo, y_hi = 0.0, 0.6
+    y_lo, y_hi = 0.0, y_hi
     margin_frac = 0.02
     y_margin = (y_hi - y_lo) * margin_frac
 
     def pretty_title(name: str) -> str:
         base = (name or "").replace("_", " ").strip()
-        return f"{base}'s supporting keypoints"
+
+        # return f"{base}'s supporting keypoints"
+        return f"{base}'s 2D confidence"
 
     for seg_id, fr in enumerate(frame_ranges):
         left, right = fr
@@ -387,7 +391,7 @@ def plot_normalized_scores_by_frame(
         tick_interval = max(1, data_len // max(1, tick_targets_per_seg))
 
         for frame_id in range(left, right):
-            if frame_id % 20 != 0:
+            if frame_id % downsample != 0:
                 continue
 
             fig, axes = plt.subplots(3, 2, figsize=(14, 8), sharex=False)
@@ -434,7 +438,8 @@ def plot_normalized_scores_by_frame(
                 ax.set_title(pretty_title(joint_names[i]), fontsize=title_fs, weight="bold")
 
                 if in_left_col:
-                    ax.set_ylabel("Normalized score", fontsize=axis_label_fs)
+                    # ax.set_ylabel("Normalized score", fontsize=axis_label_fs)
+                    ax.set_ylabel("Confidence score", fontsize=axis_label_fs)
                 if in_bottom_row:
                     ax.set_xlabel("Time (s)", fontsize=axis_label_fs)
 
@@ -455,6 +460,7 @@ if __name__ == '__main__':
     args = parse_args()
     # args.estimate_file = '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/Industry_both/X3D.npy'
     estimate_pose = MB_output_pose_file_loader(args)
+    GT_pose, _, confidence_2d = MB_input_pose_file_loader(args, get_confidence=True)
 
     # estimate_pose = estimate_pose_2[:243 * 21]
     # estimate_pose= estimate_pose_1[:243 * 21]
@@ -490,17 +496,23 @@ if __name__ == '__main__':
         f"score has {normalized_score.shape[1]} cols but thresholds has {thresholds.size}"
 
     # 1) Prepare once
+
+    smooth_window = 40
+    # smooth_window = 0
+
     processed = prepare_score_data(
         normalized_score=normalized_score,
         thresholds=thresholds,
         fps=20,
-        smooth_window=40,
+        smooth_window=smooth_window,
         min_segment_sec=0.0,
         args=args  # needed for naming in frame_id_from_mask
     )
 
     # 2) Full-sequence overview (minutes on x)
-    plot_normalized_scores(processed, plot_end_time_sec=23.5 * 60)
+    end_time = 10*60
+    # end_time = 23.5 * 60
+    plot_normalized_scores(processed, plot_end_time_sec=end_time)
 
     # 3) Per-frame rendering (seconds on x), same processed data
     render_dir = os.path.join(args.output_dir)
@@ -513,6 +525,8 @@ if __name__ == '__main__':
     elif "Industry_both" in render_dir:
         frame_range_max = list(np.array([2, 2, 1, 2, 1, 2, 2, 2, 1, 2, 2, 2, 11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * args.MB_data_stride)
 
+    fps = 5
+    downsample = int(processed['fps']/fps)
     # plot_normalized_scores_by_frame(
     #     processed=processed,
     #     render_dir=render_dir,
@@ -522,8 +536,37 @@ if __name__ == '__main__':
     #     skip_first=False,
     #     tick_targets_per_seg=6,  # fewer ticks
     #     title_fs=18,
-    #     axis_label_fs=16
+    #     axis_label_fs=16,
+    #     downsample = downsample
     # )
-    fps = 1
+
+    print(f"Copy command to merge frames into video at {fps} fps:")
+    print(f"python conversion_scripts/video.py --imgs_dir {render_dir} --fps {fps}")  # --delete_imgs
+
+    center_ids = [16, 15, 14, 13, 12, 11]
+    confidence_2d = confidence_2d[:, center_ids, :]
+    confidence_2d = confidence_2d.squeeze(-1)  # [T, 6]
+
+    confidence_2d_processed = {
+        "smoothed": confidence_2d.astype(float),  # [T, 6]
+        "thresholds": np.array([6.0,6.0,6.0,6.0,5.25,5.25], dtype=float),  # [6,]
+        "joint_names": ['LSHOULDER', 'RSHOULDER', 'LELBOW', 'RELBOW', 'LHAND', 'RHAND'],
+        "fps": fps,
+    }
+    render_dir = os.path.join(args.output_dir, 'upper_limb_2d_confidence')
+    plot_normalized_scores_by_frame(
+        processed=confidence_2d_processed,
+        render_dir=render_dir,
+        frame_interval=args.MB_data_stride,  # 243 by default
+        frame_range=[0, processed["smoothed"].shape[0]],
+        frame_range_max=frame_range_max,
+        skip_first=False,
+        tick_targets_per_seg=6,  # fewer ticks
+        title_fs=18,
+        axis_label_fs=16,
+        downsample=downsample,  # render every 20th frame
+        y_hi=12.0
+    )
+    print()
     print(f"Copy command to merge frames into video at {fps} fps:")
     print(f"python conversion_scripts/video.py --imgs_dir {render_dir} --fps {fps}")  # --delete_imgs

@@ -7,18 +7,19 @@ from MB_np_to_visual import MB_input_pose_file_loader
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/VEHS-6D-MB.yaml')
-    # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
-    # parser.add_argument('--angle_mode', type=str, default='VEHS')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/Inference-GT2D-66kpt-MB-50fps-VEHS7M.yaml')
+    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
+    parser.add_argument('--angle_mode', type=str, default='VEHS')
+    parser.add_argument('--clip_fill', type=bool, default=True)
 
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/H36M17kpts/VEHS-3D-MB.yaml')
     # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/H36M-17.yaml')
     # parser.add_argument('--angle_mode', type=str, default='VEHS')
 
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
-    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
-    parser.add_argument('--angle_mode', type=str, default='VEHS')
-    parser.add_argument('--clip_fill', type=bool, default=True)
+    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
+    # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
+    # parser.add_argument('--angle_mode', type=str, default='VEHS')
+    # parser.add_argument('--clip_fill', type=bool, default=True)
 
 
 

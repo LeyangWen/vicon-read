@@ -68,7 +68,7 @@ def MB_output_pose_file_loader(args):
     return output_np_pose
 
 
-def MB_input_pose_file_loader(args, data_key='joint3d_image'):
+def MB_input_pose_file_loader(args, data_key='joint3d_image', get_confidence=False):
     if args.GT_file=='None':
         return None
     with open(args.GT_file, "rb") as f:
@@ -77,6 +77,8 @@ def MB_input_pose_file_loader(args, data_key='joint3d_image'):
     print(f'2.5d_factor: {data[args.eval_key]["2.5d_factor"]}')
 
     if not args.clip_fill:
+        if get_confidence:
+            return data[args.eval_key][data_key], data[args.eval_key]["2.5d_factor"], data[args.eval_key]['confidence']
         return data[args.eval_key][data_key], data[args.eval_key]["2.5d_factor"]
     else:
         source = data[args.eval_key]['source']
@@ -95,14 +97,17 @@ def MB_input_pose_file_loader(args, data_key='joint3d_image'):
         # dict_keys(['joint_2d', 'confidence', 'joint3d_image', 'joints_2.5d_image', '2.5d_factor', 'camera_name', 'action', 'source', 'c3d_frame'])
         np_pose = data[args.eval_key][data_key][MB_clip_id]
         factor_25d = data[args.eval_key]['2.5d_factor'][MB_clip_id]
-        camera_name_store = ''
-        for n in range(100000):
-            if data[args.eval_key]['camera_name'][n] != camera_name_store:
-                print(n)
-                print(data[args.eval_key]['action'][n])
-                print(data[args.eval_key]['camera_name'][n])
-                print()
-                camera_name_store = data[args.eval_key]['camera_name'][n]
+        confidence_score = data[args.eval_key]['confidence'][MB_clip_id] if get_confidence else None
+        # camera_name_store = ''
+        # for n in range(100000):
+        #     if data[args.eval_key]['camera_name'][n] != camera_name_store:
+        #         print(n)
+        #         print(data[args.eval_key]['action'][n])
+        #         print(data[args.eval_key]['camera_name'][n])
+        #         print()
+        #         camera_name_store = data[args.eval_key]['camera_name'][n]
+        if get_confidence:
+            return np_pose, factor_25d, confidence_score
         return np_pose, factor_25d
 
 

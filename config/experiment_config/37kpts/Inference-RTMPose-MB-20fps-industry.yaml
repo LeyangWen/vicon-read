@@ -7,8 +7,8 @@ name_list: ['PELVIS',
 eval_key: 'validate'
 
 # RTMW-V4, no 3d, 2d only
-#GT_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-1-OG/Industry_both/exp_2b_industry_videos_20fps/rtmpose_v5-2b_20fps_industry_37kpts_v2.pkl'
-GT_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v4/20fps/Ricks_Videos_RTMW_freeze_backbone_neck_merged_epoch_best/rtmpose_v4_20fps_industry_1_37kpts_v2.pkl'
+GT_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/2D/exp_2b_industry_videos_20fps/rtmpose_v5-2b_20fps_industry_37kpts_v2.pkl'
+#GT_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v4/20fps/Ricks_Videos_RTMW_freeze_backbone_neck_merged_epoch_best/rtmpose_v4_20fps_industry_1_37kpts_v2.pkl'
 #GT_file: None
 
 # if frame number not same, try switching between validate and test
@@ -46,6 +46,6 @@ GT_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v4/20fps/Ricks_Videos_RTMW_freeze_backb
 
 
 # Veeru's 3D smooth
-#estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/Industry_both_smooth/X3D.npy'
+estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/Industry_both_smooth/X3D.npy'
 
 

@@ -8,8 +8,8 @@ import numpy as np
 # Used to delete two activities from the Vicon-MB pkl file
 #
 ######################################
-
-pkl_file = r"W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2_pitch_correct.pkl"
+pkl_file = r"/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/GT3D/v3v4/VEHS_6D_downsample5_keep1_37_v2_pitch_correct.pkl"
+# pkl_file = r"W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2_pitch_correct.pkl"
 # pkl_file = r"W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2.pkl"
 # pkl_file = r"W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample20_keep1_37_v1.pkl"  # no need actually
 
@@ -23,14 +23,19 @@ for key in data.keys():
     #
     source = data[key]['source']
     for id, src in enumerate(source):
-        keyword1 = 'S02\\FullCollection\\Activity04.c3d'
-        keyword2 = 'S03\\FullCollection\\Activity01.c3d'
+        keywords = ['S02\\FullCollection\\Activity04.c3d', 'S03\\FullCollection\\Activity01.c3d',
+                    'S11\\FullCollection\\activity02.c3d', 'S11\\FullCollection\\activity05.c3d',
+                    'S15\\FullCollection\\activity06.c3d', 'S15\\FullCollection\\activity07.c3d',
+                    ]
         flag = False
-        for keyword in [keyword1, keyword2]:
+        for keyword in keywords:
             if keyword in src:
                 flag = True
+                # print(src)
+                # raise NotImplementedError
         if not flag:
             id_list.append(id)
+
     print(f"{key}: {len(id_list)} out of {len(source)}")
     # keep ids in data
     if len(id_list) != len(source):

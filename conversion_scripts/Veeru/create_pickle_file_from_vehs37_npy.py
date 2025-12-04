@@ -14,11 +14,14 @@ from conversion_scripts.Veeru.veeru_format_snippet import pkl_file
 # npy_dir = r'W:\VEHS\VEHS data collection round 3\RTM2D\RTMPose_VEHS7M_37kpts_v1\outputs_epoch_best_all'
 
 # motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2.pkl'
-motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2_pitch_correct_modified.pkl'
-npy_dir = r'W:\VEHS\VEHS data collection round 3\RTM2D\RTMWPose_VEHS7M_37kpts_v5_2-b'
+# motionbert_pkl_file = r'W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_37_v2_pitch_correct_modified.pkl'
+# npy_dir = r'W:\VEHS\VEHS data collection round 3\RTM2D\RTMWPose_VEHS7M_37kpts_v5_2-b'
+
+motionbert_pkl_file = r'/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/GT3D/v3v4/VEHS_6D_downsample5_keep1_37_v2_pitch_correct_modified.pkl'
+npy_dir = r'/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/2D/RTMWPose_VEHS7M_37kpts_v5_2-b'
 
 # 4D
-npy_dir =  '/Users/leyangwen/Downloads/From_Veeru/exp_2b_industry_videos_20fps_with_visibility'
+# npy_dir =  '/Users/leyangwen/Downloads/From_Veeru/exp_2b_industry_videos_20fps_with_visibility'
 
 
 new_pkl_file = motionbert_pkl_file.replace('.pkl', '_RTM2D.pkl')
@@ -53,9 +56,9 @@ for key in motionbert_data_dict.keys():
 
             # npy_file = f"results_{subject_name}-{action_name}-{camera_id}_keypoints.npy"  # V1
             # npy_file = f"3-{int(subject_name.replace('S',''))}_jsons_npy\\results_{action_name.lower()}_1_{camera_id}_keypoints.npy"  # V3
-            npy_file = f"3-{int(subject_name.replace('S', ''))}\\results_{action_name}_1_{camera_id}.npy"  # V5
+            npy_file = f"3-{int(subject_name.replace('S', ''))}/results_{action_name}_1_{camera_id}.npy"  # V5
             try:
-                with open(npy_dir + '\\' + npy_file, 'rb') as f:
+                with open(npy_dir + '/' + npy_file, 'rb') as f:
                     det_2d_conf = np.load(f)
             except:
                 print(f"Cannot find {npy_file}")
@@ -63,10 +66,12 @@ for key in motionbert_data_dict.keys():
                 continue
             length_diff = old_clip_len - det_2d_conf.shape[0]
             gt_2d = motionbert_data_dict[key]['joint_2d'][cum_start:cum_start+old_clip_len]
-            print( f"diff: {length_diff}, old_clip_len: {old_clip_len}, det_2d_conf.shape[0]: {det_2d_conf.shape[0]} for {subject_name}-{action_name}-{camera_id}")
+            # print( f"diff: {length_diff}, old_clip_len: {old_clip_len}, det_2d_conf.shape[0]: {det_2d_conf.shape[0]} for {subject_name}-{action_name}-{camera_id}")
             # if action_name == 'activity01' and key == 'train':
             #     raise NotImplementedError
             assert abs(length_diff) < 2.5, f"diff: {length_diff}, old_clip_len: {old_clip_len}, det_2d_conf.shape[0]: {det_2d_conf.shape[0]} for {subject_name}-{action_name}-{camera_id}"
+            # if abs(length_diff) > 2.5:
+            #     print(f"diff: {length_diff}, old_clip_len: {old_clip_len}, det_2d_conf.shape[0]: {det_2d_conf.shape[0]} for {subject_name}-{action_name}-{camera_id}")
             if length_diff > 0:
                 ## concatenate the last frame to fill the gap, visualized and checked it is not big issues since last frame is stationary, frames before lines up perfectly
                 det_2d_conf = np.concatenate([det_2d_conf, det_2d_conf[-1:]]*length_diff, axis=0)
@@ -76,7 +81,7 @@ for key in motionbert_data_dict.keys():
                 ## remove the first frames to fill the gap
                 det_2d_conf = det_2d_conf[-length_diff:]
             new_motionbert_dict[key]['joint_2d'][cum_start:cum_start+old_clip_len] = det_2d_conf[:, :, :2]
-            new_motionbert_dict[key]['confidence'][cum_start:cum_start+old_clip_len] = det_2d_conf[:, :, 2:]
+            new_motionbert_dict[key]['confidence'][cum_start:cum_start+old_clip_len] = det_2d_conf[:, :, 2:3]
             sanity_check[cum_start:cum_start+old_clip_len] = 0
 
             store_source = source
@@ -120,7 +125,4 @@ else:
 #
 # gt_skeleton.plot_2d_pose_frame(frame=frame_no, baseimage=base_image)  #, filename=r'C:\Users\wenleyan1\Downloads\test')
 # det_skeleton.plot_2d_pose_frame(frame=frame_no, baseimage=base_image)  #, filename=r'C:\Users\wenleyan1\Downloads\test')
-
-
-
 
