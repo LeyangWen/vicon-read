@@ -12,7 +12,9 @@ import matplotlib.ticker as ticker
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-Industry.yaml')
+    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-Industry.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-Youtube.yaml')
+
     parser.add_argument('--clip_fill', type=bool, default=True)
     parser.add_argument('--rescale_25d', type=bool, default=False)
     parser.add_argument('--debug_mode', default=False, type=bool)
@@ -381,6 +383,7 @@ def plot_normalized_scores_by_frame(
     def pretty_title(name: str) -> str:
         base = (name or "").replace("_", " ").strip()
 
+        # TODO: put in input instead of switch manually
         # return f"{base}'s supporting keypoints"
         return f"{base}'s 2D confidence"
 
@@ -489,7 +492,7 @@ if __name__ == '__main__':
 
     # thresholds by joint type:
     # column order: L-Shoulder, R-shoulder ...
-    thresholds = np.array([0.3]*6, dtype=float)
+    thresholds = np.array([0.25,0.25,0.3,0.3,0.25,0.25], dtype=float)
     thresholds[-2:] = 0.3 # hand
 
     assert normalized_score.shape[1] == thresholds.size, \
@@ -514,6 +517,13 @@ if __name__ == '__main__':
     # end_time = 23.5 * 60
     plot_normalized_scores(processed, plot_end_time_sec=end_time)
 
+    # safe custom score with threshold
+    support_kpt_score_file = args.estimate_file.replace('.npy', '_support_kpt_score.pkl')
+    with open(support_kpt_score_file, 'wb') as f:
+        pickle.dump(processed, f)
+    print("Saved processed support kpt score to:")
+    print(support_kpt_score_file)
+
     # 3) Per-frame rendering (seconds on x), same processed data
     render_dir = os.path.join(args.output_dir)
     if "VEHS7M" in render_dir:
@@ -524,6 +534,10 @@ if __name__ == '__main__':
         frame_range_max = list(np.array([11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * args.MB_data_stride)
     elif "Industry_both" in render_dir:
         frame_range_max = list(np.array([2, 2, 1, 2, 1, 2, 2, 2, 1, 2, 2, 2, 11, 2, 9, 7, 7, 7, 3, 7, 22, 4, 17]) * args.MB_data_stride)
+    elif "Youtube_1" in render_dir:
+        frame_range_max = list(np.array([1, 2, 1, 1, 1, 1, 2, 4, 1, 1, 3, 1, 1]) * args.MB_data_stride)
+    elif "Industry_Jeff" in render_dir:
+        frame_range_max = list(np.array([1, 3, 1]) * args.MB_data_stride)
 
     fps = 5
     downsample = int(processed['fps']/fps)
@@ -543,30 +557,30 @@ if __name__ == '__main__':
     print(f"Copy command to merge frames into video at {fps} fps:")
     print(f"python conversion_scripts/video.py --imgs_dir {render_dir} --fps {fps}")  # --delete_imgs
 
-    center_ids = [16, 15, 14, 13, 12, 11]
-    confidence_2d = confidence_2d[:, center_ids, :]
-    confidence_2d = confidence_2d.squeeze(-1)  # [T, 6]
-
-    confidence_2d_processed = {
-        "smoothed": confidence_2d.astype(float),  # [T, 6]
-        "thresholds": np.array([6.0,6.0,6.0,6.0,5.25,5.25], dtype=float),  # [6,]
-        "joint_names": ['LSHOULDER', 'RSHOULDER', 'LELBOW', 'RELBOW', 'LHAND', 'RHAND'],
-        "fps": fps,
-    }
-    render_dir = os.path.join(args.output_dir, 'upper_limb_2d_confidence')
-    plot_normalized_scores_by_frame(
-        processed=confidence_2d_processed,
-        render_dir=render_dir,
-        frame_interval=args.MB_data_stride,  # 243 by default
-        frame_range=[0, processed["smoothed"].shape[0]],
-        frame_range_max=frame_range_max,
-        skip_first=False,
-        tick_targets_per_seg=6,  # fewer ticks
-        title_fs=18,
-        axis_label_fs=16,
-        downsample=downsample,  # render every 20th frame
-        y_hi=12.0
-    )
+    # center_ids = [16, 15, 14, 13, 12, 11]
+    # confidence_2d = confidence_2d[:, center_ids, :]
+    # confidence_2d = confidence_2d.squeeze(-1)  # [T, 6]
+    #
+    # confidence_2d_processed = {
+    #     "smoothed": confidence_2d.astype(float),  # [T, 6]
+    #     "thresholds": np.array([6.0,6.0,6.0,6.0,5.25,5.25], dtype=float),  # [6,]
+    #     "joint_names": ['LSHOULDER', 'RSHOULDER', 'LELBOW', 'RELBOW', 'LHAND', 'RHAND'],
+    #     "fps": fps,
+    # }
+    # render_dir = os.path.join(args.output_dir, 'upper_limb_2d_confidence')
+    # plot_normalized_scores_by_frame(
+    #     processed=confidence_2d_processed,
+    #     render_dir=render_dir,
+    #     frame_interval=args.MB_data_stride,  # 243 by default
+    #     frame_range=[0, processed["smoothed"].shape[0]],
+    #     frame_range_max=frame_range_max,
+    #     skip_first=False,
+    #     tick_targets_per_seg=6,  # fewer ticks
+    #     title_fs=18,
+    #     axis_label_fs=16,
+    #     downsample=downsample,  # render every 20th frame
+    #     y_hi=12.0
+    # )
     print()
     print(f"Copy command to merge frames into video at {fps} fps:")
     print(f"python conversion_scripts/video.py --imgs_dir {render_dir} --fps {fps}")  # --delete_imgs

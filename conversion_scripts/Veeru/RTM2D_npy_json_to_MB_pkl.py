@@ -36,15 +36,15 @@ def read_input(json_path, type='rtm24'):
 def parse_args():
     parser = argparse.ArgumentParser()
     # parser.add_argument('--json_folder', type=str, default=r'W:\VEHS\Testing_Videos_and_rtmpose_results\OneDrive_2_9-4-2024\kps_133_fps_20')
-    parser.add_argument('--json_folder', type=str, default=r'/Users/leyangwen/Downloads/From_Veeru/exp_2b_industry_videos_20fps_with_visibility')
+    parser.add_argument('--json_folder', type=str, default=r'/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/2D/Industry_Jeff')
     parser.add_argument('--read_type', type=str, default='npy', help='json or npy')
     parser.add_argument('--output_file', type=str, default=r'rtmpose_v5-2b_20fps_industry_37kpts_v2.pkl')
     parser.add_argument('--joint_num', type=int, default=37)
     parser.add_argument('--type', type=str, default='rtm37_from_37')
-    parser.add_argument('--score_2d', type=str, default='visibility', help='confidence or visibility')
+    parser.add_argument('--score_2d', type=str, default='confidence', help='confidence or visibility')
 
     args = parser.parse_args()
-    args.output_file = args.output_file.replace('.pkl', f'_{args.score_2d}.pkl')
+    # args.output_file = args.output_file.replace('.pkl', f'_{args.score_2d}.pkl')
     return args
 
 if __name__ == '__main__':
@@ -89,6 +89,14 @@ if __name__ == '__main__':
 
             print(f"frame_no: {frame_no}, %243: {frame_no%243}")
             this_segment = frame_no//243
+            if this_segment ==0:
+                # fill with last frame till 243
+                pad_len = 243 - frame_no
+                last_frame = all_keyps_rtm[-1:]
+                pad_frames = np.repeat(last_frame, pad_len, axis=0)
+                all_keyps_rtm = np.concatenate([all_keyps_rtm, pad_frames], axis=0)
+                this_segment = 1
+                source = source + '_padend'
             seg_length.append(this_segment)
             cum_segment = this_segment+cumulative_segments[-1]
             cumulative_segments.append(cum_segment)
