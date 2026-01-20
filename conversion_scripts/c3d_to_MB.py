@@ -138,7 +138,7 @@ if __name__ == '__main__':
 
                         output_6D_dataset = append_output_xD_dataset(output_6D_dataset, train_val_test, output6D)
                     if args.output_type[2]:
-                        raise NotImplementedError('Implemented using moshpp+soma in separate repo')
+                        raise NotImplementedError('Implemented using moshpp+soma in separate repo, smpl_world_to_camera.py')
                         pass
                         # output_smpl_dataset =
                     if args.output_type[3]:  # GT 3DSSPP output

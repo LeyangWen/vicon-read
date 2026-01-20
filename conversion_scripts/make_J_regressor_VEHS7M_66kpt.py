@@ -8,7 +8,7 @@ import yaml
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
-    parser.add_argument('--output_npy', type=str, default=r'J_regressor_VEHS7M_66kpt.npy')
+    parser.add_argument('--output_npy', type=str, default=r'J_regressor_VEHS7M_37kpt.npy')
 
     args = parser.parse_args()
     with open(args.skeleton_file, 'r') as stream:
@@ -27,7 +27,8 @@ if __name__ == '__main__':
                                    'HEAD', 'RSHOULDER', 'LSHOULDER', 'THORAX', 'LELBOW', 'RELBOW', 'RWRIST', 'LWRIST', 'RHAND', 'LHAND', 'PELVIS', 'RHIP', 'RKNEE',
                                     'RANKLE', 'RFOOT', 'LHIP', 'LKNEE', 'LANKLE', 'LFOOT']  # 66: drop c7_m, add MDFH, V2
 
-    kpt_sequence = paper_custom_6D_joint_names
+    rtm_pose_37_keypoints_vicon_dataset_v1 = ['PELVIS', 'RWRIST', 'LWRIST', 'RHIP', 'LHIP', 'RKNEE', 'LKNEE', 'RANKLE', 'LANKLE', 'RFOOT', 'LFOOT', 'RHAND', 'LHAND', 'RELBOW', 'LELBOW', 'RSHOULDER', 'LSHOULDER', 'HEAD', 'THORAX', 'HDTP', 'REAR', 'LEAR', 'C7', 'C7_d', 'SS', 'RAP_b', 'RAP_f', 'LAP_b', 'LAP_f', 'RLE', 'RME', 'LLE', 'LME', 'RMCP2', 'RMCP5', 'LMCP2', 'LMCP5']
+    kpt_sequence = rtm_pose_37_keypoints_vicon_dataset_v1
 
     joint_calculation = {'center':{'HEAD': ('LEAR', 'REAR'),
                                     'RSHOULDER': ('RAP_f', 'RAP_b'), 'LSHOULDER': ('LAP_f', 'LAP_b'),
