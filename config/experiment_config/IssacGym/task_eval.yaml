@@ -1,0 +1,43 @@
+
+name_list: ['PELVIS', 'torso', 'head', 'right_upper_arm', 'right_lower_arm',
+ 'right_hand', 'left_upper_arm', 'left_lower_arm', 'left_hand',
+ 'right_thigh', 'right_shin', 'right_foot', 'left_thigh', 'left_shin', 'left_foot', '1', '2', '3']
+# compare 1
+fps: 10
+#density: 100
+#dim: [0.25, 0.30, 0.20]  # w l h
+
+density: 156.25
+dim: [0.4, 0.4, 0.4]  # w l h
+
+
+estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/MMH_eval/Generated/box_good_2_lift/joint_states.csv'
+start_heights: [0,0]
+lifts: [[15, 21],[105, 114]]
+lowers: [[0,0], [0,0]]
+start_offset: 0
+#
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/MMH_eval/Generated/timber_eval_3_lift/joint_states.csv'
+#start_heights: [0,0,0]
+#lifts: [[14, 21],[117, 127],[214, 221]]
+#lowers: [[0,0], [0,0], [0,0]]
+#start_offset: 5
+
+#
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/MMH_eval/Mocap/bad_pickUp/box_okay_1/phys_humanoid_v4/isaac_formatted_motion.csv'
+#start_heights: [0]
+#lifts: [[67, 111]]
+#lowers: [[0,0]]
+#start_offset: 15
+
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/MMH_eval/Mocap/bad_pickUp/box_bad_1/phys_humanoid_v4/isaac_formatted_motion.csv'
+#start_heights: [0]
+#lifts: [[81, 129]]
+#lowers: [[0,0]]
+#start_offset: 20
+
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/MMH_eval/Mocap/bad_pickUp/timber_bad_1/phys_humanoid_v4/isaac_formatted_motion.csv'
+#start_heights: [0]
+#lifts: [[61, 104]]
+#lowers: [[0,0]]
+#start_offset: 25

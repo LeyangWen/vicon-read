@@ -86,4 +86,9 @@ start_offset: 0
 
 
 # lab:
-estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/CRC/lab_1_loc/joint_states.csv'
+#estimate_file: '/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/compare-1/CRC/lab_1_loc/joint_states.csv'
+
+
+
+estimate_file: '/Users/leyangwen/Downloads/2026-01-13_18-05-14/joint_states.csv'
+

@@ -9,7 +9,7 @@ import csv
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/test.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/task_eval.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/IssacGym/15kpts-Skeleton.yaml')
 
 
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     isaac_skeleton.load_name_list_and_np_points(args.name_list, isaac_pose)
     isaac_skeleton.load_rot_quat(issac_rot)
 
-    frames = list(range(1977,	1995, 1))
+    frames = list(range(4,	129, 3))
 
     for frame in frames:
         # frame -= 3
@@ -61,8 +61,14 @@ if __name__ == '__main__':
     # issac_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='PELVIS')
 
 
+    frame = 29
+    print(isaac_skeleton.point_poses.keys())
+    print(isaac_skeleton.point_poses['head'].z[frame])
+    print(isaac_skeleton.point_poses['left_foot'].z[frame])
+    print(isaac_skeleton.point_poses['right_foot'].z[frame])
 
-
+    print(isaac_skeleton.point_poses['right_upper_arm'].z[frame]-isaac_skeleton.point_poses['right_hand'].z[frame])
+    print(isaac_skeleton.point_poses['left_upper_arm'].z[frame]-isaac_skeleton.point_poses['left_hand'].z[frame])
 
     if False: # quick visualization of copied rigid body pose frame
         rigid_body_pose = np.array(

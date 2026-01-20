@@ -10,9 +10,6 @@ from ergo3d import Point
 # matplotlib.use('Qt5Agg')
 import csv
 
-# in vscode
-# PYTHONPATH=$(pwd) python conversion_scripts/IsaacGym/csv_to_ergo_scores.py
-
 
 ####################################################
 # From isaac inference output, csv file
@@ -23,7 +20,7 @@ import csv
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/generated.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/task_eval.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/IssacGym/15kpts-Skeleton.yaml')
 
 
@@ -42,137 +39,18 @@ def parse_args():
         args.fps = data['fps']
         args.dim = data['dim']
         args.density = data['density']
-        args.start_positions = data["start_positions"]
-        args.end_positions = data["end_positions"]
+        # args.start_positions = data["start_positions"]
+        # args.end_positions = data["end_positions"]
+        args.start_heights = data.get("start_heights", [])
         args.start_offset = data.get("start_offset", 0)
-        args.keyframe_detect = data["keyframe_detect"]
-        if not args.keyframe_detect:
-            print("*"*10,"Warning: keyframe_detect is set to False, please specify lift start and end frames in the yaml file!","*"*10)
-            keyframe_dict = {}
-            no_experiments = data['no_experiments']
-            keyframe_dict['lift_start'] = data.get("lift_start", [-1]*no_experiments)
-            keyframe_dict['lift_end'] = data.get("lift_end", [-1]*no_experiments)
-            keyframe_dict['lower_start'] = data.get("lower_start", [-1]*no_experiments)
-            keyframe_dict['lower_end'] = data.get("lower_end", [-1]*no_experiments)
-            keyframe_dict['start_heights'] = np.array(args.start_positions)[:, 2].T.tolist()
-            if len(keyframe_dict['start_heights']) == 1:
-                keyframe_dict['start_heights'] = keyframe_dict['start_heights'] * no_experiments
-            args.keyframe_dict = keyframe_dict
-            print(f"keyframe_dict: {keyframe_dict}")
-
+        args.lifts = np.array(data.get("lifts", []))
+        args.lowers = np.array(data.get("lowers", []))
     print(args.plot_mode)
     print(args.estimate_file)
     args.mass = args.density * args.dim[0] * args.dim[1] * args.dim[2]  # kg
     args.output_frame_folder = os.path.dirname(args.estimate_file) if args.output_frame_folder is None else args.output_frame_folder
     args.output_frame_folder = os.path.join(args.output_frame_folder, args.plot_mode)
     return args
-
-
-def extract_movement_segments(box_moved: np.ndarray, min_segment_length: int = 15) -> np.ndarray:
-    """
-    Given a boolean mask `box_moved` of shape (frames,),
-    return a 2×n array of [start_frame, stop_frame] for each movement segment
-    with length >= min_segment_length.
-    """
-    # find rising (+1) and falling (–1) edges
-    edges = np.diff(box_moved.astype(int))
-    starts = np.where(edges ==  1)[0] + 1
-    stops  = np.where(edges == -1)[0] + 1
-
-    # handle case where movement is active at t=0 or t=frames-1
-    if box_moved[0]:
-        starts = np.r_[0, starts]
-    if box_moved[-1]:
-        stops = np.r_[stops, box_moved.size]
-    assert len(starts) == len(stops), "Unequal number of starts and stops"
-
-    # stack into 2×n and filter by minimum length
-    segments = np.vstack([starts, stops])  # shape (2, n_total)
-    lengths = segments[1] - segments[0]
-    valid   = lengths >= min_segment_length
-    return segments[:, valid]
-
-def identify_start(args, isaac_pose):
-    #################
-    start_loc_id = 16
-    box_id = 15
-    #################
-    i = 0
-    start_ids = []
-    start_heights = []
-    last_loc = hash((-1000, -1000, -1000))
-    for i in range(isaac_pose.shape[0]):
-        start_loc_z = isaac_pose[i, start_loc_id, 2]
-        start_loc_x = isaac_pose[i, start_loc_id, 0]
-        start_loc_y = isaac_pose[i, start_loc_id, 1]
-        start_loc = hash((start_loc_x, start_loc_y, start_loc_z))
-        if last_loc != start_loc:
-            # record the start id
-            height = isaac_pose[i+5, box_id, 2] # center box height at segment start
-            height = round(height, 2)  # round to 2 decimal places
-            start_ids.append(i)
-            start_heights.append(height)
-            last_loc = start_loc
-    print(f"No_starts: {len(start_ids)}")
-    print(f"Start ids: \n {start_ids}")
-    print(f"Start heights: \n {start_heights}")
-    return start_ids, start_heights
-
-
-def get_MMH_start_end(args, segment):
-    #################
-    box_id = 15
-    box_move_threshold = 0.01
-    #################
-    box_diff = segment[1:, box_id, :] - segment[:-1, box_id, :]
-    box_moved = np.zeros(len(segment), dtype=bool)
-    box_moved[1:] = np.sum(box_diff ** 2, axis=1) > box_move_threshold ** 2
-
-    box_movement_segments = extract_movement_segments(box_moved, min_segment_length=15)  # shape: (2, no) [lift_start, lower_end]
-
-    #################
-    box_init_id = 16
-    box_dest_id = 17
-    box_near_xy_threshold = 0.4
-    # box_near_z_threshold = 0.05
-    #################
-    box_init = segment[:, box_init_id]
-    box_dest = segment[:, box_dest_id]
-    box = segment[:, box_id]
-
-    box2init_xy_diff = box[:, :2] - box_init[:, :2]
-    box2dest_xy_diff = box[:, :2] - box_dest[:, :2]
-    box2init_xy_near = np.sum(box2init_xy_diff ** 2, axis=1) < box_near_xy_threshold ** 2
-    box2dest_xy_near = np.sum(box2dest_xy_diff ** 2, axis=1) < box_near_xy_threshold ** 2
-
-    # far from box_init and box_dest
-    box2_init_dest_xy_far = np.logical_not(box2init_xy_near) & np.logical_not(box2dest_xy_near)
-    # carry_height = np.median(box[box2_init_dest_xy_far, 2])
-
-    # box2carry_z_diff = box[:, 2] - carry_height
-    # box2carry_z_near = np.abs(box2carry_z_diff) < box_near_z_threshold
-
-    box2init_xy_near_segments = extract_movement_segments(box2_init_dest_xy_far, min_segment_length=5)  # shape: (2, no) [lift_end, lower_start]
-    # box2dest_xy_near_segments = extract_movement_segments(box2dest_xy_near, min_segment_length=5)
-
-    ################# output #################
-    lift_start_seg, lower_end_seg = box_movement_segments
-    lift_end_seg, lower_start_seg = box2init_xy_near_segments
-
-    max_frame = segment.shape[0] - 1
-    lower_start_seg = lower_start_seg + 2
-    lower_start_seg = np.clip(lower_start_seg, 0, max_frame)
-
-    if len(lift_start_seg) == 0 or len(lift_end_seg) == 0 or len(lower_start_seg) == 0 or len(lower_end_seg) == 0:
-        print("No lift or lower segments found, returning empty segments.")
-        return False, False, False, False
-    return lift_start_seg[0], lift_end_seg[0], lower_start_seg[-1], lower_end_seg[-1]
-    # assert len(lift_start) == len(lift_end), "Error: lift start and lower end not equal"
-    # assert len(lower_start) == len(lower_end), "Error: lift end and lower start not equal"
-    # for i in range(len(lift_start)):
-    #     assert lift_start[i] < lift_end[i], "Error: lift start should be less than lift end"
-    # for i in range(len(lower_start)):
-    #     assert lower_start[i] < lower_end[i], "Error: lower start should be less than lower end"
 
 
 def pop_by_id_list(input_list, id_list):
@@ -201,41 +79,12 @@ if __name__ == '__main__':
 
     ######################## NIOSH lifting equation ########################
 
-    # Step 1: detect key events in frame no: each lift start, lift end, lower start, lower end
-    if args.keyframe_detect:
-        start_ids, start_heights = identify_start(args, isaac_pose)
-        end_ids = start_ids.copy()
-        end_ids[:-1] = start_ids[1:]
-        end_ids[-1] = frame_no - 1  # last end id is the last frame
-        print(f"End ids: {end_ids}")
-        bad_id = []
-        lift_start, lift_end, lower_end, lower_start = [[], [], [], []]
-        for i in range(len(start_ids)):
-            print(f"Start: {start_ids[i]}, End: {end_ids[i]}")
-            segment = isaac_pose[start_ids[i]:end_ids[i], :, :]
-
-            a,b,c,d = get_MMH_start_end(args, segment)
-            if not d:
-                bad_id.append(i)
-                print(f"Bad segment {i}, skipping")
-            lift_start.append(a + start_ids[i])
-            lift_end.append(b + start_ids[i])
-            lower_start.append(c + start_ids[i])
-            lower_end.append(d + start_ids[i])
-        # if len(bad_id) > 0:
-        #     bad_id.reverse()
-        #     for i in bad_id:
-        #         start_ids.pop(i)
-        #         end_ids.pop(i)
-        #         start_heights.pop(i)
-
-
-    else:
-        start_heights = args.keyframe_dict['start_heights']
-        lift_start = args.keyframe_dict['lift_start']
-        lift_end = args.keyframe_dict['lift_end']
-        lower_start = args.keyframe_dict['lower_start']
-        lower_end = args.keyframe_dict['lower_end']
+    # Step 1: specify lift and lower segments
+    lift_start = args.lifts[:, 0].tolist()
+    lift_end = args.lifts[:, 1].tolist()
+    lower_start = args.lowers[:, 0].tolist()
+    lower_end = args.lowers[:, 1].tolist()
+    start_heights = args.start_heights
 
     low_id = np.concatenate((lift_start, lift_start, lower_end, lower_end))
     high_id = np.concatenate((lift_end, lift_end, lower_start, lower_start))
@@ -246,21 +95,17 @@ if __name__ == '__main__':
     pelvis_id = 0
     foot_id = [11, 14]
     shoulder_id = [3, 6]
-    hand_id = [5, 8]
     box_id = 15
     #################
     foot_center = (isaac_pose[:, foot_id[0]] + isaac_pose[:, foot_id[1]]) / 2
-    hand_center = (isaac_pose[:, hand_id[0]] + isaac_pose[:, hand_id[1]]) / 2
     pelvis = isaac_pose[:, pelvis_id]
     box = isaac_pose[:, box_id]
 
     # Horizontal location (box center to pelvis xy)
     # H = (np.sum((box[all_id, :2] - pelvis[all_id, :2]) ** 2, axis=1) ** 0.5) * 100  # cm
-    # H = (np.sum((box[all_id, :2] - foot_center[all_id, :2])**2, axis=1)**0.5)*100  # cm
-    H = (np.sum((hand_center[all_id, :2] - foot_center[all_id, :2])**2, axis=1)**0.5)*100  # cm
+    H = (np.sum((box[all_id, :2] - foot_center[all_id, :2])**2, axis=1)**0.5)*100  # cm
     # Vertical location (box center to floor z)
     V = box[all_id, 2]*100  # cm
-    # TODO: >175cm VM = 0
     # Vertical Travel Distance (D)
     D = (box[high_id, 2] - box[low_id, 2])*100  # cm shape: (2no,)
     # Asymmetric angle (A) in degrees
@@ -283,15 +128,12 @@ if __name__ == '__main__':
     # Horizontal Multiplier HM (25/H)
     H_floor = 25
     H_new = np.where(H < H_floor, H_floor, H)  # if H < 25cm, set to 25cm
-    # TODO: > 63 --> HM=0
     HM = 25/H_new
     # Vertical Multiplier VM 1− (.003|V-75|)
     VM = 1 - (0.003 * np.abs(V - 75))  # 75cm
-    
     # Distance Multiplier DM .82 + (4.5/D)
     D_floor = 25
     D_new = np.where(D < D_floor, D_floor, D)  # if D < 25cm, set to 25cm
-    # TODO: > 175 --> DM=0
     DM = 0.82 + (4.5/D_new)  # 4.5cm
     # Asymmetric Multiplier AM 1− (.0032A)
     AM = 1 - (0.0032 * np.abs(A))  # degree
@@ -303,17 +145,11 @@ if __name__ == '__main__':
     # CM = 1.0  # -- assume good coupling because lifting box  with handel
     # RWL recommended weight limit
     RWL = LC * HM * VM * DM * AM * FM * CM
-    print("#"*40)
-    print(f"H: {H} cm \nV: {V} cm\nD: {D} cm\nA: {A} deg\nFreq: {frequency} Hz\nCount: {count}\nTotal time: {total_time*60:.1f} min")
-    print(f"LC: {LC} \nHM: {HM}\nVM: {VM}\nDM: {DM}\nAM: {AM}\nFM: {FM}\nCM: {CM}\nRWL: {RWL}") 
+
     LI = args.mass/RWL  # lifting index
 
 
     ####### reshape back to lift and lower
-    
-    print("LI", LI)
-    print("all_id", all_id)
-    print("#"*40)
     LI = LI.reshape(4, -1)
     # keep max of row 1 and 2, keep max of row 3 and 4
     # LI_lift = np.max(LI[:2], axis=0)
@@ -386,10 +222,10 @@ if __name__ == '__main__':
     compiled_array = np.hstack((compiled_LI, compiled_angles))
     # remove rows with id bad_lift_id and (bad_lower_id + len(start_heights))
     bad_lower_id_shifted = [i + len(start_heights) for i in bad_lower_id]
-    all_bad_id = list(set(bad_lift_id) | set(bad_lower_id_shifted) | set(bad_lift_id_LI) | set(bad_lower_id_LI))
-    # replace w. blank
-    for idx in sorted(all_bad_id, reverse=True):
-        compiled_array[idx, 3:] = np.nan
+    # all_bad_id = list(set(bad_lift_id) | set(bad_lower_id_shifted) | set(bad_lift_id_LI) | set(bad_lower_id_LI))
+    # # replace w. blank
+    # for idx in sorted(all_bad_id, reverse=True):
+    #     compiled_array[idx, 3:] = np.nan
 
     # rearrange based on start_heights
     # compiled_array = compiled_array[np.argsort(compiled_array[:, 0])]
@@ -426,8 +262,7 @@ if __name__ == '__main__':
             for j, frame in enumerate(frame_4):
                 frame = int(frame)
                 title = f"{start_height}m - {four_type[j]} - {segment_id}:{frame}"
-                isaac_skeleton.plot_3d_pose_frame(filename=f'frames/{frame}', frame=frame, coord_system="world-m", plot_range=2, mode=args.plot_mode, center_key='PELVIS', plot_rot=True, title=title)
-        
+                isaac_skeleton.plot_3d_pose_frame(frame=frame, coord_system="world-m", plot_range=2, mode=args.plot_mode, center_key='PELVIS', plot_rot=True, title=title)
             # raise NotImplementedError
     ######################## REBA ########################
 
