@@ -11,11 +11,12 @@ import yaml
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_SMPL_dir', type=str, default=r"W:\VEHS\VEHS-7M\Mesh\SMPL_pkl")
-    parser.add_argument('--input_MB_file', type=str, default=r"W:\VEHS\VEHS data collection round 3\processed\VEHS_6D_downsample5_keep1_66_v2.pkl")
-    parser.add_argument('--camera_xcp_dir', type=str, default=r"W:\VEHS\VEHS data collection round 3\processed")  #S01\FullCollection\Activity00.xcp
+    parser.add_argument('--input_SMPL_dir', type=str, default=r"/media/leyang/My Book3/VEHS/VEHS-7M/Mesh/SMPL_pkl")
+    parser.add_argument('--input_MB_file', type=str, default=r"/media/leyang/My Book3/VEHS/VEHS data collection round 3/processed/VEHS_6D_downsample5_keep1_37_v2_pitch_correct_modified_RTM2D.pkl")
+    parser.add_argument('--camera_xcp_dir', type=str, default=r"/media/leyang/My Book3/VEHS/VEHS data collection round 3/processed")  #S01\FullCollection\Activity00.xcp
     parser.add_argument('--split_config_file', type=str, default=r'config/experiment_config/VEHS-R3-622-MotionBert.yaml')
     parser.add_argument('--output_MB_file', type=str, default=None)
+    parser.add_argument('--remove_keywords', type=bool, default=True)
     args = parser.parse_args()
     with open(args.split_config_file, 'r') as stream:
         try:
@@ -26,6 +27,12 @@ def parse_args():
         except yaml.YAMLError as exc:
             print(args.split_config_file, exc)
 
+    if args.remove_keywords:
+        args.remove_keywords = ['S02/FullCollection/Activity04.xcp', 'S03/FullCollection/Activity01.xcp',
+                    # 'S11\\FullCollection\\activity02.xcp', 'S11\\FullCollection\\activity05.xcp',
+                    # 'S15\\FullCollection\\activity06.xcp', 'S15\\FullCollection\\activity07.xcp',
+                    ]
+        
     return args
 
 def blender_axis_angle(axis_angle):
@@ -49,7 +56,8 @@ if __name__ == '__main__':
             if not file.endswith('.pkl'):
                 continue
             activity = file.split('.')[0]  # Activity00 or activity00
-            subject = root.split('\\')[-1]  # S01
+            # subject = root.split('\\')[-1]  # S01
+            subject = root.split('/')[-1]  # S01
             if any(keyword in root for keyword in args.val_keyword):
                 train_val_test = 'validate'
             elif any(keyword in root for keyword in args.test_keyword):
@@ -68,7 +76,14 @@ if __name__ == '__main__':
             smpl_shape = np.tile(smpl_shape_one, (frame_no, 1))
 
             # Step 2: read camera orientation and rotate pose
+            # print(os.path.join(args.camera_xcp_dir, subject, 'FullCollection', f"{activity}.xcp"))
             camera_xcp_file = os.path.join(args.camera_xcp_dir, subject, 'FullCollection', f"{activity}.xcp")
+            # print(f"Loading camera from {camera_xcp_file}")
+            if args.remove_keywords and any(k in camera_xcp_file for k in args.remove_keywords):
+                print(f"{'#'*60} Skipping {camera_xcp_file} due to remove_keywords")
+                continue
+
+                
             cameras = eg.batch_load_from_xcp(camera_xcp_file)
             for camera_id, camera, in enumerate(cameras):
                 print(f"Camera id: {camera.DEVICEID}, Camera position: {camera.POSITION}")
@@ -97,7 +112,7 @@ if __name__ == '__main__':
         MB_data[key]['smpl_shape'] = new_MB_data[key]['smpl_shape']
 
     if args.output_MB_file is None:
-        args.output_MB_file = args.input_MB_file.replace('.pkl', '_SMPL.pkl')
+        args.output_MB_file = args.input_MB_file.replace('.pkl', '_Pitched_SMPL.pkl')
     with open(args.output_MB_file, "wb") as f:
         pickle.dump(MB_data, f)
     print(f"Output file saved to {args.output_MB_file}")
