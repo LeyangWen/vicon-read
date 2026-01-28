@@ -36,7 +36,7 @@ def read_input(json_path, type='rtm24'):
 def parse_args():
     parser = argparse.ArgumentParser()
     # parser.add_argument('--json_folder', type=str, default=r'W:\VEHS\Testing_Videos_and_rtmpose_results\OneDrive_2_9-4-2024\kps_133_fps_20')
-    parser.add_argument('--json_folder', type=str, default=r'/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/2D/Industry_Jeff')
+    parser.add_argument('--json_folder', type=str, default=r'/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/2D/Industry_3')
     parser.add_argument('--read_type', type=str, default='npy', help='json or npy')
     parser.add_argument('--output_file', type=str, default=r'rtmpose_v5-2b_20fps_industry_37kpts_v2.pkl')
     parser.add_argument('--joint_num', type=int, default=37)

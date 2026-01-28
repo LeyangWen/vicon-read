@@ -11,7 +11,7 @@ import copy
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-Youtube.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry_3.yaml')
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
     parser.add_argument('--overlay_GT', type=bool, default=False)
     parser.add_argument('--debug_mode', default=False)
@@ -133,13 +133,13 @@ if __name__ == '__main__':
     # estimate_skeleton.plot_3d_pose_frame(frame)
 
     frame_range = None #[0, 60*3*20]
-    # target_angles = estimate_skeleton.angle_names  # ['neck', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'right_wrist', 'left_wrist', 'back', 'right_knee', 'left_knee']
+    target_angles = estimate_skeleton.angle_names  # ['neck', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'right_wrist', 'left_wrist', 'back', 'right_knee', 'left_knee']
     # target_angles = ['neck', 'right_shoulder', 'left_shoulder']
     # target_angles = ['right_elbow', 'left_elbow', 'right_wrist', 'left_wrist']
     # target_angles = ['back', 'right_knee', 'left_knee']
 
-    target_angles = ['right_wrist', 'left_wrist']
-    target_angles = ['right_shoulder', 'left_shoulder']
+    # target_angles = ['right_wrist', 'left_wrist']
+    # target_angles = ['right_shoulder', 'left_shoulder']
 
     print(f"target angles: {target_angles}")
     # Single thread
@@ -175,7 +175,8 @@ if __name__ == '__main__':
                 frame_range_max = list(np.array([1, 2, 1, 1, 1, 1, 2, 4, 1, 1, 3, 1, 1]) * args.MB_data_stride)
             elif "Industry_Jeff" in render_dir:
                 frame_range_max = list(np.array([1, 3, 1]) * args.MB_data_stride)
-
+            elif "Industry_3" in render_dir:
+                frame_range_max = list(np.array([8, 2, 3, 1, 16, 1, 11, 1, 16, 9, 1, 30, 11, 15, 13, 9, 9, 8, 2, 2, 2, 3, 1, 10, 8, 2, 3, 2, 1, 4, 17]) * args.MB_data_stride)  # [8, 2, 3, 1, 16, 1, 11, 1, 16, 9, 1, 30, 11, 15, 13, 9, 9, 8, 2, 2, 2, 3, 1, 10, 8, 2, 3, 2, 1, 4, 17]
                 ## only 12 rick videos
                 # frame_range_max = list(np.array([2,2,1,2,1,2,2,2,1,2,2,2])*243)
 
@@ -185,9 +186,13 @@ if __name__ == '__main__':
             else:
                 pass
                 raise ValueError(f"Make sure this is the right dataset")
-            downsample = 1
+            downsample = 5
             fps = 20
-            estimate_ergo_angles[this_angle_name].plot_angles_by_frame(render_dir, joint_name=f"{this_angle_name}", alpha=0.75, colors=['r', 'r', 'r'], frame_range=frame_range, frame_range_max=frame_range_max, skip_first=skip_first,
-                                                                       angle_names=list(print_ergo_names.values()), fps=fps, x_tick_s=2, downsample=downsample)
-            plot_fps = fps // downsample
-            print(f"python conversion_scripts/video.py  --fps {plot_fps} --imgs_dir {render_dir}")
+            estimate_ergo_angles[this_angle_name].plot_angles(render_dir, joint_name=f"{this_angle_name}", alpha=0.75, colors=['r', 'r', 'r'], frame_range=frame_range,
+                                                                       frame_range_max=frame_range_max, skip_first=skip_first,
+                                                                       angle_names=list(print_ergo_names.values()), fps=fps)
+
+            # estimate_ergo_angles[this_angle_name].plot_angles_by_frame(render_dir, joint_name=f"{this_angle_name}", alpha=0.75, colors=['r', 'r', 'r'], frame_range=frame_range, frame_range_max=frame_range_max, skip_first=skip_first,
+            #                                                            angle_names=list(print_ergo_names.values()), fps=fps, x_tick_s=2, downsample=downsample)
+            # plot_fps = fps // downsample
+            # print(f"python conversion_scripts/video.py  --fps {plot_fps} --imgs_dir {render_dir}")

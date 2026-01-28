@@ -13,7 +13,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-Industry.yaml')
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-Youtube.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry_3.yaml')
 
     parser.add_argument('--clip_fill', type=bool, default=True)
     parser.add_argument('--rescale_25d', type=bool, default=False)
@@ -538,6 +538,9 @@ if __name__ == '__main__':
         frame_range_max = list(np.array([1, 2, 1, 1, 1, 1, 2, 4, 1, 1, 3, 1, 1]) * args.MB_data_stride)
     elif "Industry_Jeff" in render_dir:
         frame_range_max = list(np.array([1, 3, 1]) * args.MB_data_stride)
+    elif "Industry_3" in render_dir:
+        frame_range_max = list(np.array([8, 2, 3, 1, 16, 1, 11, 1, 16, 9, 1, 30, 11, 15, 13, 9, 9, 8, 2, 2, 2, 3, 1, 10, 8, 2, 3, 2, 1, 4, 17]) * args.MB_data_stride)
+
 
     fps = 5
     downsample = int(processed['fps']/fps)

@@ -17,11 +17,12 @@ def parse_args():
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/H36M17kpts/VEHS-3D-MB.yaml')
     # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/H36M-17.yaml')
 
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-Youtube.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry_3.yaml')
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-Industry.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
     parser.add_argument('--type', type=str, default='body')
-    parser.add_argument('--clip_fill', type=bool, default=False)
+    # parser.add_argument('--clip_fill', type=bool, default=False)  # 3D
+    parser.add_argument('--clip_fill', type=bool, default=True)  # 2D
     parser.add_argument('--rescale_25d', type=bool, default=False)
     parser.add_argument('--dynamic_plot_range', type=bool, default=True)
     parser.add_argument('--debug_mode', default=False, type=bool)
@@ -36,7 +37,7 @@ def parse_args():
 
     parser.add_argument('--output_frame_folder', type=str, default=None)
     parser.add_argument('--output_GT_frame_folder', type=str, default=None)
-    parser.add_argument('--plot_mode', type=str, default='paper_view', help='mode: paper_view, camera_side_view, camera_view, 0_135_view, normal_view')
+    parser.add_argument('--plot_mode', type=str, default='camera_side_view', help='mode: paper_view, camera_side_view, camera_view, 0_135_view, normal_view')
     parser.add_argument('--MB_data_stride', type=int, default=243)
 
 
@@ -200,10 +201,10 @@ def flip_data(data, args=False):
 if __name__ == '__main__':
     # read arguments
     args = parse_args()
-    estimate_pose = MB_output_pose_file_loader(args)
-    # data_key = 'joint_2d'  # todo: only for 2D plot, maybe move in config
-    data_key = 'joint3d_image'
-    # GT_pose, factor_25d = MB_input_pose_file_loader(args, data_key=data_key)
+    # estimate_pose = MB_output_pose_file_loader(args)
+    data_key = 'joint_2d'  # todo: only for 2D plot, maybe move in config
+    # data_key = 'joint3d_image'
+    GT_pose, factor_25d = MB_input_pose_file_loader(args, data_key=data_key)
     # if args.rescale_25d:
     #     if args.clip_fill:
     #         print(f'rescale by 2.5d factor in GT file')
@@ -236,11 +237,11 @@ if __name__ == '__main__':
     # estimate_pose = flip_data(estimate_pose, args)
     # estimate_pose = flip_data(estimate_pose, args)
 
-    estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
-    estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
+    # estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
+    # estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
 
-    # GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
-    # GT_skeleton.load_name_list_and_np_points(args.name_list, GT_pose)
+    GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
+    GT_skeleton.load_name_list_and_np_points(args.name_list, GT_pose)
 
     if args.type == 'hand':
         # get legend
@@ -268,21 +269,23 @@ if __name__ == '__main__':
         # estimate_skeletocn.plot_3d_pose_frame(frame=frame, coord_system="camera-px", plot_range=700, mode='camera_view', center_key='PELVIS')
 
         #### example of plotting 37 keypoints for industry and VEHS7M inference
-        if args.dynamic_plot_range:
-            segment_count = estimate_skeleton.frame_number // 243
-            for segment_id in range(segment_count):
-                start_frame = segment_id * 243
-                end_frame = start_frame + 243
-                xyz_min = np.min(estimate_skeleton.points[start_frame:end_frame], axis=(0, 1))
-                xyz_max = np.max(estimate_skeleton.points[start_frame:end_frame], axis=(0, 1))
-                plot_range = np.max(xyz_max - xyz_min) * 1.0
-                estimate_skeleton.plot_3d_pose(args.output_frame_folder, start_frame=start_frame, end_frame=end_frame,
-                                               coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS')
-        else:
-            plot_range = 850  # for VEHS7M - camera_side_view
-            # estimate_skeleton.plot_3d_pose(args.output_frame_folder, start_frame=0, coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS')
-
-            GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, start_frame=1190, coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS')
+        downsample = 2
+        # if args.dynamic_plot_range:
+        #     segment_count = estimate_skeleton.frame_number // 243
+        #
+        #     for segment_id in range(segment_count):
+        #         start_frame = segment_id * 243
+        #         end_frame = start_frame + 243
+        #         xyz_min = np.min(estimate_skeleton.points[start_frame:end_frame], axis=(0, 1))
+        #         xyz_max = np.max(estimate_skeleton.points[start_frame:end_frame], axis=(0, 1))
+        #         plot_range = np.max(xyz_max - xyz_min) * 1.0
+        #         estimate_skeleton.plot_3d_pose(args.output_frame_folder, start_frame=start_frame, end_frame=end_frame,
+        #                                        coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS', downsample=downsample)
+        # else:
+        #     plot_range = 850  # for VEHS7M - camera_side_view
+        #     # estimate_skeleton.plot_3d_pose(args.output_frame_folder, start_frame=0, coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS')
+        #
+        #     GT_skeleton.plot_3d_pose(args.output_GT_frame_folder, start_frame=1190, coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS')
 
         ###### example of plotting h36M 17 keypoints
         # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1200, mode=args.plot_mode, center_key='HIP_c')
@@ -295,14 +298,14 @@ if __name__ == '__main__':
 
         ###### example of plotting 2D with transparent background
         # GT_skeleton.plot_2d_pose_frame(frame=frame)
-        # GT_skeleton.plot_2d_pose(foldername=args.output_2D_frame_folder)
+        GT_skeleton.plot_2d_pose(foldername=args.output_2D_frame_folder)
 
 
         ###### example to get legend
         # estimate_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='PELVIS')
         # GT_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='HIP_c')
 
-        print(f"python conversion_scripts/video.py --imgs_dir {args.output_frame_folder} --fps 20")
+        print(f"python conversion_scripts/video.py --imgs_dir {args.output_frame_folder} --fps {20//downsample}")
 
 # store = ""
 # frame_no = 0
@@ -316,3 +319,5 @@ if __name__ == '__main__':
 # 2356/50
 
 
+# python conversion_scripts/video.py --imgs_dir /Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/v3v4/Industry_3/camera_side_view --fps 20
+# python conversion_scripts/video.py --imgs_dir /Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/v3v4/Industry_3/paper_view --fps 20

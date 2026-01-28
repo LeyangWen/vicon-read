@@ -363,12 +363,12 @@ class Skeleton:
             plt.show()
             return fig, ax
 
-    def plot_3d_pose(self, foldername=False, start_frame=0, end_frame=None, **kwargs):
+    def plot_3d_pose(self, foldername=False, start_frame=0, end_frame=None, downsample=1, **kwargs):
         if foldername:
             create_dir(foldername)
         if end_frame is None:
             end_frame = self.frame_number
-        for i in range(start_frame, end_frame, 1):
+        for i in range(start_frame, end_frame, downsample):
             print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
             self.plot_3d_pose_frame(frame=i, filename=filename, **kwargs)
@@ -377,12 +377,12 @@ class Skeleton:
     def plot_2d_pose(self, foldername=False, baseimage_folder=None, **kwargs):
         if foldername:
             create_dir(foldername)
-        for i in range(1, self.frame_number):
+        for i in range(0, self.frame_number):
             print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
             baseimage = os.path.join(baseimage_folder, f'{i :05d}.png') if baseimage_folder else None
             self.plot_2d_pose_frame(frame=i, filename=filename, baseimage=baseimage, **kwargs)
-            if i > 10:
+            if i > 14400:
                 break
 
     def set_weight_height(self, weight=0, height=0):
