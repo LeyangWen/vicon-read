@@ -5,12 +5,14 @@ from Skeleton import *
 from scipy.stats import f_oneway
 from MB_np_to_visual import MB_input_pose_file_loader
 
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/Inference-GT2D-66kpt-MB-50fps-VEHS7M.yaml')
-    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
-    parser.add_argument('--angle_mode', type=str, default='VEHS')
-    parser.add_argument('--clip_fill', type=bool, default=True)
+    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/Inference-GT2D-66kpt-MB-50fps-VEHS7M.yaml')
+    # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
+    # parser.add_argument('--angle_mode', type=str, default='VEHS')
+    # parser.add_argument('--clip_fill', type=bool, default=True)
 
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/H36M17kpts/VEHS-3D-MB.yaml')
     # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/H36M-17.yaml')
@@ -20,6 +22,7 @@ def parse_args():
     # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
     # parser.add_argument('--angle_mode', type=str, default='VEHS')
     # parser.add_argument('--clip_fill', type=bool, default=True)
+
 
 
 
@@ -56,7 +59,7 @@ def MB_output_pose_file_loader(args):
 if __name__ == '__main__':
     # read arguments
     args = parse_args()
-
+    # raise NotImplementedError
     if args.eval_key == 'dict':
         estimate_pose = []
         GT_pose = []
@@ -104,7 +107,7 @@ if __name__ == '__main__':
             estimate_ergo_angles[angle_name] = estimate_skeleton.empty_angles()
 
     # Step 3: visualize
-    
+
     # # Hi Veeru, I used this to visualize the 3D pose frame by frame
     # frame = 10210
     # frame = 10180
@@ -121,8 +124,8 @@ if __name__ == '__main__':
     # target_angles = ['right_shoulder']
     for angle_index, this_angle_name in enumerate(target_angles):
         # plot angles
-        GT_fig, GT_ax = GT_ergo_angles[this_angle_name].plot_angles(joint_name=f"GT-{this_angle_name}", frame_range=frame_range, alpha=0.75, colors=['g', 'g', 'g'])
-        estimate_fig, _ = estimate_ergo_angles[this_angle_name].plot_angles(joint_name=f"Est-{this_angle_name}", frame_range=frame_range, alpha=0.75, colors=['r', 'r', 'r'], overlay=[GT_fig, GT_ax])
+        GT_fig, GT_ax = GT_ergo_angles[this_angle_name].plot_angles_old_style(joint_name=f"GT-{this_angle_name}", frame_range=frame_range, alpha=0.75, colors=['g', 'g', 'g'])
+        estimate_fig, _ = estimate_ergo_angles[this_angle_name].plot_angles_old_style(joint_name=f"Est-{this_angle_name}", frame_range=frame_range, alpha=0.75, colors=['r', 'r', 'r'], overlay=[GT_fig, GT_ax])
         # plt.show()
         # GT_fig.savefig(f'frames/MB_angles/GT-{this_angle_name}.png')
         if not os.path.exists(os.path.join(args.output_dir, 'angle_plots', args.eval_key)):

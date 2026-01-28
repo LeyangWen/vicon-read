@@ -56,11 +56,12 @@ class Skeleton:
         self.frame_number = np.shape(pt_np)[0]
         self.points_dimension = np.shape(pt_np)[-1]
         self.point_poses = {}
+        exist_list = [True] * self.frame_number
         for i in range(self.point_number):
             self.poses[self.point_labels[i]] = pt_np[:, i, :]
             if self.points_dimension == 3:
-                exist = pt_np[:, i, 0] != np.nan  # todo: check if missing points is expressed as np.nan in c3d
-                xyz_exist = [pt_np[:, i, 0], pt_np[:, i, 1], pt_np[:, i, 2], exist.tolist()]
+                # exist = pt_np[:, i, 0] != np.nan  # todo: check if missing points is expressed as np.nan in c3d
+                xyz_exist = [pt_np[:, i, 0], pt_np[:, i, 1], pt_np[:, i, 2], exist_list]
                 self.point_poses[self.point_labels[i]] = MarkerPoint(xyz_exist, name=self.point_labels[i])
 
     def load_np_rot_quat(self, rot_quat):
@@ -70,7 +71,7 @@ class Skeleton:
         self.load_name_list(name_list)
         self.load_np_points(pt_np)
 
-    def load_mesh(self, vertices, format='smpl'):
+    def load_mesh(self, vertices, format='smpl', pre_saved=True):
         """
         load vertices from mesh as 49 surface markers using vert ids
         vertices: np array of vertices (n, 6890, 3) for smpl
@@ -82,7 +83,11 @@ class Skeleton:
         vid = self.marker_vids[format]
         name_list = list(vid.keys())
         idx_list = list(vid.values())
-        marker_vertices = vertices[:, idx_list, :]
+        if not pre_saved:
+            marker_vertices = vertices[:, idx_list, :]
+        else:
+            marker_vertices = vertices
+        print("loading mesh vertices as markers...")
         self.load_name_list_and_np_points(name_list, marker_vertices)
 
 
@@ -1873,10 +1878,11 @@ class PulginGaitSkeleton(Skeleton):
 
 
 class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
-    def __init__(self, skeleton_file='config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml', mode="VEHS"):
+    def __init__(self, skeleton_file='config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml', mode="VEHS", try_wrist=True):
         super().__init__(skeleton_file)
         self.angle_names = ['neck', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'right_wrist', 'left_wrist', 'back', 'right_knee', 'left_knee']
         self.mode = mode # choose from "paper", "VEHS"
+        self.try_wrist = try_wrist
 
     def empty_angles(self):
         angle = JointAngles()
@@ -2027,11 +2033,12 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         RMCP5 = self.point_poses['RMCP5']
         # RHAND = Point.mid_point(self.point_poses['RMCP2'], self.point_poses['RMCP5'])
         RHAND = self.point_poses['RHAND']
-        try:
-            RRS = self.point_poses['RRS']
-            RUS = self.point_poses['RUS']
-        except:
-            pass
+        if self.try_wrist:
+            try:
+                RRS = self.point_poses['RRS']
+                RUS = self.point_poses['RUS']
+            except:
+                pass
         RLE = self.point_poses['RLE']
         RME = self.point_poses['RME']
         RELBOW = self.point_poses['RELBOW']
@@ -2044,10 +2051,12 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         RWRIST_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'deviation', 'rotation': 'pronation'}
         RWRIST_angles.set_zero(zero_frame, by_frame=False)
         RWRIST_angles.get_flex_abd(RWRIST_coord, Point.vector(RWRIST, RELBOW), plane_seq=['xy', 'yz'], flip_sign=[-1, 1])
-        try:
-            RWRIST_angles.get_rot(RRS, RUS, RLE, RME)
-        except:
-            RWRIST_angles.get_rot(RMCP2, RMCP5, RLE, RME)
+        RWRIST_angles.get_rot(RMCP2, RMCP5, RLE, RME)
+        if self.try_wrist:
+            try:
+                RWRIST_angles.get_rot(RRS, RUS, RLE, RME)
+            except:
+                pass
         return RWRIST_angles
 
     def left_wrist_angles(self):  # not checked
@@ -2057,11 +2066,12 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         LMCP5 = self.point_poses['LMCP5']  # todo: more accurate using LRS
         # LHand = Point.mid_point(self.point_poses['LMCP2'], self.point_poses['LMCP5'])
         LHand = self.point_poses['LHAND']
-        try:
-            LRS = self.point_poses['LRS']
-            LUS = self.point_poses['LUS']
-        except:
-            pass
+        if self.try_wrist:
+            try:
+                LRS = self.point_poses['LRS']
+                LUS = self.point_poses['LUS']
+            except:
+                pass
         LLE = self.point_poses['LLE']
         LME = self.point_poses['LME']
         LELBOW = self.point_poses['LELBOW']
@@ -2074,10 +2084,12 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         LWrist_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'deviation ', 'rotation': 'pronation'}
         LWrist_angles.set_zero(zero_frame, by_frame=False)
         LWrist_angles.get_flex_abd(LWrist_coord, Point.vector(LWrist, LELBOW), plane_seq=['xy', 'yz'], flip_sign=[-1, 1])
-        try:
-            LWrist_angles.get_rot(LRS, LUS, LLE, LME, flip_sign=-1)
-        except:
-            LWrist_angles.get_rot(LMCP2, LMCP5, LLE, LME, flip_sign=-1)
+        LWrist_angles.get_rot(LMCP2, LMCP5, LLE, LME, flip_sign=-1)
+        if self.try_wrist:
+            try:
+                LWrist_angles.get_rot(LRS, LUS, LLE, LME, flip_sign=-1)
+            except:
+                pass
         return LWrist_angles
 
     def back_angles(self, up_axis=[0, 1000, 0], zero_frame = [-90, -180, 180]):
@@ -2143,7 +2155,8 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
 class H36MSkeleton_angles(VEHSErgoSkeleton_angles):
     def __init__(self, skeleton_file='config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml', mode="VEHS"):
         super().__init__(skeleton_file, mode=mode)
-        self.angle_names = ['neck', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'back', 'right_knee', 'left_knee']
+        # self.angle_names = ['neck', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'back', 'right_knee', 'left_knee']
+        self.angle_names = ['right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'back', 'right_knee', 'left_knee']
 
     def neck_angles(self):
         zero_frame = [0, -180, -180]  # todo: not zeroed out for flexion, need to fix
@@ -2223,9 +2236,11 @@ class H36MSkeleton_angles(VEHSErgoSkeleton_angles):
         LSHOULDER_angles.rotation = None
         return LSHOULDER_angles
 
-    def back_angles(self, up_axis=[0, 1000, 0], zero_frame = [-90, -180, 180]):
-        # todo: back correction
-        THORAX = self.point_poses['H36M_THORAX']
+    def back_angles(self, up_axis=[0, 1000, 0], zero_frame = [-90, -180, 180], kpt_source='H36M'):
+        if kpt_source == 'H36M':
+            THORAX = self.point_poses['H36M_THORAX']
+        elif kpt_source == 'VEHS37kpts':
+            THORAX = self.point_poses['H36M_NECK']
         RHIP = self.point_poses['RHIP']
         LHIP = self.point_poses['LHIP']
         RSHOULDER = self.point_poses['RSHOULDER']

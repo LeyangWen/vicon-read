@@ -70,7 +70,7 @@ def MB_output_pose_file_loader(args):
     return output_np_pose
 
 
-def MB_input_pose_file_loader(args, data_key='joint3d_image', get_confidence=False):
+def MB_input_pose_file_loader(args, data_key='joint3d_image', get_confidence=False, get_clip_id=False):
     if args.GT_file=='None':
         return None
     with open(args.GT_file, "rb") as f:
@@ -110,6 +110,8 @@ def MB_input_pose_file_loader(args, data_key='joint3d_image', get_confidence=Fal
         #         camera_name_store = data[args.eval_key]['camera_name'][n]
         if get_confidence:
             return np_pose, factor_25d, confidence_score
+        if get_clip_id:
+            return np_pose, factor_25d, MB_clip_id
         return np_pose, factor_25d
 
 
