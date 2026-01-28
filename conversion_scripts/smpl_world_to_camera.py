@@ -118,7 +118,8 @@ if __name__ == '__main__':
     print(f"Output file saved to {args.output_MB_file}")
 
 
-# file = r"C:\Users\Public\Documents\Vicon\vicon_coding_projects\MotionBERT\data\mesh\mesh_det_h36m.pkl"
+# # sanity check
+# file = r"/media/leyang/My Book3/VEHS/VEHS data collection round 3/processed/VEHS_6D_downsample5_keep1_37_v2_pitch_correct_modified_RTM2D_Pitched_SMPL.pkl"
 # with open(file, "rb") as f:
 #     MB_data = pickle.load(f)
 # MB_data['test'].keys()  # dict_keys(['joint_2d', 'confidence', 'joint_cam', 'smpl_pose', 'smpl_shape', 'camera_name', 'action', 'source'])
@@ -130,3 +131,5 @@ if __name__ == '__main__':
 # MB_data['test']['camera_name']  # [102280]
 # MB_data['test']['action']  # [102280]
 # MB_data['test']['source']  # [102280]
+
+
