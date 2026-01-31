@@ -271,18 +271,21 @@ if __name__ == '__main__':
         # estimate_skeletocn.plot_3d_pose_frame(frame=frame, coord_system="camera-px", plot_range=700, mode='camera_view', center_key='PELVIS')
 
         #### example of plotting 37 keypoints for industry and VEHS7M inference
-        downsample = 2
+        downsample = 1
         # if args.dynamic_plot_range:
         #     segment_count = estimate_skeleton.frame_number // 243
+        #     # segment_count = GT_skeleton.frame_number // 243
         #
         #     for segment_id in range(segment_count):
         #         start_frame = segment_id * 243
         #         end_frame = start_frame + 243
-        #         xyz_min = np.min(estimate_skeleton.points[start_frame:end_frame], axis=(0, 1))
-        #         xyz_max = np.max(estimate_skeleton.points[start_frame:end_frame], axis=(0, 1))
-        #         plot_range = np.max(xyz_max - xyz_min) * 1.0
-        #         estimate_skeleton.plot_3d_pose(args.output_frame_folder, start_frame=start_frame, end_frame=end_frame,
-        #                                        coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS', downsample=downsample)
+        #         # 3D plot range
+        #         # xyz_min = np.min(estimate_skeleton.points[start_frame:end_frame], axis=(0, 1))
+        #         # xyz_max = np.max(estimate_skeleton.points[start_frame:end_frame], axis=(0, 1))
+        #         # plot_range = np.max(xyz_max - xyz_min) * 1.0
+        #         # estimate_skeleton.plot_3d_pose(args.output_frame_folder, start_frame=start_frame, end_frame=end_frame,
+        #         #                                coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS', downsample=downsample)
+        #
         # else:
         #     plot_range = 850  # for VEHS7M - camera_side_view
         #     # estimate_skeleton.plot_3d_pose(args.output_frame_folder, start_frame=0, coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS')
@@ -300,7 +303,14 @@ if __name__ == '__main__':
 
         ###### example of plotting 2D with transparent background
         # GT_skeleton.plot_2d_pose_frame(frame=frame)
-        GT_skeleton.plot_2d_pose(foldername=args.output_2D_frame_folder)
+        # GT_skeleton.plot_2d_pose(foldername=args.output_2D_frame_folder)
+
+        # 2D plot range
+        x_max, y_max = np.max(GT_skeleton.points, axis=(0, 1)).tolist()
+        resolution = (int(x_max), int(y_max))
+
+        GT_skeleton.plot_2d_pose(foldername=args.output_2D_frame_folder,
+                                 resolution=resolution, dpi=100, downsample=downsample, transparent=False)
 
 
         ###### example to get legend
@@ -323,3 +333,5 @@ if __name__ == '__main__':
 
 # python conversion_scripts/video.py --imgs_dir /Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/v3v4/Industry_3/camera_side_view --fps 20
 # python conversion_scripts/video.py --imgs_dir /Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/v3v4/Industry_3/paper_view --fps 20
+
+# python conversion_scripts/video.py --imgs_dir /Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/2D/Industry_3/2D --fps 20
