@@ -12,3 +12,4 @@ GT_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/2D/Industry_3/rtmpose_v5-2b_20
 # v3v4 mb
 estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/v3v4/Industry_3/X3D.npy'
 
+#estimate_file: '/Users/leyangwen/Downloads/X3D_gunwoo_test.npy'

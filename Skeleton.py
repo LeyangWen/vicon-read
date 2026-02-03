@@ -221,6 +221,8 @@ class Skeleton:
         for joint_name in self.key_joint_name:
             if joint_name in self.poses:
                 point_type, point_size = self.get_plot_property(joint_name, size=[10, 20])
+                # print(f"plotting joint {joint_name} at frame {frame}")
+                # print(self.poses[joint_name][frame, :])
                 ax.scatter(self.poses[joint_name][frame, pose_sequence[0]],
                            self.poses[joint_name][frame, pose_sequence[1]],
                            self.poses[joint_name][frame, pose_sequence[2]], label=joint_name, marker=point_type, s=point_size)
@@ -422,7 +424,8 @@ class VEHSErgoSkeleton(Skeleton):
         self.marker_height = 14/2+2  # 14mm marker
         # marker_height = 9.5/2+2  # 9.5mm marker
 
-    def calculate_joint_center(self):
+    def calculate_joint_center(self, RELBOW_fix=False):
+        print("Warning: Assuming marker units are in mm")
         self.point_poses['HEAD'] = Point.mid_point(self.point_poses['LEAR'], self.point_poses['REAR'])
 
         ear_vector = Point.vector(self.point_poses['REAR'], self.point_poses['LEAR'], normalize=1)
@@ -479,6 +482,13 @@ class VEHSErgoSkeleton(Skeleton):
         self.point_poses['H36M_THORAX'] = Point.mid_point(self.point_poses['C7'], self.point_poses['THORAX'])
         self.point_poses['H36M_HEAD'] = Point.mid_point(self.point_poses['HEAD'], self.point_poses['HDTP'])
         self.point_poses['H36M_NECK'] = Point.translate_point(self.point_poses['H36M_HEAD'], Point.vector(self.point_poses['H36M_HEAD'], self.point_poses['HEAD']))
+
+        if RELBOW_fix:  # RME RLE fix for SMPLEST-X output
+            raise NotImplementedError
+            # y direction
+            up_axis = [0, 25, 0]
+            self.point_poses['RME'] = Point.translate_point(self.point_poses['RME'], Point.create_const_vector(*up_axis, examplePt=self.point_poses['RME']), direction=-1)
+            self.point_poses['RLE'] = Point.translate_point(self.point_poses['RLE'], Point.create_const_vector(*up_axis, examplePt=self.point_poses['RLE']), direction=1)
 
         self.update_pose_from_point_pose()
 

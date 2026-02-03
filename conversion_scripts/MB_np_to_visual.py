@@ -37,7 +37,7 @@ def parse_args():
 
     parser.add_argument('--output_frame_folder', type=str, default=None)
     parser.add_argument('--output_GT_frame_folder', type=str, default=None)
-    parser.add_argument('--plot_mode', type=str, default='camera_side_view', help='mode: paper_view, camera_side_view, camera_view, 0_135_view, normal_view')
+    parser.add_argument('--plot_mode', type=str, default='paper_view', help='mode: paper_view, camera_side_view, camera_view, 0_135_view, normal_view')
     parser.add_argument('--MB_data_stride', type=int, default=243)
 
 
@@ -70,13 +70,13 @@ def MB_output_pose_file_loader(args):
     return output_np_pose
 
 
-def MB_input_pose_file_loader(args, data_key='joint3d_image', get_confidence=False, get_clip_id=False):
+def MB_input_pose_file_loader(args, data_key='joint3d_image', get_confidence=False, get_clip_id=False, file_start=None):
     if args.GT_file=='None':
         return None
     with open(args.GT_file, "rb") as f:
         data = pickle.load(f)
+    # print(f'2.5d_factor: {data[args.eval_key]["2.5d_factor"]}')
 
-    print(f'2.5d_factor: {data[args.eval_key]["2.5d_factor"]}')
 
     if not args.clip_fill:
         if get_confidence:
@@ -85,17 +85,36 @@ def MB_input_pose_file_loader(args, data_key='joint3d_image', get_confidence=Fal
     else:
         source = data[args.eval_key]['source']
         MB_clip_id = []
-        k = 0
-        for i in range(len(source)):  # MB clips each data into 243 frame segments, the last segment (<243) is discarded
-            k += 1
-            if k == args.MB_data_stride:
-                k = 0
-                good_id = list(range(i-args.MB_data_stride+1, i+1))
-                MB_clip_id.extend(good_id)
-            if i == len(source)-1:
-                break
-            if source[i] != source[i+1]:
-                k = 0
+        if file_start is not None:  # use file_start to align frames
+            print(f'aligning from frames in file_start')
+            cur_file_id = 0
+            cur_frame_id_start = 0
+            source.append('end')  # to make sure the last file is processed
+            for cur_frame_id in range(len(source)-1):
+                if source[cur_frame_id] != source[cur_frame_id + 1]:
+                    file_id, frame_id_start, frame_id_end, file_frame_len, file_path = file_start[cur_file_id]
+                    cur_file_id += 1
+                    cur_frame_id_end = cur_frame_id_start + file_frame_len
+                    assert cur_frame_id >= cur_frame_id_end-1, f"frame id not aligned: cur_frame_id: {cur_frame_id} from source {source[cur_frame_id]} should be >= cur_frame_id_end: {cur_frame_id_end-1} from file_start {file_path}"
+
+                    good_id = list(range(cur_frame_id_start, cur_frame_id_end))
+                    MB_clip_id.extend(good_id)
+                    cur_frame_id_start = cur_frame_id + 1
+
+
+        else:  # use motionbert clip logic to select frames
+            k = 0
+            for i in range(len(source)):  # MB clips each data into 243 frame segments, the last segment (<243) is discarded
+                k += 1
+                if k == args.MB_data_stride:
+                    k = 0
+                    good_id = list(range(i-args.MB_data_stride+1, i+1))
+                    MB_clip_id.extend(good_id)
+                if i == len(source)-1:
+                    break
+                if source[i] != source[i+1]:
+                    k = 0
+
         # dict_keys(['joint_2d', 'confidence', 'joint3d_image', 'joints_2.5d_image', '2.5d_factor', 'camera_name', 'action', 'source', 'c3d_frame'])
         np_pose = data[args.eval_key][data_key][MB_clip_id]
         factor_25d = data[args.eval_key]['2.5d_factor'][MB_clip_id]
@@ -203,10 +222,10 @@ def flip_data(data, args=False):
 if __name__ == '__main__':
     # read arguments
     args = parse_args()
-    # estimate_pose = MB_output_pose_file_loader(args)
+    estimate_pose = MB_output_pose_file_loader(args)
     data_key = 'joint_2d'  # todo: only for 2D plot, maybe move in config
     # data_key = 'joint3d_image'
-    GT_pose, factor_25d = MB_input_pose_file_loader(args, data_key=data_key)
+    # GT_pose, factor_25d = MB_input_pose_file_loader(args, data_key=data_key)
     # if args.rescale_25d:
     #     if args.clip_fill:
     #         print(f'rescale by 2.5d factor in GT file')
@@ -239,11 +258,11 @@ if __name__ == '__main__':
     # estimate_pose = flip_data(estimate_pose, args)
     # estimate_pose = flip_data(estimate_pose, args)
 
-    # estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
-    # estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
+    estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
+    estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
 
-    GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
-    GT_skeleton.load_name_list_and_np_points(args.name_list, GT_pose)
+    # GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
+    # GT_skeleton.load_name_list_and_np_points(args.name_list, GT_pose)
 
     if args.type == 'hand':
         # get legend
@@ -268,23 +287,23 @@ if __name__ == '__main__':
         # frame = 134*20
         # frame = 18066
         #
-        # estimate_skeletocn.plot_3d_pose_frame(frame=frame, coord_system="camera-px", plot_range=700, mode='camera_view', center_key='PELVIS')
+        # estimate_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px", plot_range=700, mode='camera_view', center_key='PELVIS')
 
         #### example of plotting 37 keypoints for industry and VEHS7M inference
         downsample = 1
-        # if args.dynamic_plot_range:
-        #     segment_count = estimate_skeleton.frame_number // 243
-        #     # segment_count = GT_skeleton.frame_number // 243
-        #
-        #     for segment_id in range(segment_count):
-        #         start_frame = segment_id * 243
-        #         end_frame = start_frame + 243
-        #         # 3D plot range
-        #         # xyz_min = np.min(estimate_skeleton.points[start_frame:end_frame], axis=(0, 1))
-        #         # xyz_max = np.max(estimate_skeleton.points[start_frame:end_frame], axis=(0, 1))
-        #         # plot_range = np.max(xyz_max - xyz_min) * 1.0
-        #         # estimate_skeleton.plot_3d_pose(args.output_frame_folder, start_frame=start_frame, end_frame=end_frame,
-        #         #                                coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS', downsample=downsample)
+        if args.dynamic_plot_range:
+            segment_count = estimate_skeleton.frame_number // 243
+            # segment_count = GT_skeleton.frame_number // 243
+
+            for segment_id in range(segment_count):
+                start_frame = segment_id * 243
+                end_frame = start_frame + 243
+                # 3D plot range
+                xyz_min = np.min(estimate_skeleton.points[start_frame:end_frame], axis=(0, 1))
+                xyz_max = np.max(estimate_skeleton.points[start_frame:end_frame], axis=(0, 1))
+                plot_range = np.max(xyz_max - xyz_min) * 1.0
+                estimate_skeleton.plot_3d_pose(args.output_frame_folder, start_frame=start_frame, end_frame=end_frame,
+                                               coord_system="camera-px", plot_range=plot_range, mode=args.plot_mode, center_key='PELVIS', downsample=downsample)
         #
         # else:
         #     plot_range = 850  # for VEHS7M - camera_side_view
@@ -306,11 +325,11 @@ if __name__ == '__main__':
         # GT_skeleton.plot_2d_pose(foldername=args.output_2D_frame_folder)
 
         # 2D plot range
-        x_max, y_max = np.max(GT_skeleton.points, axis=(0, 1)).tolist()
-        resolution = (int(x_max), int(y_max))
-
-        GT_skeleton.plot_2d_pose(foldername=args.output_2D_frame_folder,
-                                 resolution=resolution, dpi=100, downsample=downsample, transparent=False)
+        # x_max, y_max = np.max(GT_skeleton.points, axis=(0, 1)).tolist()
+        # resolution = (int(x_max), int(y_max))
+        #
+        # GT_skeleton.plot_2d_pose(foldername=args.output_2D_frame_folder,
+        #                          resolution=resolution, dpi=100, downsample=downsample, transparent=False)
 
 
         ###### example to get legend

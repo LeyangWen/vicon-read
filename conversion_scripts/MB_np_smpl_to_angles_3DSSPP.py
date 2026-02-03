@@ -1,6 +1,8 @@
 import argparse
 import os.path
 import pickle
+
+import matplotlib.pyplot as plt
 from scipy.stats import f_oneway
 
 from Skeleton import *
@@ -12,7 +14,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file', type=str, default=r'config/experiment_config/meshCompare/mesh-compare-v2.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
-    parser.add_argument("--input_type", choices=["mesh_17", "mesh_66", "3D", "6D", "pose_37"], default="mesh_17")
+    parser.add_argument("--input_type", choices=["mesh_17", "mesh_66", "mesh_SMPLEST", "3D", "6D", "pose_37"], default="mesh_17")
     # parser.add_argument("--output_type", choices=["22angles", "3DSSPP"], default=["22angles"], nargs="+")
 
     parser.add_argument('--angle_mode', type=str, default='paper')
@@ -33,7 +35,7 @@ def parse_args():
         args.root_dir = data['root_dir']
 
         args.GT_6D_name_list = data['GT_6D_name_list']
-        args.GT_file = os.path.join(args.root_dir,data['GT_file'])
+        args.GT_file = os.path.join(args.root_dir,data['GT_file_pitch_correct'])
 
         args.estimate_3D_name_list = data['estimate_3D_name_list']
         args.estimate_3D_file = os.path.join(args.root_dir, data['estimate_3D_file'])
@@ -43,6 +45,12 @@ def parse_args():
         elif 'mesh_66' in args.input_type:
             args.estimate_mesh_file = os.path.join(args.root_dir, data['estimate_mesh_66_file'])
             args.MB_data_stride = 16
+        elif 'mesh_SMPLEST' in args.input_type:
+            args.estimate_mesh_file = os.path.join(args.root_dir, data['estimate_mesh_SMPLEST_file'])
+            args.MB_data_stride = 2
+        if 'mesh' in args.input_type:
+            args.GT_file = os.path.join(args.root_dir,data['GT_file'])
+
     if '3D' == args.input_type:
         args.output_dir = os.path.join(os.path.dirname(args.estimate_3D_file), 'results')
     elif '6D' == args.input_type:
@@ -53,6 +61,7 @@ def parse_args():
         raise NotImplementedError("args.output_dir not set")
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
+    args.file_start = None
     return args
 
 
@@ -88,15 +97,36 @@ def MB_output_mesh_file_loader(args, npy_mode=True):
         del output_mesh_pose
         return verts
 
+def SMPLest_output_mesh_dir_loader(args):
+    if dir == 'None':
+        return None
+    verts = np.array([])
+    file_start = []
+    frame_id = 0
+    file_id = 0
+    for root, dirs, files in os.walk(args.estimate_mesh_file):
+        dirs.sort()  # Sort directories in-place --> important, will change walk sequence
+        files.sort(key=str.lower)  # Sort files in-place
+        for file in files:
+            if not file.endswith('.npy'):
+                continue
+            # print(root, dirs, file)
+            file_path = os.path.join(root, file)
+            cur_verts = np.load(file_path)
+            frame_id_start = frame_id
+            frame_id += cur_verts.shape[0]
+            file_start.append([file_id, frame_id_start, frame_id, cur_verts.shape[0], file_path])
+            file_id += 1
+            # append verts
+            verts = cur_verts if verts.size == 0 else np.concatenate((verts, cur_verts), axis=0)
+
+    return verts, file_start
 
 if __name__ == '__main__':
     # read arguments
     args = parse_args()
     # raise NotImplementedError
-    # Step 2: Get GT angles to compare
-    print("Loading GT poses...")
-    GT_pose, factor_25d, clip_id = MB_input_pose_file_loader(args, get_clip_id=True)
-    GT_pose = GT_pose[:1200] if args.debug_mode else GT_pose
+
 
     print(f"Loading estimated poses from {args.input_type}...")
     if '3D' == args.input_type:
@@ -126,25 +156,44 @@ if __name__ == '__main__':
         #     estimate_6D_ergo_angles[angle_name] = getattr(estimate_6D_skeleton, class_method_name)()
         pass
     elif 'mesh' in args.input_type:
-        estimate_mesh_vert = MB_output_mesh_file_loader(args)
+        if 'SMPLEST' in args.input_type:
+            estimate_mesh_vert, file_start = SMPLest_output_mesh_dir_loader(args)  #277912
+            args.file_start = file_start
+        else:
+            estimate_mesh_vert = MB_output_mesh_file_loader(args)
         estimate_mesh_vert = estimate_mesh_vert[:1200] if args.debug_mode else estimate_mesh_vert
+
+        up_right_frame = 0
+        HDTP = estimate_mesh_vert[up_right_frame, 0]
+        RHEEL = estimate_mesh_vert[up_right_frame, -2]
+        LHEEL = estimate_mesh_vert[up_right_frame, -1]
+        subject_height= 1800 # mm
+        pose_height = np.linalg.norm(HDTP - (RHEEL + LHEEL) / 2) * 2
+        scale = subject_height / pose_height
+        print(f"Scaling mesh by {scale:.3f} to match subject height of {subject_height} mm")
+        estimate_mesh_vert = estimate_mesh_vert * scale # needed for joint calculation
+
 
         # calculate MB-mesh angles
         print("Loading to skeleton...")
         estimate_mesh_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode, try_wrist=False)
         # estimate_mesh_skeleton.load_mesh(estimate_mesh_vert)  # for full verts inputs, very slow
         estimate_mesh_skeleton.load_mesh(estimate_mesh_vert, pre_saved=True)  # for full verts inputs, very slow
-        # raise NotImplementedError
         estimate_mesh_skeleton.calculate_joint_center()
         print("Calculating estimated angles...")
         estimate_mesh_ergo_angles = {}
         for angle_name in estimate_mesh_skeleton.angle_names:  # calling the angle calculation methods in skeleton class
             class_method_name = f'{angle_name}_angles'
             estimate_mesh_ergo_angles[angle_name] = getattr(estimate_mesh_skeleton, class_method_name)()
-        estimate_mesh_ergo_angles['back'] = estimate_mesh_skeleton.back_angles(up_axis=[0, 0, -1])
+        if 'SMPLEST' not in args.input_type: # z up for MB-mesh
+            estimate_mesh_ergo_angles['back'] = estimate_mesh_skeleton.back_angles(up_axis=[0, 0, -1])
 
         estimate_ergo_angles = estimate_mesh_ergo_angles
 
+    # # Step 2: Get GT angles to compare
+    print("Loading GT poses...")
+    GT_pose, factor_25d, clip_id = MB_input_pose_file_loader(args, get_clip_id=True, file_start = args.file_start)
+    GT_pose = GT_pose[:1200] if args.debug_mode else GT_pose
     print("Calculating GT angles...")
     # calculate GT angles
     GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode, try_wrist=False)
@@ -163,9 +212,10 @@ if __name__ == '__main__':
 
     # # Hi Veeru, I used this to visualize the 3D pose frame by frame
     # frame = 10210
-    # frame = 10180
-    # GT_skeleton.plot_3d_pose_frame(frame)
-    # estimate_skeleton.plot_3d_pose_frame(frame)
+    # frame = 3000
+    # for frame in [0, 1000, 3000, 9000, 12000]:
+    #     GT_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px")
+    #     estimate_mesh_skeleton.plot_3d_pose_frame(frame=frame, coord_system="camera-px")
 
     frame_range = [0, 1200]
     log = []
