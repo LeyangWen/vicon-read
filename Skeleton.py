@@ -1890,11 +1890,47 @@ class PulginGaitSkeleton(Skeleton):
 
 
 class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
-    def __init__(self, skeleton_file='config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml', mode="VEHS", try_wrist=True):
+    def __init__(self, skeleton_file='config\VEHS_ErgoSkeleton_info\Ergo-Skeleton.yaml', mode="VEHS", try_wrist=True, angle_limit=False):
         super().__init__(skeleton_file)
         self.angle_names = ['neck', 'right_shoulder', 'left_shoulder', 'right_elbow', 'left_elbow', 'right_wrist', 'left_wrist', 'back', 'right_knee', 'left_knee']
         self.mode = mode # choose from "paper", "VEHS"
         self.try_wrist = try_wrist
+        self.angle_limit = angle_limit
+        if self.angle_limit:
+            print("Angle limits will be applied to the computed joint angles.")
+            # back: flexion: -40, 120, abduction: -60 to 60, rotation: -110 to 110
+            # neck: flexion: -90 to 90, abduction: -90 to 90, rotation: -120 to 120
+            # shoulder: flexion: None, abduction: -120 to 165, rotation: None
+            # elbow: flexion: 0 to 150
+            # wrist: flexion: -135, 135, abduction: -90, 90, rotation: None
+            # knee: flexion: 0 to 150
+            self.angle_limit = {
+                'back': {'flexion': (-40, 120), 'abduction': (-60, 60), 'rotation': (-110, 110)},
+                'neck': {'flexion': (-90, 90), 'abduction': (-90, 90), 'rotation': (-120, 120)},
+                'right_shoulder': {'flexion': (None, None), 'abduction': (-120, 165), 'rotation': (-120, 120)},
+                'left_shoulder': {'flexion': (None, None), 'abduction': (-120, 165), 'rotation': (-120, 120)},
+                'right_elbow': {'flexion': (0, 150)},
+                'left_elbow': {'flexion': (0, 150)},
+                'right_wrist': {'flexion': (-135, 135), 'abduction': (-90, 90), 'rotation': (-120, 120)},
+                'left_wrist': {'flexion': (-135, 135), 'abduction': (-90, 90), 'rotation': (-120, 120)},
+                'right_knee': {'flexion': (0, 150)},
+                'left_knee': {'flexion': (0, 150)}
+            }
+
+    def enforce_angle_limits(self, angles, joint_name):
+        if joint_name in self.angle_limit:
+            limits = self.angle_limit[joint_name]
+            for angle_name in limits:
+                min_limit, max_limit = limits[angle_name]
+                angle_value = getattr(angles, angle_name)
+                if angle_value is not None:
+                    if min_limit is not None:
+                        # set values outside limit to nan
+                        angle_value = np.where(angle_value < np.deg2rad(min_limit), np.nan, angle_value)
+                    if max_limit is not None:
+                        angle_value = np.where(angle_value > np.deg2rad(max_limit), np.nan, angle_value)
+                    setattr(angles, angle_name, angle_value)
+        return angles
 
     def empty_angles(self):
         angle = JointAngles()
@@ -1925,6 +1961,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         NECK_angles.set_zero(zero_frame, by_frame=False)
         NECK_angles.get_flex_abd(HEAD_coord, Point.vector(C7, PELVIS), plane_seq=['xy', 'yz'], flip_sign=[1, -1])
         NECK_angles.get_rot(LEAR, REAR, LSHOULDER, RSHOULDER)
+        NECK_angles = self.enforce_angle_limits(NECK_angles, 'neck') if self.angle_limit else NECK_angles
         return NECK_angles
 
     def right_shoulder_angles(self):
@@ -1963,9 +2000,10 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
 
             shoulder_threshold = 10/180*np.pi  # the H-abduction is not well defined when the flexion is small or near 180 degrees
             shoulder_filter = np.logical_and(np.abs(RSHOULDER_angles.flexion) > shoulder_threshold, np.abs(RSHOULDER_angles.flexion) < (np.pi - shoulder_threshold))
-            RSHOULDER_angles.abduction = np.array([np.where(shoulder_filter[i], RSHOULDER_angles.abduction[i], 0) for i in range(len(shoulder_filter))])  # set abduction to nan if shoulder filter is false
+            RSHOULDER_angles.abduction = np.array([np.where(shoulder_filter[i], RSHOULDER_angles.abduction[i], np.nan) for i in range(len(shoulder_filter))])  # set abduction to nan if shoulder filter is false
         else:
             raise ValueError('mode must be paper or VEHS, current mode is {}'.format(self.mode))
+        RSHOULDER_angles = self.enforce_angle_limits(RSHOULDER_angles, 'right_shoulder') if self.angle_limit else RSHOULDER_angles
         return RSHOULDER_angles
 
     def left_shoulder_angles(self):     # not checked
@@ -2001,9 +2039,10 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
             LSHOULDER_angles.flexion = LSHOULDER_angles.zero_by_idx(0)
             shoulder_threshold = 10/180*np.pi
             shoulder_filter = np.logical_and(np.abs(LSHOULDER_angles.flexion) > shoulder_threshold, np.abs(LSHOULDER_angles.flexion) < (np.pi - shoulder_threshold))
-            LSHOULDER_angles.abduction = np.array([np.where(shoulder_filter[i], LSHOULDER_angles.abduction[i], 0) for i in range(len(shoulder_filter))])
+            LSHOULDER_angles.abduction = np.array([np.where(shoulder_filter[i], LSHOULDER_angles.abduction[i], np.nan) for i in range(len(shoulder_filter))])
         else:
             raise ValueError('mode must be paper or VEHS, current mode is {}'.format(self.mode))
+        LSHOULDER_angles = self.enforce_angle_limits(LSHOULDER_angles, 'left_shoulder') if self.angle_limit else LSHOULDER_angles
         return LSHOULDER_angles
 
     def right_elbow_angles(self):
@@ -2020,6 +2059,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         RELBOW_angles.is_empty = False
         RELBOW_angles.abduction = None
         RELBOW_angles.rotation = None
+        RELBOW_angles = self.enforce_angle_limits(RELBOW_angles, 'right_elbow') if self.angle_limit else RELBOW_angles
         return RELBOW_angles
 
     def left_elbow_angles(self):  # not checked
@@ -2036,6 +2076,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         LELBOW_angles.is_empty = False
         LELBOW_angles.abduction = None
         LELBOW_angles.rotation = None
+        LELBOW_angles = self.enforce_angle_limits(LELBOW_angles, 'left_elbow') if self.angle_limit else LELBOW_angles
         return LELBOW_angles
 
     def right_wrist_angles(self):
@@ -2069,6 +2110,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
                 RWRIST_angles.get_rot(RRS, RUS, RLE, RME)
             except:
                 pass
+        RWRIST_angles = self.enforce_angle_limits(RWRIST_angles, 'right_wrist') if self.angle_limit else RWRIST_angles
         return RWRIST_angles
 
     def left_wrist_angles(self):  # not checked
@@ -2102,6 +2144,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
                 LWrist_angles.get_rot(LRS, LUS, LLE, LME, flip_sign=-1)
             except:
                 pass
+        LWrist_angles = self.enforce_angle_limits(LWrist_angles, 'left_wrist') if self.angle_limit else LWrist_angles
         return LWrist_angles
 
     def back_angles(self, up_axis=[0, 1000, 0], zero_frame = [-90, -180, 180]):
@@ -2128,7 +2171,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         BACK_angles.get_flex_abd(BACK_coord, Point.vector(PELVIS, C7), plane_seq=['xy', 'yz'], flip_sign=[-1, -1])  # right to be positive for lateral bend
         # BACK_angles.get_rot(RSHOULDER, LSHOULDER, RPSIS, LPSIS, flip_sign=1)
         BACK_angles.get_rot(RSHOULDER, LSHOULDER, RHIP, LHIP, flip_sign=1)
-
+        BACK_angles = self.enforce_angle_limits(BACK_angles, 'back') if self.angle_limit else BACK_angles
         return BACK_angles
 
     def right_knee_angles(self):
@@ -2145,6 +2188,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         RKNEE_angles.is_empty = False
         RKNEE_angles.abduction = None
         RKNEE_angles.rotation = None
+        RKNEE_angles = self.enforce_angle_limits(RKNEE_angles, 'right_knee') if self.angle_limit else RKNEE_angles
         return RKNEE_angles
 
     def left_knee_angles(self):  # not checked
@@ -2161,6 +2205,7 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         LKNEE_angles.is_empty = False
         LKNEE_angles.abduction = None
         LKNEE_angles.rotation = None
+        LKNEE_angles = self.enforce_angle_limits(LKNEE_angles, 'left_knee') if self.angle_limit else LKNEE_angles
         return LKNEE_angles
 
 
@@ -2475,20 +2520,5 @@ class RokokoHandSkeleton(Skeleton):
         # c3d info
         output['c3d_frame'] = c3d_frame
         return output
-
-
-# RMCP2,RMCP5, RWRIST
-# marker_height = 9  # mm
-# R_wrist_plane = Plane()
-# R_wrist_plane.set_by_pts(RMCP5, RWRIST, RMCP2)
-# RMCP2 = Point.translate_point(RMCP2, R_wrist_plane.normal_vector, marker_height)
-# RMCP5 = Point.translate_point(RMCP5, R_wrist_plane.normal_vector, marker_height)
-#
-# LMCP2,LMCP5, LWRIST
-# L_wrist_plane = Plane()
-# L_wrist_plane.set_by_pts(LMCP2, LWRIST, LMCP5)
-# LMCP2 = Point.translate_point(LMCP2, L_wrist_plane.normal_vector, marker_height)
-# LMCP5 = Point.translate_point(LMCP5, L_wrist_plane.normal_vector, marker_height)
-
 
 

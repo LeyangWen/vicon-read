@@ -46,6 +46,7 @@ GT_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/2D/exp_2b_industry_videos_20fp
 
 
 # Veeru's 3D smooth
-estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/Industry_both_smooth/X3D.npy'
+#estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/Industry_both_smooth/X3D.npy'
 
-
+# v3v4
+estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/v3v4/Industry_both/X3D.npy'

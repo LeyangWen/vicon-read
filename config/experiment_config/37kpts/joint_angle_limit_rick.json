@@ -1,0 +1,277 @@
+{
+ "segments": {
+   "neck": {
+     "joint": "neck",
+     "ranges": {
+       "2d" : {
+         "cautious":{"flexion":[25,45],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[45,80],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[80,180],"abduction":[],"rotation": []}
+       }
+     }
+   },
+   "trunk": {
+     "joint": "back",
+     "ranges": {
+       "2d" : {
+         "cautious":{"flexion":[20,60],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[60,180],"abduction":[],"rotation": []}
+         },
+       "3d" : {
+       "cautious":{"flexion":[30,60,-15,-10],"abduction":[15,30,-30,-15],"rotation": [30,45,-45,-30]},
+       "dangerous":{"flexion":[60,120,-40,-15],"abduction":[30,60,-60,-30],"rotation": [45,110,-110,-45]},
+       "impossible": {"flexion":[120,180,-180,-40],"abduction":[60,180,-180,-60],"rotation": [110,180,-180,-110]}
+       },
+       "seated" : {
+       "cautious":{"flexion":[30,60,-40,-15],"abduction":[15,30,-30,-15],"rotation": [30,45,-45,-30]},
+       "dangerous":{"flexion":[60,120,-180,-40],"abduction":[30,60,-60,-30],"rotation": [45,110,-110,-45]},
+       "impossible": {"flexion":[120,180],"abduction":[60,180,-180,-60],"rotation": [110,180,-180,-110]}
+       }
+     }
+   },
+   "rightUpperArm": {
+     "joint": "rightShoulder",
+     "ranges": {
+       "2d" : {
+         "cautious":{"flexion":[45,90],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[90,180],"abduction":[],"rotation": []}
+         },
+       "3d" : {
+       "cautious":{"flexion":[45,90],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[90,180],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[],"abduction":[],"rotation": []}
+     }
+   }
+   },
+   "rightLowerArm": {
+     "joint": "rightElbow",
+     "if": {
+       "joint": "rightShoulder",
+       "range": [45, 180],
+       "then": {
+         "2d": {
+           "cautious":{"flexion":[60,90],"abduction":[],"rotation": []},
+           "dangerous":{"flexion":[0,60],"abduction":[],"rotation": []}
+         },
+         "3d" : {
+       "cautious":{"flexion":[45,65],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[-5,45],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[150,180,-180,-5],"abduction":[],"rotation": []}
+           }
+       }
+     },
+     "else": {
+       "default": [0, 180]
+     }
+   },
+   "rightWristPalm": {
+     "joint": "rightWrist",
+     "ranges": {
+       "2d" : {
+       "cautious":{"flexion":[20,45],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[45,90],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[90,180],"abduction":[],"rotation": []}
+         }
+     }
+   },
+   "rightThigh": {
+     "joint": "rightKnee",
+     "ranges": {
+       "2d": {
+           "cautious":{"flexion":[30,60],"abduction":[],"rotation": []},
+           "dangerous":{"flexion":[60,180],"abduction":[],"rotation": []}
+         },
+       "3d" : {
+       "cautious":{"flexion":[45,60],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[60,150],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[150,180,-180,-10],"abduction":[],"rotation": []}
+         },
+       "seated" : {
+       "cautious":{"flexion":[95,105],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[105,180],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[-180,-10],"abduction":[],"rotation": []}
+         }
+     }
+   },
+   "rightCalf": {
+     "joint": "rightKnee",
+     "ranges": {
+       "2d": {
+           "cautious":{"flexion":[30,60],"abduction":[],"rotation": []},
+           "dangerous":{"flexion":[60,180],"abduction":[],"rotation": []}
+         },
+       "3d" : {
+       "cautious":{"flexion":[45,60],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[60,150],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[150,180,-180,-10],"abduction":[],"rotation": []}
+         },
+       "seated" : {
+       "cautious":{"flexion":[95,105],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[105,180],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[-180,-10],"abduction":[],"rotation": []}
+         }
+     }
+   },
+   "leftUpperArm": {
+     "joint": "leftShoulder",
+     "ranges": {
+       "2d" : {
+         "cautious":{"flexion":[45,90],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[90,180],"abduction":[],"rotation": []}
+         },
+       "3d" : {
+       "cautious":{"flexion":[45,90],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[90,180],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[],"abduction":[],"rotation": []}
+     }
+   }
+   },
+   "leftLowerArm": {
+     "joint": "leftElbow",
+     "if": {
+       "joint": "leftShoulder",
+       "range": [45, 180],
+       "then": {
+         "2d": {
+           "cautious":{"flexion":[60,90],"abduction":[],"rotation": []},
+           "dangerous":{"flexion":[0,60],"abduction":[],"rotation": []}
+         },
+         "3d" : {
+       "cautious":{"flexion":[45,65],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[-5,45],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[150,180,-180,-5],"abduction":[],"rotation": []}
+           }
+       }
+     },
+     "else": {
+       "default": [0, 180]
+     }
+   },
+   "leftWristPalm": {
+      "joint": "leftWrist",
+     "ranges": {
+       "2d" : {
+       "cautious":{"flexion":[20,45],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[45,90],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[90,180],"abduction":[],"rotation": []}
+         }
+     }
+   },
+   "leftThigh": {
+     "joint": "leftKnee",
+     "ranges": {
+       "2d": {
+           "cautious":{"flexion":[30,60],"abduction":[],"rotation": []},
+           "dangerous":{"flexion":[60,180],"abduction":[],"rotation": []}
+         },
+       "3d" : {
+       "cautious":{"flexion":[45,60],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[60,150],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[150,180,-180,-10],"abduction":[],"rotation": []}
+         },
+       "seated" : {
+       "cautious":{"flexion":[95,105],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[105,180],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[-180,-10],"abduction":[],"rotation": []}
+         }
+     }
+   },
+   "leftCalf": {
+     "joint": "leftKnee",
+     "ranges": {
+       "2d": {
+           "cautious":{"flexion":[30,60],"abduction":[],"rotation": []},
+           "dangerous":{"flexion":[60,180],"abduction":[],"rotation": []}
+         },
+       "3d" : {
+       "cautious":{"flexion":[45,60],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[60,150],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[150,180,-180,-10],"abduction":[],"rotation": []}
+         },
+       "seated" : {
+       "cautious":{"flexion":[95,105],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[105,180],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[-180,-10],"abduction":[],"rotation": []}
+         }
+     }
+   },
+   "rightShoulderNeck": {
+     "joint": "none"
+   },
+   "leftShoulderNeck": {
+     "joint": "none"
+   },
+   "rightHipBack": {
+     "joint": "none"
+   },
+   "leftHipBack": {
+     "joint": "none"
+   },
+   "leftEarNose": {
+     "joint": "none"
+   },
+   "rightEarNose": {
+     "joint": "none"
+   },
+   "rightEarHead": {
+     "joint": "none"
+   },
+   "leftEarHead": {
+     "joint": "none"
+   },
+   "leftWristPinky": {
+     "joint": "leftWrist",
+     "ranges": {
+       "2d" : {
+       "cautious":{"flexion":[20,45],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[45,90],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[90,180],"abduction":[],"rotation": []}
+         }
+     }
+   },
+   "rightWristPinky": {
+     "joint": "rightWrist",
+     "ranges": {
+       "2d" : {
+       "cautious":{"flexion":[20,45],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[45,90],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[90,180],"abduction":[],"rotation": []}
+         }
+     }
+   },
+   "leftWristIndex": {
+     "joint": "leftWrist",
+     "ranges": {
+       "2d" : {
+       "cautious":{"flexion":[20,45],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[45,90],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[90,180],"abduction":[],"rotation": []}
+         }
+     }
+   },
+   "rightWristIndex": {
+     "joint": "rightWrist",
+     "ranges": {
+       "2d" : {
+       "cautious":{"flexion":[20,45],"abduction":[],"rotation": []},
+       "dangerous":{"flexion":[45,90],"abduction":[],"rotation": []},
+       "impossible": {"flexion":[90,180],"abduction":[],"rotation": []}
+         }
+     }
+   }
+ },
+ "colors": {
+   "default": [0, 205, 71],
+   "cautious": [255, 228, 0],
+   "dangerous": [227, 0, 8],
+   "impossible": [0,0,0],
+   "lower_arm_dangerous": [227, 0, 8]
+ },
+ "options": {
+   "blurFactor": 0.005,
+   "palmScaleFactor": 1.37,
+   "heelScaleFactor": 1.159,
+   "headScaleFactor": 0.182,
+   "segmentWidthFactor": 150
+ }
+}

@@ -92,7 +92,7 @@ if __name__ == '__main__':
             GT_ergo_angles[angle_name] = getattr(GT_skeleton, class_method_name)()
 
     # Step 2: calculate MB angles
-    estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file)
+    estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, angle_limit=True)
     estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
 
     estimate_ergo_angles = {}
@@ -116,6 +116,8 @@ if __name__ == '__main__':
         R_shoulder_abd_mask = mask[:, 1]
         L_wrist_rot_mask = np.logical_or(mask[:, 2], mask[:, 4])
         R_wrist_rot_mask = np.logical_or(mask[:, 3], mask[:, 5])
+        L_wrist_flex_abd_mask = mask[:, 4]
+        R_wrist_flex_abd_mask = mask[:, 5]
 
 
         estimate_ergo_angles['left_shoulder'].rotation[L_shoulder_rot_mask] = np.nan
@@ -124,6 +126,12 @@ if __name__ == '__main__':
         estimate_ergo_angles['right_shoulder'].abduction[R_shoulder_abd_mask] = np.nan
         estimate_ergo_angles['left_wrist'].rotation[L_wrist_rot_mask] = np.nan
         estimate_ergo_angles['right_wrist'].rotation[R_wrist_rot_mask] = np.nan
+
+        estimate_ergo_angles['left_wrist'].flexion[L_wrist_flex_abd_mask] = np.nan
+        estimate_ergo_angles['left_wrist'].abduction[L_wrist_flex_abd_mask] = np.nan
+        estimate_ergo_angles['right_wrist'].flexion[R_wrist_flex_abd_mask] = np.nan
+        estimate_ergo_angles['right_wrist'].abduction[R_wrist_flex_abd_mask] = np.nan
+
 
 
     # Step 3: visualize
