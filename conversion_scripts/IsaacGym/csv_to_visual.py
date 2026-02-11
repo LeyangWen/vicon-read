@@ -3,13 +3,13 @@ import os.path
 import pickle
 from Skeleton import *
 import matplotlib
-# matplotlib.use('Qt5Agg')
+matplotlib.use('Qt5Agg')
 from mpl_toolkits.mplot3d import Axes3D
 import csv
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/task_eval.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/test.yaml')  # task_eval
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/IssacGym/15kpts-Skeleton.yaml')
 
 
@@ -48,8 +48,8 @@ if __name__ == '__main__':
     isaac_skeleton.load_name_list_and_np_points(args.name_list, isaac_pose)
     isaac_skeleton.load_rot_quat(issac_rot)
 
-    frames = list(range(4,	129, 3))
-
+    # frames = list(range(4,	129, 3))
+    frames = [0]
     for frame in frames:
         # frame -= 3
         # isaac_skeleton.plot_3d_pose_frame(frame=frame, coord_system="world-m", plot_range=10, mode=args.plot_mode, center_key='PELVIS', plot_rot=True, title='Frame {}'.format(frame))
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # issac_skeleton.plot_3d_pose(args.output_frame_folder, coord_system="camera-px", plot_range=1e20, mode=args.plot_mode, get_legend=True, center_key='PELVIS')
 
 
-    frame = 29
+    frame = 0
     print(isaac_skeleton.point_poses.keys())
     print(isaac_skeleton.point_poses['head'].z[frame])
     print(isaac_skeleton.point_poses['left_foot'].z[frame])
