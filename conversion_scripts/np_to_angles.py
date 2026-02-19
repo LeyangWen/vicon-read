@@ -1,6 +1,10 @@
 import argparse
 import os.path
 import pickle
+
+import matplotlib
+# matplotlib.use('Qt5Agg')
+
 from Skeleton import *
 from scipy.stats import f_oneway
 from MB_np_to_visual import MB_input_pose_file_loader
@@ -9,10 +13,11 @@ from MB_np_to_visual import MB_input_pose_file_loader
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/Inference-GT2D-66kpt-MB-50fps-VEHS7M.yaml')
-    # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
-    # parser.add_argument('--angle_mode', type=str, default='VEHS')
-    # parser.add_argument('--clip_fill', type=bool, default=True)
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/Inference-GT2D-66kpt-MB-50fps-VEHS7M.yaml')  # paper
+    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
+    parser.add_argument('--angle_mode', type=str, default='VEHS')
+    parser.add_argument('--try_wrist', type=bool, default=True)
+    parser.add_argument('--clip_fill', type=bool, default=True)
 
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/H36M17kpts/VEHS-3D-MB.yaml')
     # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/H36M-17.yaml')
@@ -85,7 +90,7 @@ if __name__ == '__main__':
         estimate_pose = estimate_pose[:small_sample]
 
     # Step 1: calculate GT angles
-    GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode)
+    GT_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode, try_wrist=args.try_wrist)
     # GT_skeleton = H36MSkeleton_angles(args.skeleton_file, mode=args.angle_mode)  # todo: remember to change this back to VEHSErgoSkeleton_angles
     GT_skeleton.load_name_list_and_np_points(args.GT_name_list, GT_pose)
     GT_ergo_angles = {}
@@ -95,7 +100,7 @@ if __name__ == '__main__':
 
 
     # Step 2: calculate MB angles
-    estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode)
+    estimate_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode, try_wrist=args.try_wrist)
     # estimate_skeleton = H36MSkeleton_angles(args.skeleton_file, mode=args.angle_mode)  # todo: remember to change this back to VEHSErgoSkeleton_angles
     estimate_skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
     estimate_ergo_angles = {}
@@ -114,7 +119,10 @@ if __name__ == '__main__':
     # GT_skeleton.plot_3d_pose_frame(frame)
     # estimate_skeleton.plot_3d_pose_frame(frame)
 
-    frame_range = [0, 1200]
+    assert GT_pose.shape[1] == len(args.name_list)
+    assert estimate_pose.shape[1] == len(args.name_list)
+
+    frame_range = [0, 60*50]
     log = []
     anova_results = []
     average_error = {}
@@ -124,6 +132,7 @@ if __name__ == '__main__':
     # target_angles = ['right_shoulder']
     for angle_index, this_angle_name in enumerate(target_angles):
         # plot angles
+        # GT_ergo_angles[this_angle_name].
         GT_fig, GT_ax = GT_ergo_angles[this_angle_name].plot_angles_old_style(joint_name=f"GT-{this_angle_name}", frame_range=frame_range, alpha=0.75, colors=['g', 'g', 'g'])
         estimate_fig, _ = estimate_ergo_angles[this_angle_name].plot_angles_old_style(joint_name=f"Est-{this_angle_name}", frame_range=frame_range, alpha=0.75, colors=['r', 'r', 'r'], overlay=[GT_fig, GT_ax])
         # plt.show()
@@ -194,7 +203,16 @@ if __name__ == '__main__':
                 # print(f'Error distribution: {error_dist}')
 
                 # Calculate errors
-                errors = ja1 - ja2
+                errors = angle_diff(ja1, ja2, input_rad=True, output_rad=True)
+
+                # # plot errors in frame range
+                # figure = plt.figure(figsize=(10, 5))
+                # plt.plot(errors[frame_range[0]:frame_range[1]], label='Error')
+                # plt.xlabel('Frame')
+                # plt.ylabel('Error')
+                # plt.title(f'Error over Frames: {print_angle_name} - {print_ergo_name}')
+                # plt.show()
+
                 if this_ergo_angle == 'flexion':
                     flexion_errors = errors.copy()
                 elif this_ergo_angle == 'abduction':
@@ -207,6 +225,8 @@ if __name__ == '__main__':
                 # this_log = [this_angle_name, this_ergo_angle, md, sd, MAE, RMSE]
                 this_log = [print_angle_name, print_ergo_name, MAE, median_AE, RMSE, md, sd, error_dist['skewness'], error_dist['kurtosis'], angle_compare.median_deg, error_dist['IQR']]
                 log.append(this_log)
+                # if this_ergo_angle == "abduction":
+                #     raise NotImplementedError
 
         # # Perform ANOVA for each joint
         # if flexion_errors.size > 0 and abduction_errors.size > 0 and rotation_errors.size > 0:
@@ -249,7 +269,7 @@ if __name__ == '__main__':
             print(j, end=",")
         print()
     # also save log as csv
-    with open(os.path.join(args.output_dir, f'{args.eval_key}_{args.angle_mode}_log.csv'), 'w') as f:
+    with open(os.path.join(args.output_dir, f'{args.eval_key}_PlotMode-{args.angle_mode}_MergeLR-{args.merge_lr}_TryWrist-{args.try_wrist}_log.csv'), 'w') as f:
         f.write(f"{header}\n")
         for i in log:
             for j in i:
@@ -262,7 +282,7 @@ if __name__ == '__main__':
         print(f"{result[0]}, {result[1]:}, {result[2]}")
 
     # store Absolute Error for each angle in dict
-    with open(os.path.join(args.output_dir, f'{args.eval_key}_{args.angle_mode}_AE.pkl'), 'wb') as f:
+    with open(os.path.join(args.output_dir, f'{args.eval_key}_PlotMode-{args.angle_mode}_MergeLR-{args.merge_lr}_TryWrist-{args.try_wrist}_AE.pkl'), 'wb') as f:
         pickle.dump(average_error, f)
 
     print(f"Store location: {args.output_dir}")

@@ -2,6 +2,12 @@ import os
 import argparse
 import cv2
 
+"""
+python conversion_scripts/video.py --imgs_dir /Users/leyangwen/Desktop/handle_lift_works_0 --fps 10
+
+"""
+
+
 VALID_EXTS = (".png", ".jpg", ".jpeg", ".bmp")
 
 def is_image_file(name: str) -> bool:

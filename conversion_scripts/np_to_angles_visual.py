@@ -11,7 +11,7 @@ import copy
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry_3.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry.yaml')
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
     parser.add_argument('--overlay_GT', type=bool, default=False)
     parser.add_argument('--debug_mode', default=False)

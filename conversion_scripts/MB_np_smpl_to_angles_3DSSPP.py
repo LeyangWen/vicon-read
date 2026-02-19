@@ -10,11 +10,17 @@ from MB_np_to_visual import MB_input_pose_file_loader
 import matplotlib
 matplotlib.use('Qt5Agg')
 
+
+"""
+compress fist using `conversion_scripts/MB_SMPL_file_compress.py`
+
+"""
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file', type=str, default=r'config/experiment_config/meshCompare/mesh-compare-v2.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
-    parser.add_argument("--input_type", choices=["mesh_17", "mesh_66", "mesh_SMPLEST", "3D", "6D", "pose_37"], default="mesh_17")
+    parser.add_argument("--input_type", choices=["mesh_17", "mesh_37", "mesh_66", "mesh_SMPLEST", "3D", "6D", "pose_37"], default="mesh_17")
     # parser.add_argument("--output_type", choices=["22angles", "3DSSPP"], default=["22angles"], nargs="+")
 
     parser.add_argument('--angle_mode', type=str, default='paper')
@@ -29,6 +35,8 @@ def parse_args():
 
     # parser.add_argument('--name_list', type=list, default=[])
     args = parser.parse_args()
+    print(f"Config file: {args.config_file}")
+    print(f"Input type: {args.input_type}")
     with open(args.config_file, 'r') as stream:
         data = yaml.safe_load(stream)
         args.eval_key = data['eval_key']
@@ -41,6 +49,9 @@ def parse_args():
         args.estimate_3D_file = os.path.join(args.root_dir, data['estimate_3D_file'])
         if 'mesh_17' in args.input_type:
             args.estimate_mesh_file = os.path.join(args.root_dir, data['estimate_mesh_17_file'])
+            args.MB_data_stride = 16
+        elif 'mesh_37' in args.input_type:
+            args.estimate_mesh_file = os.path.join(args.root_dir, data['estimate_mesh_37_file'])
             args.MB_data_stride = 16
         elif 'mesh_66' in args.input_type:
             args.estimate_mesh_file = os.path.join(args.root_dir, data['estimate_mesh_66_file'])

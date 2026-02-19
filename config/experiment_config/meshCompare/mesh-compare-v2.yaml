@@ -13,7 +13,8 @@ estimate_3D_name_list: ['HIP_c', 'RHIP', 'RKNEE', 'RANKLE', 'LHIP', 'LKNEE', 'LA
 estimate_3D_file: "/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/mesh_compare/Pose_RTM17kpts_PitchCorrect_V1/VEHS7M-Validate/X3D.npy"  # 20 fps (267300, 17, 3)
 
 ## MB mesh
-estimate_mesh_17_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/mesh_compare/SMPL_RTM17kpts_V1/h36m_results.pkl'  # 17 2D kpts (277376)
+estimate_mesh_17_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/mesh_compare/SMPL_RTM17kpts_V4/h36m_results.pkl'  # 17 2D kpts (277376)
+estimate_mesh_37_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/mesh_compare/SMPL_RTM37kpts_V1/VEHS7M_results.pkl'
 # output mesh file: "/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/mesh_compare/SMPL_RTM17kpts_V1/h36m_gt.pkl"  # 20 fps 37 kpts (17336, 16, 17, 3) 17336*16=277376
 
 

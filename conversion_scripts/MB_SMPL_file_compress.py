@@ -2,9 +2,12 @@ import pickle
 import numpy as np
 from numpy.lib.format import open_memmap
 import gc
+#
+# PKL = "/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/mesh_compare/SMPL_RTM17kpts_V4/h36m_results.pkl"
+# OUT = "/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/mesh_compare/SMPL_RTM17kpts_V4/h36m_results_markers.npy"
 
-PKL = "/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/mesh_compare/SMPL_RTM17kpts_V1/h36m_results.pkl"
-OUT = "/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/mesh_compare/SMPL_RTM17kpts_V1/h36m_results_markers.npy"
+PKL = "/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/mesh_compare/SMPL_RTM37kpts_V1/VEHS7M_results.pkl"
+OUT = "/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/mesh_compare/SMPL_RTM37kpts_V1/VEHS7M_results_markers.npy"
 
 # 49 marker vertex indices (order matches name_list)
 idx_list = np.array(
