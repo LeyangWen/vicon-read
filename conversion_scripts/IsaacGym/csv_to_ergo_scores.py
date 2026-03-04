@@ -23,7 +23,7 @@ import csv
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/generated.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/exp/exp_flat_v1.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/IssacGym/15kpts-Skeleton.yaml')
 
 
@@ -200,6 +200,13 @@ if __name__ == '__main__':
 
 
     ######################## NIOSH lifting equation ########################
+
+    # Step 1: specify lift and lower segments
+    if args.lifts.shape[0] == 0 and args.lowers.shape[0]==1: # simple first lift detect using box movement
+        box_id = 15
+        box_z = isaac_pose[:, box_id, 2]
+        box_z_diff = np.diff(box_z)
+        lift_start = np.where(box_z_diff > 0.01)[0].tolist()  # when box starts to move up
 
     # Step 1: detect key events in frame no: each lift start, lift end, lower start, lower end
     if args.keyframe_detect:

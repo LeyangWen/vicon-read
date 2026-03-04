@@ -18,12 +18,13 @@ keyframe_detect: True
 # estimate_file: '/home/leyang/Documents/TokenHSI/output/imgs/dashboard_30fps/joint_states.csv'
 # estimate_file: '/home/leyang/Documents/TokenHSI/output/imgs/dashboard_30fps_10cmHigher/joint_states.csv'
 # estimate_file: '/home/leyang/Documents/TokenHSI/output/imgs/dashboard_30fps_20cmHigher/joint_states.csv'
+estimate_file: '/Volumes/Y/intervension_eval_data/recommended_motion/exp_flat_v1/bag_l/joint_states.csv'
 
 
-keyframe_detect: False
-no_experiments: 1
-estimate_file: '/home/leyang/Documents/TokenHSI/output/imgs/dashboard_30fps/joint_states.csv'
-lift_start: [46]
-lift_end: [63]
+#keyframe_detect: False
+#no_experiments: 1
+#estimate_file: '/home/leyang/Documents/TokenHSI/output/imgs/dashboard_30fps/joint_states.csv'
+#lift_start: [46]
+#lift_end: [63]
 
 
