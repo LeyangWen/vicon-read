@@ -15,7 +15,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file', type=str, default=r'config/experiment_config/Inference-GT2D-66kpt-MB-50fps-VEHS7M.yaml')  # paper
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
-    parser.add_argument('--angle_mode', type=str, default='VEHS')
+    parser.add_argument('--angle_mode', type=str, default='paper')
     parser.add_argument('--try_wrist', type=bool, default=True)
     parser.add_argument('--clip_fill', type=bool, default=True)
 
@@ -33,7 +33,7 @@ def parse_args():
 
     parser.add_argument('--MB_data_stride', type=int, default=243)
     parser.add_argument('--debug_mode', default=False)
-    parser.add_argument('--merge_lr', default=True)
+    parser.add_argument('--merge_lr', default=False)
 
     # parser.add_argument('--name_list', type=list, default=[])
     args = parser.parse_args()
@@ -114,15 +114,16 @@ if __name__ == '__main__':
     # Step 3: visualize
 
     # # Hi Veeru, I used this to visualize the 3D pose frame by frame
-    # frame = 10210
+    frame = 948872
     # frame = 10180
-    # GT_skeleton.plot_3d_pose_frame(frame)
-    # estimate_skeleton.plot_3d_pose_frame(frame)
+    GT_skeleton.plot_3d_pose_frame(frame, coord_system='camera-px', plot_range=1000)
+    estimate_skeleton.plot_3d_pose_frame(frame, coord_system='camera-px')
 
     assert GT_pose.shape[1] == len(args.name_list)
     assert estimate_pose.shape[1] == len(args.name_list)
 
     frame_range = [0, 60*50]
+
     log = []
     anova_results = []
     average_error = {}
@@ -133,6 +134,7 @@ if __name__ == '__main__':
     for angle_index, this_angle_name in enumerate(target_angles):
         # plot angles
         # GT_ergo_angles[this_angle_name].
+        frame_range = [948872 - 1000, 948872 + 1000]
         GT_fig, GT_ax = GT_ergo_angles[this_angle_name].plot_angles_old_style(joint_name=f"GT-{this_angle_name}", frame_range=frame_range, alpha=0.75, colors=['g', 'g', 'g'])
         estimate_fig, _ = estimate_ergo_angles[this_angle_name].plot_angles_old_style(joint_name=f"Est-{this_angle_name}", frame_range=frame_range, alpha=0.75, colors=['r', 'r', 'r'], overlay=[GT_fig, GT_ax])
         # plt.show()
@@ -184,6 +186,8 @@ if __name__ == '__main__':
                 merge_name = f"{print_angle_name}-{print_ergo_name}"
                 average_error[merge_name] = angle_diff(ja1, ja2, input_rad=True, output_rad=False)
 
+
+
                 angle_compare = AngleCompare(ja1, ja2)
                 # 1,435,236 frames in test set, use Rice rule --> approx 225 bins
                 # 	•	For n = 267{,}300: 128 bins
@@ -204,6 +208,9 @@ if __name__ == '__main__':
 
                 # Calculate errors
                 errors = angle_diff(ja1, ja2, input_rad=True, output_rad=True)
+
+                frame = 948872-1000
+                print(ja1[frame]*180/np.pi, ja2[frame]*180/np.pi, errors[frame])
 
                 # # plot errors in frame range
                 # figure = plt.figure(figsize=(10, 5))

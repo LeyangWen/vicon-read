@@ -20,6 +20,7 @@ from ergo3d import *
 from ergo3d.camera.FLIR_camera import batch_load_from_xcp
 from scipy.spatial.transform import Rotation as R
 import matplotlib.image as mpimg
+import tqdm
 
 class Skeleton:
     def __init__(self, skeleton_file):
@@ -171,6 +172,8 @@ class Skeleton:
         '''
         return point_type and point_size for plot
         '''
+        point_type = 'o'
+        point_size = size[1]
         if joint_name in self.joint_name_mid:
             point_type = 's'
             point_size = size[0]
@@ -183,12 +186,11 @@ class Skeleton:
         elif joint_name in self.joint_name_others:
             point_type = 's'
             point_size = 30
-        else:
-            point_type = 'o'
-            point_size = size[1]
         if joint_name in self.joint_center_list:
-            point_type = 'o'
-            point_size = size[1]
+            if joint_name not in self.joint_name_botL and joint_name not in self.joint_name_botR:  # TODO: temp fix for 37 kpt leg and ear direction < >
+                if joint_name not in ["LEAR", "REAR"]:
+                    point_type = 'o'
+                    point_size = size[1]
         return point_type, point_size
 
     def plot_3d_pose_frame(self, frame=0, filename=False, plot_range=1800, coord_system="world-mm", center_key='PELVIS', mode='normal_view', get_legend=False, plot_rot=False, title=None):
@@ -376,7 +378,7 @@ class Skeleton:
         if end_frame is None:
             end_frame = self.frame_number
         for i in range(start_frame, end_frame, downsample):
-            print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
+            # print(f'plotting frame {i}/{self.frame_number} in {foldername}...', end='\r')
             filename = foldername if not foldername else os.path.join(foldername, f'{i:05d}.png')
             self.plot_3d_pose_frame(frame=i, filename=filename, **kwargs)
             # break
@@ -1925,10 +1927,16 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
                 angle_value = getattr(angles, angle_name)
                 if angle_value is not None:
                     if min_limit is not None:
-                        # set values outside limit to nan
-                        angle_value = np.where(angle_value < np.deg2rad(min_limit), np.nan, angle_value)
+                        mask = angle_value < np.deg2rad(min_limit)
+                        if np.any(mask):
+                            print(f"[{joint_name}.{angle_name}] Below min ({min_limit}°) at frames: {np.where(mask)[0].tolist()}")
+                        angle_value = np.where(mask, np.nan, angle_value)
                     if max_limit is not None:
-                        angle_value = np.where(angle_value > np.deg2rad(max_limit), np.nan, angle_value)
+                        mask = angle_value > np.deg2rad(max_limit)
+                        if np.any(mask):
+                            print(f"[{joint_name}.{angle_name}] Above max ({max_limit}°) at frames: {np.where(mask)[0].tolist()}")
+                        angle_value = np.where(mask, np.nan, angle_value)
+
                     setattr(angles, angle_name, angle_value)
         return angles
 
@@ -1988,12 +1996,14 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         # RSHOULDER_coord.set_by_plane(RSHOULDER_plane, RSHOULDER, RSHOULDER_C7_m_project, sequence='zyx', axis_positive=False)  # old: use shoulder to chest vector
         RSHOULDER_angles = JointAngles()
         RSHOULDER_angles.set_zero(zero_frame, by_frame=False)
-        RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, Point.vector(RSHOULDER, RELBOW), plane_seq=['xy', 'xz'], flip_sign=[1, -1])
+
         RSHOULDER_angles.get_rot(RAP_b, RAP_f, RME, RLE)  # -90 when hand turned to lateral side (out), 0 when hand point anterior (forward), 90 when medial side
 
         if self.mode == "paper":  # shoulder angles used in paper
-            RSHOULDER_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'H-abduction', 'rotation': 'rotation'}
+            RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, Point.vector(RSHOULDER, RELBOW), plane_seq=['xy', 'yz'], flip_sign=[1, -1])
+            RSHOULDER_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'abduction', 'rotation': 'rotation'}
         elif self.mode == "VEHS":  # shoulder angles used in VEHS application
+            RSHOULDER_angles.get_flex_abd(RSHOULDER_coord, Point.vector(RSHOULDER, RELBOW), plane_seq=['xy', 'xz'], flip_sign=[1, -1])
             RSHOULDER_angles.ergo_name = {'flexion': 'elevation', 'abduction': 'H-abduction', 'rotation': 'rotation'}
             RSHOULDER_angles.flexion = Point.angle(Point.vector(RSHOULDER, RELBOW).xyz, Point.vector(C7, PELVIS).xyz)
             RSHOULDER_angles.flexion = RSHOULDER_angles.zero_by_idx(0)  # zero by zero frame after setting flexion without function
@@ -2028,13 +2038,15 @@ class VEHSErgoSkeleton_angles(VEHSErgoSkeleton):
         LSHOULDER_coord = CoordinateSystem3D()
         LSHOULDER_coord.set_by_plane(LSHOULDER_plane, C7_d, LSHOULDER_SS_project, sequence='zyx', axis_positive=True)  # z forward, y upward, x leftward, different from plots
         LSHOULDER_angles = JointAngles()
-        LSHOULDER_angles.get_flex_abd(LSHOULDER_coord, Point.vector(LSHOULDER, LELBOW), plane_seq=['xy', 'xz'], flip_sign=[1, 1])
+
         LSHOULDER_angles.set_zero(zero_frame, by_frame=False)
         LSHOULDER_angles.get_rot(LAP_b, LAP_f, LME, LLE, flip_sign=-1)  # -90 when hand turned to lateral side (out), 0 when hand point anterior (forward), 90 when medial side
 
         if self.mode == "paper":  # shoulder angles used in paper
-            LSHOULDER_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'H-abduction', 'rotation': 'rotation'}  # horizontal abduction
+            LSHOULDER_angles.get_flex_abd(LSHOULDER_coord, Point.vector(LSHOULDER, LELBOW), plane_seq=['xy', 'yz'], flip_sign=[1, 1])
+            LSHOULDER_angles.ergo_name = {'flexion': 'flexion', 'abduction': 'abduction', 'rotation': 'rotation'}  # horizontal abduction
         elif self.mode== "VEHS":  # shoulder angles used in VEHS application
+            LSHOULDER_angles.get_flex_abd(LSHOULDER_coord, Point.vector(LSHOULDER, LELBOW), plane_seq=['xy', 'xz'], flip_sign=[1, 1])
             LSHOULDER_angles.ergo_name = {'flexion': 'elevation', 'abduction': 'H-abduction', 'rotation': 'rotation'}  # horizontal abduction
             LSHOULDER_angles.flexion = Point.angle(Point.vector(LSHOULDER, LELBOW).xyz, Point.vector(C7, PELVIS).xyz)
             LSHOULDER_angles.flexion = LSHOULDER_angles.zero_by_idx(0)

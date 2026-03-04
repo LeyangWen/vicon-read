@@ -13,7 +13,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-Industry.yaml')
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry.yaml')
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry_3.yaml')
 
     parser.add_argument('--clip_fill', type=bool, default=True)
     parser.add_argument('--rescale_25d', type=bool, default=False)
@@ -516,6 +516,10 @@ if __name__ == '__main__':
     end_time = 10*60
     # end_time = 23.5 * 60
     plot_normalized_scores(processed, plot_end_time_sec=end_time)
+
+    # add conf 2d info
+    processed["confidence_2d"] = confidence_2d.astype(float)
+    processed["kpt_names"] = rtm_pose_37_keypoints_vicon_dataset_v1
 
     # safe custom score with threshold
     support_kpt_score_file = args.estimate_file.replace('.npy', '_support_kpt_score.pkl')
