@@ -6,6 +6,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import xml.etree.ElementTree as ET
+from scipy.signal import butter, filtfilt
 
 # from PyQt5.QtWidgets.QWidget import width
 from scipy.io import savemat
@@ -167,6 +168,39 @@ class Skeleton:
             return self.key_joint_parent[parent_idx]
         except IndexError:
             return None
+
+    def filter_lowpass(self, cutoff=6, keypoint_fps=20, order=2):
+        """
+        Butterworth lowpass filter to smooth jitter.
+        Call BEFORE filter_confidence.
+        """
+        nyquist = keypoint_fps / 2
+        if cutoff >= nyquist:
+            print(f"Warning: cutoff {cutoff}Hz >= nyquist {nyquist}Hz, skipping filter")
+            return
+
+        b, a = butter(order, cutoff / nyquist, btype='low')
+
+        for joint_name in self.key_joint_name:
+            if joint_name not in self.poses:
+                continue
+            data = self.poses[joint_name]
+            for axis in range(2):
+                data[:, axis] = filtfilt(b, a, data[:, axis])
+            self.poses[joint_name] = data
+
+    def filter_confidence(self, threshold=5.0):
+        """
+        Mark keypoints below confidence threshold as nan.
+        Call AFTER filter_lowpass.
+        """
+        for joint_name in self.key_joint_name:
+            if joint_name not in self.poses:
+                continue
+            data = self.poses[joint_name]
+            low_conf = data[:, 2] < threshold
+            data[low_conf, :2] = np.nan
+            self.poses[joint_name] = data
 
     def get_plot_property(self, joint_name, size=[4,8]):
         '''
@@ -372,6 +406,7 @@ class Skeleton:
             plt.show()
             return fig, ax
 
+
     def plot_3d_pose(self, foldername=False, start_frame=0, end_frame=None, downsample=1, **kwargs):
         if foldername:
             create_dir(foldername)
@@ -395,6 +430,95 @@ class Skeleton:
             self.plot_2d_pose_frame(frame=i, filename=filename, baseimage=baseimage, **kwargs)
             if i > 14400:
                 break
+
+    import cv2
+    import numpy as np
+    import os
+
+    def plot_2d_pose_cv(self, video_path=None, output_path="output.mp4",
+                        keypoint_fps=20, start_frame=0, end_frame=None,
+                        resolution=(1920, 1200)):
+        if end_frame is None:
+            end_frame = self.frame_number
+
+        # Video input setup
+        if video_path:
+            cap = cv2.VideoCapture(video_path)
+            video_fps = cap.get(cv2.CAP_PROP_FPS)
+            resolution = (int(cap.get(3)), int(cap.get(4)))
+        else:
+            cap = None
+            video_fps = keypoint_fps  # no conversion needed
+
+        # Video output setup
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        out = cv2.VideoWriter(output_path, fourcc, keypoint_fps, resolution)
+
+        # Precompute video frame mapping
+        kp_to_video = [round(kp * video_fps / keypoint_fps) for kp in range(end_frame)]
+
+        colors = [
+            (31, 119, 180), (255, 127, 14), (44, 160, 44), (214, 39, 40),
+            (148, 103, 189), (140, 86, 75), (227, 119, 194), (127, 127, 127),
+            (188, 189, 34), (23, 190, 207), (174, 199, 232), (255, 187, 120),
+            (152, 223, 138), (255, 152, 150), (197, 176, 213), (196, 156, 148),
+        ]
+
+        video_frame_idx = 0
+
+        # Skip to start_frame
+        if cap and start_frame > 0:
+            target = kp_to_video[start_frame]
+            while video_frame_idx < target:
+                cap.grab()
+                video_frame_idx += 1
+
+        for kp_frame in range(start_frame, end_frame):
+            print(f'rendering frame {kp_frame}/{end_frame}...', end='\r')
+
+            # Get base image
+            if cap:
+                target_video_frame = kp_to_video[kp_frame]
+                while video_frame_idx < target_video_frame:
+                    cap.grab()
+                    video_frame_idx += 1
+                ret, img = cap.read()
+                video_frame_idx += 1
+                if not ret:
+                    break
+            else:
+                img = np.full((resolution[1], resolution[0], 3), 255, dtype=np.uint8)
+
+            # Draw bones
+            for joint_name in self.key_joint_name:
+                if joint_name in self.poses:
+                    if np.isnan(self.poses[joint_name][kp_frame, 0]):
+                        continue
+                    parent_name = self.get_parent(joint_name)
+                    if parent_name is not None and parent_name != 'None' and parent_name in self.poses:
+                        if np.isnan(self.poses[parent_name][kp_frame, 0]):
+                            continue
+                        pt1 = (int(self.poses[joint_name][kp_frame, 0]),
+                               int(self.poses[joint_name][kp_frame, 1]))
+                        pt2 = (int(self.poses[parent_name][kp_frame, 0]),
+                               int(self.poses[parent_name][kp_frame, 1]))
+                        cv2.line(img, pt1, pt2, (128, 128, 128), thickness=2, lineType=cv2.LINE_AA)
+
+            # Draw joints
+            for i, joint_name in enumerate(self.key_joint_name):
+                if joint_name in self.poses:
+                    if np.isnan(self.poses[joint_name][kp_frame, 0]):
+                        continue
+                    x = int(self.poses[joint_name][kp_frame, 0])
+                    y = int(self.poses[joint_name][kp_frame, 1])
+                    cv2.circle(img, (x, y), 5, colors[i % len(colors)],
+                               thickness=-1, lineType=cv2.LINE_AA)
+            out.write(img)
+
+        print(f'\nDone. Saved to {output_path}')
+        if cap:
+            cap.release()
+        out.release()
 
     def set_weight_height(self, weight=0, height=0):
         """
