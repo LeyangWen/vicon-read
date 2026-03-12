@@ -1,21 +1,89 @@
-
 name_list: ['PELVIS', 'torso', 'head', 'right_upper_arm', 'right_lower_arm',
  'right_hand', 'left_upper_arm', 'left_lower_arm', 'left_hand',
  'right_thigh', 'right_shin', 'right_foot', 'left_thigh', 'left_shin', 'left_foot', '1', '2', '3']
 
 
 start_positions:
-  - [8.5, 4, 0.25]
+  - [8.5, 4, 0.0]
 
 end_positions:
-  - [2.5, 2.5, 0.25]
+  - [2.5, 2.5, 0.0]
 
-fps: 30
-density: 156.25
-dim: [0.4, 0.4, 0.4]  # w l h
-
+fps: 20
 keyframe_detect: False
-estimate_file: '/Volumes/Y/intervension_eval_data/recommended_motion/exp_flat_v1/bag_l/joint_states.csv'
-lift_end: [-1]
+mute_lowers: True
+lift_detect: True
+no_experiments: 1
 
+experiments:
+  - name: flat_v1_bag_l
+    weight: 20.41
+    estimate_file: '/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/bag_l/joint_states.csv'
+    lift_start: []
+    lift_end: [-1]
 
+  - name: flat_v1_bag_s
+    weight: 11.34
+    estimate_file: '/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/bag_s_working/joint_states.csv'
+    lift_start: []
+    lift_end: [-1]
+
+  - name: flat_v1_box_l_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/box_l_10lbs/joint_states.csv'
+    lift_start: []
+    lift_end: [-1]
+
+  - name: flat_v1_box_l_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/box_l_20lbs/joint_states.csv'
+    lift_start: []
+    lift_end: [-1]
+
+  - name: flat_v1_box_s_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/box_s_10lbs/joint_states.csv'
+    lift_start: []
+    lift_end: [-1]
+
+  - name: flat_v1_box_s_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/box_s_20lbs/joint_states.csv'
+    lift_start: []
+    lift_end: [-1]
+
+  - name: flat_v1_handle_l_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/handle_l_10lbs/joint_states.csv'
+    lift_start: []
+    lift_end: [-1]
+
+  - name: flat_v1_handle_l_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/handle_l_20lbs/joint_states.csv'
+    lift_start: []
+    lift_end: [-1]
+
+  - name: flat_v1_handle_s_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/handle_s_10lbs/joint_states.csv'
+    lift_start: []
+    lift_end: [-1]
+
+  - name: flat_v1_handle_s_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/handle_s_20lbs/joint_states.csv'
+    lift_start: []
+    lift_end: [-1]
+
+  - name: flat_v1_timber_l
+    weight: 2.27
+    estimate_file: '/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/timber_l/joint_states.csv'
+    lift_start: []
+    lift_end: [-1]
+
+  - name: flat_v1_timber_s
+    weight: 1.36
+    estimate_file: '/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/timber_s/joint_states.csv'
+    lift_start: []
+    lift_end: [-1]

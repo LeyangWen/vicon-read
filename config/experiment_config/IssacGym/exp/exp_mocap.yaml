@@ -1,4 +1,3 @@
-
 name_list: ['PELVIS', 'torso', 'head', 'right_upper_arm', 'right_lower_arm',
  'right_hand', 'left_upper_arm', 'left_lower_arm', 'left_hand',
  'right_thigh', 'right_shin', 'right_foot', 'left_thigh', 'left_shin', 'left_foot', '1', '2', '3']
@@ -13,381 +12,387 @@ end_positions:
 fps: 20
 keyframe_detect: False
 no_experiments: 1
+start_offset: 40
 
-# S01 - bag_l
-weight: 20.41
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+bag_l/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+experiments:
+  # S01
+  - name: S01_bag_l
+    weight: 20.41
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+bag_l/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [79]
+    lift_end: [104]
 
-# S01 - bag_s
-weight: 11.34
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+bag_s/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_bag_s
+    weight: 11.34
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+bag_s/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [131]
+    lift_end: [161]
 
-# S01 - bag_slide
-weight: 11.34
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+bag_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_bag_slide
+    weight: 11.34
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+bag_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [83]
+    lift_end: [111]
 
-# S01 - bag_step
-weight: 11.34
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+bag_step/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_bag_step
+    weight: 11.34
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+bag_step/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [59]
+    lift_end: [96]
 
-# S01 - box_l_10lbs
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+box_l_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_box_l_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+box_l_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [54]
+    lift_end: [115]
 
-# S01 - box_l_20lbs
-weight: 9.07
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+box_l_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_box_l_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+box_l_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [96]
+    lift_end: [120]
 
-# S01 - box_s_10lbs
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+box_s_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_box_s_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+box_s_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [58]
+    lift_end: [111]
 
-# S01 - box_s_20lbs
-weight: 9.07
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+box_s_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_box_s_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+box_s_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [82]
+    lift_end: [107]
 
-# S01 - box_slide
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+box_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_box_slide
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+box_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [84]
+    lift_end: [121]
 
-# S01 - box_step
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+box_step/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_box_step
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+box_step/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [34]
+    lift_end: [88]
 
-# S01 - handle_l_10lbs
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+handle_l_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_handle_l_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+handle_l_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [59]
+    lift_end: [76]
 
-# S01 - handle_l_20lbs
-weight: 9.07
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+handle_l_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_handle_l_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+handle_l_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [60]
+    lift_end: [81]
 
-# S01 - handle_s_10lbs
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+handle_s_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_handle_s_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+handle_s_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [52]
+    lift_end: [76]
 
-# S01 - handle_s_20lbs
-weight: 9.07
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+handle_s_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_handle_s_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+handle_s_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [55]
+    lift_end: [77]
 
-# S01 - handle_slide
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+handle_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_handle_slide
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+handle_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [77]
+    lift_end: [108]
 
-# S01 - handle_step
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+handle_step/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_handle_step
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+handle_step/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [54]
+    lift_end: [78]
 
-# S01 - timber_l
-weight: 2.27
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+timber_l/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_timber_l
+    weight: 2.27
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+timber_l/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [64]
+    lift_end: [95]
 
-# S01 - timber_s
-weight: 1.36
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+timber_s/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_timber_s
+    weight: 1.36
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+timber_s/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [53]
+    lift_end: [79]
 
-# S01 - timber_slide
-weight: 1.36
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+timber_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_timber_slide
+    weight: 1.36
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+timber_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [108]
+    lift_end: [141]
 
-# S01 - timber_step
-weight: 1.36
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+timber_step/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_timber_step
+    weight: 1.36
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+timber_step/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [64]
+    lift_end: [98]
 
-# S01 - timber_step_2
-weight: 1.36
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+timber_step_2/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S01_timber_step_2
+    weight: 1.36
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S01/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S01+__+timber_step_2/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [56]
+    lift_end: [87]
 
-# S02 - bag_l
-weight: 20.41
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+bag_l/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  # S02
+  - name: S02_bag_l
+    weight: 20.41
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+bag_l/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [124]
+    lift_end: [147]
 
-# S02 - bag_s
-weight: 11.34
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+bag_s/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_bag_s
+    weight: 11.34
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+bag_s/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [78]
+    lift_end: [109]
 
-# S02 - bag_slide
-weight: 11.34
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+bag_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_bag_slide
+    weight: 11.34
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+bag_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [143]
+    lift_end: [176]
 
-# S02 - bag_step
-weight: 11.34
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+bag_step/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_bag_step
+    weight: 11.34
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+bag_step/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [72]
+    lift_end: [116]
 
-# S02 - bag_step_2
-weight: 11.34
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+bag_step_2/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_bag_step_2
+    weight: 11.34
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+bag_step_2/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [64]
+    lift_end: [110]
 
-# S02 - box_l_10lbs
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+box_l_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_box_l_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+box_l_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [116]
+    lift_end: [138]
 
-# S02 - box_l_20lbs
-weight: 9.07
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+box_l_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_box_l_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+box_l_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [156]
+    lift_end: [187]
 
-# S02 - box_s_10lbs
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+box_s_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_box_s_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+box_s_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [71]
+    lift_end: [93]
 
-# S02 - box_s_20lbs
-weight: 9.07
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+box_s_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_box_s_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+box_s_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [74]
+    lift_end: [95]
 
-# S02 - box_slide
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+box_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_box_slide
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+box_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [100]
+    lift_end: [163]
 
-# S02 - box_step
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+box_step/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_box_step
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+box_step/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [89]
+    lift_end: [122]
 
-# S02 - handle_l_10lbs
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+handle_l_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_handle_l_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+handle_l_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [59]
+    lift_end: [81]
 
-# S02 - handle_l_20lbs
-weight: 9.07
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+handle_l_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_handle_l_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+handle_l_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [58]
+    lift_end: [84]
 
-# S02 - handle_s_10lbs
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+handle_s_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_handle_s_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+handle_s_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [60]
+    lift_end: [84]
 
-# S02 - handle_s_20lbs
-weight: 9.07
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+handle_s_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_handle_s_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+handle_s_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [57]
+    lift_end: [80]
 
-# S02 - handle_slide
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+handle_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_handle_slide
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+handle_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [80]
+    lift_end: [105]
 
-# S02 - handle_step
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+handle_step/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_handle_step
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+handle_step/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [96]
+    lift_end: [141]
 
-# S02 - handle_step_2
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+handle_step_2/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_handle_step_2
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+handle_step_2/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [57]
+    lift_end: [87]
 
-# S02 - timber_l
-weight: 2.27
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+timber_l/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_timber_l
+    weight: 2.27
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+timber_l/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [58]
+    lift_end: [79]
 
-# S02 - timber_s
-weight: 1.36
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+timber_s/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_timber_s
+    weight: 1.36
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+timber_s/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [57]
+    lift_end: [89]
 
-# S02 - timber_slide
-weight: 1.36
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+timber_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_timber_slide
+    weight: 1.36
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+timber_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [90]
+    lift_end: [137]
 
-# S02 - timber_step
-weight: 1.36
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+timber_step/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S02_timber_step
+    weight: 1.36
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S02/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S02+__+timber_step/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [46]
+    lift_end: [76]
 
-# S03 - bag_l
-weight: 20.41
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+bag_l/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  # S03
+  - name: S03_bag_l
+    weight: 20.41
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+bag_l/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [40]
+    lift_end: [77]
 
-# S03 - bag_s
-weight: 11.34
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+bag_s/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_bag_s
+    weight: 11.34
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+bag_s/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [37]
+    lift_end: [65]
 
-# S03 - bag_slide
-weight: 11.34
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+bag_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_bag_slide
+    weight: 11.34
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+bag_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [57]
+    lift_end: [85]
 
-# S03 - bag_step
-weight: 11.34
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+bag_step/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_bag_step
+    weight: 11.34
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+bag_step/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [27]
+    lift_end: [67]
 
-# S03 - box_l_10lbs
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+box_l_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_box_l_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+box_l_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [36]
+    lift_end: [66]
 
-# S03 - box_l_20lbs
-weight: 9.07
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+box_l_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_box_l_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+box_l_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [81]
+    lift_end: [104]
 
-# S03 - box_s_10lbs
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+box_s_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_box_s_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+box_s_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [65]
+    lift_end: [95]
 
-# S03 - box_s_20lbs
-weight: 9.07
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+box_s_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_box_s_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+box_s_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [35]
+    lift_end: [61]
 
-# S03 - box_slide
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+box_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_box_slide
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+box_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [83]
+    lift_end: [110]
 
-# S03 - box_step
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+box_step/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_box_step
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+box_step/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [38]
+    lift_end: [68]
 
-# S03 - handle_l_10lbs
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+handle_l_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_handle_l_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+handle_l_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [31]
+    lift_end: [53]
 
-# S03 - handle_l_20lbs
-weight: 9.07
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+handle_l_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_handle_l_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+handle_l_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [28]
+    lift_end: [49]
 
-# S03 - handle_s_10lbs
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+handle_s_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_handle_s_10lbs
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+handle_s_10lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [29]
+    lift_end: [50]
 
-# S03 - handle_s_20lbs
-weight: 9.07
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+handle_s_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_handle_s_20lbs
+    weight: 9.07
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+handle_s_20lbs/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [33]
+    lift_end: [57]
 
-# S03 - handle_slide
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+handle_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_handle_slide
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+handle_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [53]
+    lift_end: [76]
 
-# S03 - handle_step
-weight: 4.54
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+handle_step/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_handle_step
+    weight: 4.54
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+handle_step/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [22]
+    lift_end: [45]
 
-# S03 - timber_l
-weight: 2.27
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+timber_l/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_timber_l
+    weight: 2.27
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+timber_l/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [30]
+    lift_end: [55]
 
-# S03 - timber_s
-weight: 1.36
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+timber_s/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_timber_s
+    weight: 1.36
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+timber_s/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [34]
+    lift_end: [56]
 
-# S03 - timber_slide
-weight: 1.36
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+timber_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_timber_slide
+    weight: 1.36
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+timber_slide/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [73]
+    lift_end: [103]
 
-# S03 - timber_step
-weight: 1.36
-estimate_file: '/Volumes/Y/intervension_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+timber_step/phys_humanoid_v5/isaac_formatted_motion.csv'
-lift_start: []
-lift_end: []
+  - name: S03_timber_step
+    weight: 1.36
+    estimate_file: '/Volumes/Y/intervention_eval_data/worker_motion/issac/S03/+__+home+__+leyang+__+Documents+__+SMPLest-X+__+demo+__+result_worker_motion+__+S03+__+timber_step/phys_humanoid_v5/isaac_formatted_motion.csv'
+    lift_start: [24]
+    lift_end: [48]
+

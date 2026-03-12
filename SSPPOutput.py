@@ -104,12 +104,32 @@ class SSPPOutput:
         segment_eval_keys (str or list): A key for evaluation. For example, 'Summary - Minimum Shoulder Percentile'.
                                          It can also be a list of such keys.
         verbose (bool, optional): If True, print detailed information during evaluation. Defaults to False.
+        criteria (str or int): Aggregation method: 'min_mean', 'min_min', 'mean_min', 'min_max'.
+                               If an int, treated as a relative frame index within the segment (0-based).
+                               Supports negative indexing (e.g. -1 for last frame). Raises IndexError if out of range.
 
         Returns:
-        tuple: A tuple containing the id, score percentage, and task name.
+        tuple: A tuple containing the id, score percentage, scores list, and task name.
         """
         segment_eval_keys = segment_eval_keys if isinstance(segment_eval_keys, list) else [segment_eval_keys]
         segments = segments if isinstance(segments, dict) else {"place_holder": segments}
+
+        # If criteria is an int, treat as relative frame index within the segment (0-based), -1 for last frame
+        if isinstance(criteria, int):
+            rel_idx = criteria
+            for _key, _value in segments.items():
+                n_frames = len(_value)
+                if rel_idx < -n_frames or rel_idx >= n_frames:
+                    raise IndexError(f"Relative frame {rel_idx} out of range for segment '{_key}' (length {n_frames})")
+                row = _value.iloc[rel_idx]
+                frame_values = []
+                for eval_key in segment_eval_keys:
+                    val = row[eval_key]
+                    frame_values.append(val)
+                    if verbose:
+                        print(f"{_key}-{eval_key} [relative frame {rel_idx}]: {val}")
+                return rel_idx, np.min(frame_values), frame_values, _key
+
         min_score_per_task = []
         min_scores = []
         for _key, _value in segments.items():

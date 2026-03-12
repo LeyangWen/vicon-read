@@ -1353,7 +1353,9 @@ class IsaacSkeleton(VEHSErgoSkeleton):
         base = self.point_poses[f'{side}_foot']
         limb = self.point_poses[f'{side}_toe']
         FOOT_angles.flexion = self.horizontal_3DSSPP_angle(base, limb, side=side)
-        FOOT_angles.abduction = self.vertical_3DSSPP_angle(base, limb)
+        # FOOT_angles.abduction = self.vertical_3DSSPP_angle(base, limb)
+        # set vert angle to zero instead
+        FOOT_angles.abduction = np.zeros((self.frame_number))
         return FOOT_angles
 
 
