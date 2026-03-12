@@ -13,7 +13,7 @@ name_list: ['PELVIS',
 
 # center loss
 #estimate_file: '/Users/leyangwen/Downloads/scratch_pose/RTMW37kpts_v2_20fps-finetune-pitch-correct-6-center-angleLoss/VEHS7M-Validate/X3D.npy'
-estimate_file: '/Users/leyangwen/Downloads/scratch_pose/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-centerLoss/VEHS7M-Validate/X3D.npy'
+#estimate_file: '/Users/leyangwen/Downloads/scratch_pose/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-centerLoss/VEHS7M-Validate/X3D.npy'
 #### RTMW V5-2b + MB-Try2-20250903
 #estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/Try2/RTMW37kpts_v2_20fps-finetune-pitch-correct-1-OG/VEHS7M-Validate/X3D.npy'
 #estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/Try2/RTMW37kpts_v2_20fps-finetune-pitch-correct-2-limbLoss/VEHS7M-Validate/X3D.npy'
@@ -27,7 +27,7 @@ estimate_file: '/Users/leyangwen/Downloads/scratch_pose/RTMW37kpts_v2_20fps-fine
 #estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-normal-2-limbLoss/VEHS7M-Validate/X3D.npy'
 #estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-3-angleLoss/VEHS7M-Validate/X3D.npy'
 #estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-4-angleLossV2/VEHS7M-Validate/X3D.npy'
-#estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/VEHS7M-Validate/X3D.npy'
+estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/VEHS7M-Validate/X3D.npy'
 
 
 #### RTMW V3 + MB-20250827

@@ -13,27 +13,27 @@ from MB_np_to_visual import MB_input_pose_file_loader
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/Inference-GT2D-66kpt-MB-50fps-VEHS7M.yaml')  # paper
-    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
-    parser.add_argument('--angle_mode', type=str, default='paper')
-    parser.add_argument('--try_wrist', type=bool, default=True)
-    parser.add_argument('--clip_fill', type=bool, default=True)
+    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/Inference-GT2D-66kpt-MB-50fps-VEHS7M.yaml')  # paper
+    # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-66.yaml')
+    # parser.add_argument('--angle_mode', type=str, default='paper')
+    # parser.add_argument('--try_wrist', type=bool, default=True)
+    # parser.add_argument('--clip_fill', type=bool, default=True)
 
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/H36M17kpts/VEHS-3D-MB.yaml')
     # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/H36M-17.yaml')
     # parser.add_argument('--angle_mode', type=str, default='VEHS')
 
-    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
-    # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
-    # parser.add_argument('--angle_mode', type=str, default='VEHS')
-    # parser.add_argument('--clip_fill', type=bool, default=True)
-
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
+    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
+    parser.add_argument('--angle_mode', type=str, default='paper')
+    parser.add_argument('--clip_fill', type=bool, default=True)
+    parser.add_argument('--try_wrist', type=bool, default=False)
 
 
 
     parser.add_argument('--MB_data_stride', type=int, default=243)
     parser.add_argument('--debug_mode', default=False)
-    parser.add_argument('--merge_lr', default=False)
+    parser.add_argument('--merge_lr', default=True)
 
     # parser.add_argument('--name_list', type=list, default=[])
     args = parser.parse_args()
@@ -79,7 +79,7 @@ if __name__ == '__main__':
         estimate_pose = np.concatenate(estimate_pose, axis=0)
         GT_pose = np.concatenate(GT_pose, axis=0)
     else:
-        GT_pose, _ = MB_input_pose_file_loader(args)
+        GT_pose, _, _, source = MB_input_pose_file_loader(args, get_clip_id=True)
         estimate_pose = MB_output_pose_file_loader(args)
     # assert GT_pose.shape == estimate_pose.shape, f"GT_pose.shape: {GT_pose.shape}, estimate_pose.shape: {estimate_pose.shape}, they should be the same"
     assert GT_pose.shape[0] == estimate_pose.shape[0], f"GT_pose.shape: {GT_pose.shape}, estimate_pose.shape: {estimate_pose.shape}, frame no should be the same"
@@ -114,10 +114,10 @@ if __name__ == '__main__':
     # Step 3: visualize
 
     # # Hi Veeru, I used this to visualize the 3D pose frame by frame
-    frame = 948872
+    # frame = 948872
     # frame = 10180
-    GT_skeleton.plot_3d_pose_frame(frame, coord_system='camera-px', plot_range=1000)
-    estimate_skeleton.plot_3d_pose_frame(frame, coord_system='camera-px')
+    # GT_skeleton.plot_3d_pose_frame(frame, coord_system='camera-px', plot_range=1000)
+    # estimate_skeleton.plot_3d_pose_frame(frame, coord_system='camera-px')
 
     assert GT_pose.shape[1] == len(args.name_list)
     assert estimate_pose.shape[1] == len(args.name_list)
@@ -126,7 +126,7 @@ if __name__ == '__main__':
 
     log = []
     anova_results = []
-    average_error = {}
+    average_error = {"source": source}
     target_angles = GT_skeleton.angle_names
     all_ja1 = None
     all_ja2 = None
@@ -209,8 +209,8 @@ if __name__ == '__main__':
                 # Calculate errors
                 errors = angle_diff(ja1, ja2, input_rad=True, output_rad=True)
 
-                frame = 948872-1000
-                print(ja1[frame]*180/np.pi, ja2[frame]*180/np.pi, errors[frame])
+                # frame = 948872-1000
+                # print(ja1[frame]*180/np.pi, ja2[frame]*180/np.pi, errors[frame])
 
                 # # plot errors in frame range
                 # figure = plt.figure(figsize=(10, 5))
@@ -251,8 +251,6 @@ if __name__ == '__main__':
     RMSE = root_mean_squared_error(all_ja1, all_ja2)
     MAE = mean_absolute_error(all_ja1, all_ja2)
     median_AE = median_absolute_error(all_ja1, all_ja2)
-    merge_name = f"{print_angle_name}-{print_ergo_name}"
-    average_error[merge_name] = angle_diff(all_ja1, all_ja2, input_rad=True, output_rad=False)
 
     angle_compare = AngleCompare(all_ja1, all_ja2)
     plot_error_histogram(angle_compare.diff_deg, bins=bin_no, title=f'All Angles',

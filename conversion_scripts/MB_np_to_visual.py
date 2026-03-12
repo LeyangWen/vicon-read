@@ -136,7 +136,8 @@ def MB_input_pose_file_loader(args, data_key='joint3d_image', get_confidence=Fal
         if get_confidence:
             return np_pose, factor_25d, confidence_score
         if get_clip_id:
-            return np_pose, factor_25d, MB_clip_id
+            source = np.array(source)
+            return np_pose, factor_25d, MB_clip_id, source[MB_clip_id]
         return np_pose, factor_25d
 
 

@@ -20,7 +20,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file', type=str, default=r'config/experiment_config/meshCompare/mesh-compare-v2.yaml')
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
-    parser.add_argument("--input_type", choices=["mesh_17", "mesh_37", "mesh_66", "mesh_SMPLEST", "3D", "6D", "pose_37"], default="mesh_17")
+    parser.add_argument("--input_type", choices=["mesh_17", "mesh_37", "mesh_66", "mesh_SMPLEST", "3D", "6D", "pose_37"], default="mesh_37")
     # parser.add_argument("--output_type", choices=["22angles", "3DSSPP"], default=["22angles"], nargs="+")
 
     parser.add_argument('--angle_mode', type=str, default='paper')
@@ -203,7 +203,7 @@ if __name__ == '__main__':
 
     # # Step 2: Get GT angles to compare
     print("Loading GT poses...")
-    GT_pose, factor_25d, clip_id = MB_input_pose_file_loader(args, get_clip_id=True, file_start = args.file_start)
+    GT_pose, factor_25d, clip_id, source = MB_input_pose_file_loader(args, get_clip_id=True, file_start = args.file_start)
     GT_pose = GT_pose[:1200] if args.debug_mode else GT_pose
     print("Calculating GT angles...")
     # calculate GT angles
@@ -231,7 +231,7 @@ if __name__ == '__main__':
     frame_range = [0, 1200]
     log = []
     anova_results = []
-    average_error = {}
+    average_error = {"source": source}
     target_angles = GT_skeleton.angle_names
     all_ja1 = None
     all_ja2 = None
@@ -342,8 +342,6 @@ if __name__ == '__main__':
     RMSE = root_mean_squared_error(all_ja1, all_ja2)
     MAE = mean_absolute_error(all_ja1, all_ja2)
     median_AE = median_absolute_error(all_ja1, all_ja2)
-    merge_name = f"{print_angle_name}-{print_ergo_name}"
-    average_error[merge_name] = angle_diff(all_ja1, all_ja2, input_rad=True, output_rad=False)
 
     angle_compare = AngleCompare(all_ja1, all_ja2)
     plot_error_histogram(angle_compare.diff_deg, bins=bin_no, title=f'All Angles',
