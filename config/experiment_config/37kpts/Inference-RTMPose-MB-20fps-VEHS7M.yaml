@@ -27,7 +27,7 @@ name_list: ['PELVIS',
 #estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-normal-2-limbLoss/VEHS7M-Validate/X3D.npy'
 #estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-3-angleLoss/VEHS7M-Validate/X3D.npy'
 #estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-4-angleLossV2/VEHS7M-Validate/X3D.npy'
-estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/VEHS7M-Validate/X3D.npy'
+#estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/VEHS7M-Validate/X3D.npy'# <-------------
 
 
 #### RTMW V3 + MB-20250827
@@ -43,7 +43,7 @@ eval_key: 'validate'
 #estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20-fps-pretrain-normal/VEHS7M-validate-best-gt2d/X3D.npy'
 
 ## pitch-correct
-GT_file: '/Volumes/Z/RTMPose/37kpts_freeze_v3/20fps/MB_GT/VEHS_6D_downsample5_keep1_37_v2_pitch_correct_RTM2D.pkl'
+#GT_file: '/Volumes/Z/RTMPose/37kpts_freeze_v3/20fps/MB_GT/VEHS_6D_downsample5_keep1_37_v2_pitch_correct_RTM2D.pkl' # <-------------
 #GT_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/GT3D/pitch-correct/VEHS_6D_downsample5_keep1_37_v2_pitch_correct_modified_RTM2D.pkl'
 # limb loss added
 #estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20-fps-finetune-pitch-correct-6/VEHS7M-validate/X3D.npy'
@@ -53,3 +53,8 @@ GT_file: '/Volumes/Z/RTMPose/37kpts_freeze_v3/20fps/MB_GT/VEHS_6D_downsample5_ke
 
 # OG loss
 #estimate_file: '/Users/leyangwen/Downloads/scratch_pose/20fps-finetune-pitch-correct-9/VEHS7M-validate/X3D.npy'
+
+
+# v3v4
+estimate_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/v3v4/VEHS7M-R3R4-Validate/X3D.npy'
+GT_file: '/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/GT3D/v3v4/VEHS_6D_downsample5_keep1_37_v2_pitch_correct_modified_RTM2D.pkl'

@@ -26,14 +26,14 @@ from Skeleton import *
 def phrase_args():
     parser = argparse.ArgumentParser(description='RTM pose inference to 2D metric')
 
-    # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/2D/exp_2b_industry_videos_20fps')
-    # parser.add_argument('--video_folder', type=str, default='/Volumes/Z/RTMPose/inference_vid/Industry')
+    parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/2D/exp_2b_industry_videos_20fps')
+    parser.add_argument('--video_folder', type=str, default='/Volumes/Z/RTMPose/inference_vid/Industry')
 
     # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/2D/exp_2b_industry_videos_20fps')
     # parser.add_argument('--video_folder', type=str, default='/Volumes/Z/RTMPose/inference_vid/Industry_2')
 
-    parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/2D/Industry_3')
-    parser.add_argument('--video_folder', type=str, default='/Volumes/Z/RTMPose/inference_vid/Industry_3')
+    # parser.add_argument('--RTM_infer_folder', type=str, default='/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/2D/Industry_3')
+    # parser.add_argument('--video_folder', type=str, default='/Volumes/Z/RTMPose/inference_vid/Industry_3')
 
     parser.add_argument('--infer_pose_type', type=str, choices=['rtm37_from_coco133', 'rtm37_from_37'], default='rtm37_from_37')
     parser.add_argument('--GT_ann_file', type=str, default=None)
@@ -45,12 +45,12 @@ def phrase_args():
     parser.add_argument('--img_shape', type=tuple, default=(1200, 1920), help='height, width in px')
     parser.add_argument('--verbose', type=bool, default=True)
     parser.add_argument('--norm_mode', type=str, choices=['bbox_diag', 'part_diag'], default='part_diag')
-
+    parser.add_argument('--filter_lowConf_legs', type=bool, default=True)
     args = parser.parse_args()
     with open(args.config_file, 'r') as stream:
         data = yaml.safe_load(stream)
         args.name_list = data['name_list']
-    args.output_folder = os.path.join(args.RTM_infer_folder, 'filtered')
+    args.output_folder = os.path.join(args.RTM_infer_folder, 'filtered_2')
     return args
 
 def match_video(npy_filename, video_folder):
@@ -195,7 +195,9 @@ if __name__ == '__main__':
                     continue
 
                 vid_stem = os.path.splitext(os.path.basename(video_path))[0]
-                output_path = os.path.join(args.output_folder, f"{vid_stem}_overlay.mp4")
+                # make sure output and input folder is not the same using os
+                assert os.path.dirname(video_path) != args.output_folder, "Output folder cannot be the same as video folder to avoid overwriting videos"
+                output_path = os.path.join(args.output_folder, f"{vid_stem}.mp4")
 
                 print(f"Processing {file} -> {os.path.basename(video_path)}")
 
@@ -206,6 +208,29 @@ if __name__ == '__main__':
                 estimate_skeleton.load_name_list_and_np_points(args.name_list, inference_pose)
                 # estimate_skeleton.filter_lowpass(cutoff=6, keypoint_fps=20)
                 # estimate_skeleton.filter_confidence(threshold=5.0)
+
+                if args.filter_lowConf_legs:
+                    kpt_names = args.name_list  # list of kpt names corresponding to the mask columns
+                    conf_2d = inference_pose[:,:,2]  # shape: (frame_num, kpt_num)
+                    threshold = 5.8
+                    left_knee_mask = conf_2d[:, kpt_names.index('LKNEE')] < threshold
+                    right_knee_mask = conf_2d[:, kpt_names.index('RKNEE')] < threshold
+                    left_ankle_mask = conf_2d[:, kpt_names.index('LANKLE')] < threshold
+                    right_ankle_mask = conf_2d[:, kpt_names.index('RANKLE')] < threshold
+                    left_foot_mask = conf_2d[:, kpt_names.index('LFOOT')] < threshold
+                    right_foot_mask = conf_2d[:, kpt_names.index('RFOOT')] < threshold
+                    both_knee_mask = left_knee_mask & right_knee_mask
+                    both_knee_mask = both_knee_mask.reshape(-1)  # ensure it's 1D
+                    for kpt_name in ['LKNEE', 'RKNEE', 'LANKLE', 'RANKLE', 'LFOOT', 'RFOOT', 'LHIP', 'RHIP']:
+                        estimate_skeleton.poses[kpt_name][both_knee_mask] = np.nan
+                    both_foot_ankle_mask = left_foot_mask & right_foot_mask & left_ankle_mask & right_ankle_mask
+                    both_foot_ankle_mask = both_foot_ankle_mask.reshape(-1)  # ensure it's 1D
+                    for kpt_name in ['LANKLE', 'RANKLE', 'LFOOT', 'RFOOT']:
+                        estimate_skeleton.poses[kpt_name][both_foot_ankle_mask] = np.nan
+
+
+
+
                 estimate_skeleton.plot_2d_pose_cv(
                     video_path=video_path,
                     output_path=output_path

@@ -3,6 +3,8 @@ import os.path
 import pickle
 
 import matplotlib
+import numpy as np
+
 # matplotlib.use('Qt5Agg')
 
 from Skeleton import *
@@ -19,15 +21,21 @@ def parse_args():
     # parser.add_argument('--try_wrist', type=bool, default=True)
     # parser.add_argument('--clip_fill', type=bool, default=True)
 
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')  # dissertation chapter 3
+    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
+    parser.add_argument('--angle_mode', type=str, default='paper')
+    parser.add_argument('--try_wrist', type=bool, default=False)
+    parser.add_argument('--clip_fill', type=bool, default=True)
+
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/H36M17kpts/VEHS-3D-MB.yaml')
     # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/H36M-17.yaml')
     # parser.add_argument('--angle_mode', type=str, default='VEHS')
 
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
-    parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
-    parser.add_argument('--angle_mode', type=str, default='paper')
-    parser.add_argument('--clip_fill', type=bool, default=True)
-    parser.add_argument('--try_wrist', type=bool, default=False)
+    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')  # config/experiment_config/VEHS-6D-MB.yaml') #
+    # parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
+    # parser.add_argument('--angle_mode', type=str, default='paper')
+    # parser.add_argument('--clip_fill', type=bool, default=True)
+    # parser.add_argument('--try_wrist', type=bool, default=False)
 
 
 
@@ -79,7 +87,7 @@ if __name__ == '__main__':
         estimate_pose = np.concatenate(estimate_pose, axis=0)
         GT_pose = np.concatenate(GT_pose, axis=0)
     else:
-        GT_pose, _, _, source = MB_input_pose_file_loader(args, get_clip_id=True)
+        GT_pose, factor_25d, _, source = MB_input_pose_file_loader(args, get_clip_id=True)
         estimate_pose = MB_output_pose_file_loader(args)
     # assert GT_pose.shape == estimate_pose.shape, f"GT_pose.shape: {GT_pose.shape}, estimate_pose.shape: {estimate_pose.shape}, they should be the same"
     assert GT_pose.shape[0] == estimate_pose.shape[0], f"GT_pose.shape: {GT_pose.shape}, estimate_pose.shape: {estimate_pose.shape}, frame no should be the same"
@@ -292,6 +300,61 @@ if __name__ == '__main__':
 
     print(f"Store location: {args.output_dir}")
 # generate merged bland-altman plot for left and right
+
+def compute_pa_mpjpe(predicted, target):
+    """
+    Compute PA-MPJPE (Procrustes-Aligned MPJPE).
+    predicted: (N, J, 3)
+    target: (N, J, 3)
+    """
+    errors = []
+    for i in range(predicted.shape[0]):
+        pred = predicted[i]  # (J, 3)
+        gt = target[i]
+
+        # Center both
+        mu_pred = pred.mean(axis=0)
+        mu_gt = gt.mean(axis=0)
+        pred_c = pred - mu_pred
+        gt_c = gt - mu_gt
+
+        # Optimal rotation via SVD
+        H = pred_c.T @ gt_c
+        U, S, Vt = np.linalg.svd(H)
+        d = np.linalg.det(Vt.T @ U.T)
+        D = np.diag([1, 1, d])  # handles reflection
+        R = Vt.T @ D @ U.T
+
+        # Optimal scale
+        scale = np.trace(R @ H) / np.trace(pred_c.T @ pred_c)
+
+        # Align
+        pred_aligned = scale * (pred_c @ R.T) + mu_gt
+        errors.append(np.linalg.norm(pred_aligned - gt, axis=1))
+
+    return np.stack(errors)  # (N, J)
+
+# MPJPE
+estimate_pose_mm = estimate_pose/factor_25d[:, None, None]
+estimate_pose_mm = estimate_pose_mm - estimate_pose_mm[:, 0:1, :]
+GT_pose_mm = GT_pose - GT_pose[:, 0:1, :]
+
+err = GT_pose_mm - estimate_pose_mm
+err_3D = np.linalg.norm(err, axis=2)
+err_3D_joint = np.mean(err_3D, axis = 0)
+MPJPE = np.mean(err_3D)
+
+pa_err_3D = compute_pa_mpjpe(estimate_pose_mm, GT_pose_mm)
+pa_err_3D_joint = np.mean(pa_err_3D, axis=0)
+PA_MPJPE = np.mean(pa_err_3D)
+
+# save as csv
+with open (os.path.join(args.output_dir, f'{args.eval_key}_MPJPE.csv'), 'w') as f:
+    f.write("joint_name,MPJPE,PA-MPJPE\n")
+    for i in range(len(args.name_list)):
+        f.write(f"{args.name_list[i]},{err_3D_joint[i]:.2f},{pa_err_3D_joint[i]:.2f}\n")
+    f.write(f"Overall,{MPJPE:.2f},{PA_MPJPE:.2f}\n")
+# log
 
 
 """ powershell batch crop png files
