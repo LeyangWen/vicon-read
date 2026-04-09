@@ -19,10 +19,18 @@ from SSPPOutput import SSPPV7Output
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--export_file', type=str, default=r'/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/intervention_eval_data/output_3DSSPP_export.txt')
+
     parser.add_argument('--print_all', default=True, help='Print all frames without cutting segments')
 
+    # parser.add_argument('--export_file', type=str, default=r'/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/intervention_eval_data/Generated_flat_results-3DSSPP_export.txt')
+    # parser.add_argument('--export_file', type=str, default=r'/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/intervention_eval_data/Generated_step_results-3DSSPP_export.txt')
     # parser.add_argument('--export_file', type=str, default=r'/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/intervention_eval_data/Mocap_results-3DSSPP_export.txt')
+
+    parser.add_argument('--export_file', type=str, default=r'/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/intervention_eval_data/export_results/flat_export.txt')
+    # parser.add_argument('--export_file', type=str, default=r'/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/intervention_eval_data/export_results/mocap_export.txt')
+    # parser.add_argument('--export_file', type=str, default=r'/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/intervention_eval_data/export_results/step_export.txt')
+
+
     # parser.add_argument('--print_all', default=False, help='Print all frames without cutting segments')
     args = parser.parse_args()
     return args

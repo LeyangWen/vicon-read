@@ -189,7 +189,7 @@ if __name__ == '__main__':
         print("Loading to skeleton...")
         estimate_mesh_skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode, try_wrist=False)
         # estimate_mesh_skeleton.load_mesh(estimate_mesh_vert)  # for full verts inputs, very slow
-        estimate_mesh_skeleton.load_mesh(estimate_mesh_vert, pre_saved=True)  # for full verts inputs, very slow
+        estimate_mesh_skeleton.load_mesh(estimate_mesh_vert, pre_saved=True)
         estimate_mesh_skeleton.calculate_joint_center()
         print("Calculating estimated angles...")
         estimate_mesh_ergo_angles = {}

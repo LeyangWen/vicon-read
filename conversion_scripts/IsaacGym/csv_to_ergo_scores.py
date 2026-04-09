@@ -19,16 +19,21 @@ import csv
 # From isaac inference output, csv file
 # Output NIOSH lifting index, REBA score, and output 3DSSPP batch txt file
 
+
+# Steps: csv-to-ergo-scores --> 3DSSPP run batch and adjust --> if adjusted, run export batch file to export --> run SSPP_txt_to_scores.py to read 3DSSPP --> CSV copy to excel --> excel sheet summerized results copy to claude to format --> boxplot_subject.py to plot
 ####################################################
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/exp/exp_mocap.yaml')
-    parser.add_argument('--output_excel', type=str, default=r'/Volumes/Y/intervention_eval_data/worker_motion/issac/Mocap_results.csv')
-    #
-    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/exp/exp_flat_v1.yaml')
-    # parser.add_argument('--output_excel', type=str, default=r'/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/Generated_results.csv')
+    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/exp/exp_mocap.yaml')
+    # parser.add_argument('--output_excel', type=str, default=r'/Volumes/Y/intervention_eval_data/worker_motion/issac/Mocap_results.csv')
+    # #
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/exp/exp_flat_v1.yaml')
+    parser.add_argument('--output_excel', type=str, default=r'/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/Generated_flat_results.csv')
+
+    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/exp/exp_terrain_step_v1.yaml')
+    # parser.add_argument('--output_excel', type=str, default=r'/Volumes/Y/intervention_eval_data/recommended_motion/exp_terrain_step_v1/Generated_step_results.csv')
 
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/IssacGym/15kpts-Skeleton.yaml')
     parser.add_argument('--output_frame_folder', type=str, default=None)
@@ -574,7 +579,7 @@ def output_3dsspp(args, result):
     isaac_skeleton.output_3DSSPP_JOA(frame_range=all_segments, lift_mass=args.mass, start_offset=args.start_offset)
 
 
-def generate_3dsspp_lines(args, result, frame_counter):
+def generate_3dsspp_lines(args, result, frame_counter, export_only=False):
     """
     Generate 3DSSPP body lines for one experiment for batch accumulation.
     Returns (lines, frame_numbers, next_frame_counter).
@@ -604,22 +609,24 @@ def generate_3dsspp_lines(args, result, frame_counter):
         end_frame = f_range[1]
         step = f_range[2]
         for k in np.arange(start_frame, end_frame, step):
-            joint_rotations = np.array2string(JOA[k], separator=' ', max_line_width=1000000, precision=3, suppress_small=True)[1:-1].replace('0. ', '0 ')
-            lines.append(f'FRM {frame_counter} #\n')
-            lines.append(f'HAN {hand_load / 2} -90 0 {hand_load / 2} -90 0 #\n')
-            left_foot_supported = isaac_skeleton.poses['left_toe'][k, 2] < support_feet_max_height
-            right_foot_supported = isaac_skeleton.poses['right_toe'][k, 2] < support_feet_max_height
-            if left_foot_supported and right_foot_supported:
+            if not export_only:
+                joint_rotations = np.array2string(JOA[k], separator=' ', max_line_width=1000000, precision=3, suppress_small=True)[1:-1].replace('0. ', '0 ')
+                lines.append(f'FRM {frame_counter} #\n')
+                lines.append(f'HAN {hand_load / 2} -90 0 {hand_load / 2} -90 0 #\n')
+                # left_foot_supported = isaac_skeleton.poses['left_toe'][k, 2] < support_feet_max_height
+                # right_foot_supported = isaac_skeleton.poses['right_toe'][k, 2] < support_feet_max_height
+                # if left_foot_supported and right_foot_supported:
+                #     foot_support_parameter = 0
+                # elif left_foot_supported and not right_foot_supported:
+                #     foot_support_parameter = 1
+                # elif not left_foot_supported and right_foot_supported:
+                #     foot_support_parameter = 2
+                # else:
+                #     foot_support_parameter = 0
                 foot_support_parameter = 0
-            elif left_foot_supported and not right_foot_supported:
-                foot_support_parameter = 1
-            elif not left_foot_supported and right_foot_supported:
-                foot_support_parameter = 2
-            else:
-                foot_support_parameter = 0
-            pelvic_tilt = 0
-            lines.append(f'SUP {foot_support_parameter} 0 0 0 20.0 {pelvic_tilt} #\n')
-            lines.append(f'JOA {joint_rotations} #\n')
+                pelvic_tilt = 0
+                lines.append(f'SUP {foot_support_parameter} 0 0 0 20.0 {pelvic_tilt} #\n')
+                lines.append(f'JOA {joint_rotations} #\n')
             lines.append("OUT #\n")
             frame_numbers.append(frame_counter)
             frame_counter += 1
@@ -665,6 +672,7 @@ if __name__ == '__main__':
         all_rows = []
         header = None
         all_3dsspp_lines = []   # accumulated 3DSSPP body lines
+        export_command_lines = []  # for printing cp commands to terminal
         frame_counter = args.start_offset       # running 3DSSPP frame number across experiments
 
         for i, exp_dict in enumerate(experiments):
@@ -687,6 +695,7 @@ if __name__ == '__main__':
                 if args.output_type[2]:
                     sspp_lines, frame_numbers, frame_counter = generate_3dsspp_lines(single_args, result, frame_counter)
                     all_3dsspp_lines.extend(sspp_lines)
+
                 else:
                     frame_numbers = [''] * len(compiled_array)
 
@@ -742,9 +751,15 @@ if __name__ == '__main__':
                         f.write(line)
                     f.write('COM Task done #')
                 print(f"Combined 3DSSPP batch file saved to {sspp_file}")
+                onedrive_dir ='/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/intervention_eval_data/'
+                # exp_dir = os.path.splitext(os.path.basename(args.config_file))[0] # 'exp_terrain_step_v1'
+                file_name = sspp_file.split('/')[-1]
+                print(r'cp "{}" "{}"'.format(sspp_file, os.path.join(onedrive_dir, f'{file_name}')))
         else:
             print("No results to write. All experiments may have failed.")
 
-# run in terminal:
-# cp "/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/Generated_results-3DSSPP.txt" "/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/intervention_eval_data/" && cp "/Volumes/Y/intervention_eval_data/worker_motion/issac/Mocap_results-3DSSPP.txt" "/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/intervention_eval_data/"
-
+# # run in terminal:
+# print(r'cp "/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/Generated_results-3DSSPP.txt" "/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/intervention_eval_data/" && cp "/Volumes/Y/intervention_eval_data/worker_motion/issac/Mocap_results-3DSSPP.txt" "/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/intervention_eval_data/" ')
+# print()
+#
+# print(r'cp "/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/Generated_results-3DSSPP.txt" "/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/intervention_eval_data/" && cp "/Volumes/Y/intervention_eval_data/worker_motion/issac/Mocap_results-3DSSPP.txt" "/Users/leyangwen/Library/CloudStorage/OneDrive-Umich/isaac_3dsspp/intervention_eval_data/" ')

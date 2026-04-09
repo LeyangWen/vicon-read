@@ -125,9 +125,10 @@ def smooth_point(frames, index, part_index, window=8):
             weight += multiplier
 
     if frames.shape[2] == 3:
-        if np.any(frames[start_index:end_index,part_index,2] < 0.3):
-            confidence_score = 0.0
-
+        if np.any(frames[start_index:end_index,part_index,2] < 0.3):  # blip removal
+            confidence_score = 0.0  # In case any frame blip w/low confidence, set all surrounding frame to zero, remove this
+# 0.3 for lots, 0.45 for elbow, wrist, and finger/hand/MCPs, --> only for 2D visualization
+    # for 3D, if both ankle or both knee is not visible, dont visualize leg, still visualize the hip
 
     # if np.count_nonzero(frames[start_index:end_index,part_index,-1] < 0.3) > 3:
     #     confidence_score = 0.0

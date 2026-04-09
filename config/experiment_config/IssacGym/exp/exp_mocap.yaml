@@ -12,7 +12,7 @@ end_positions:
 fps: 20
 keyframe_detect: False
 no_experiments: 1
-start_offset: 40
+start_offset: 60
 
 experiments:
   # S01

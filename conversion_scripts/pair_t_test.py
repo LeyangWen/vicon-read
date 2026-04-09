@@ -11,17 +11,26 @@ def phrase_args():
     parser = argparse.ArgumentParser(description="Video-level paired t-test for joint angle errors.")
     parser.add_argument("--file_AE_1", type=str, default=r"/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/mesh_compare/SMPL_RTM37kpts_V1/results_compare/validate_paper_AE.pkl")
     parser.add_argument("--file_AE_2", type=str, default=r"/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/RTMW37kpts_v2_20fps-finetune-pitch-correct-5-angleLossV2-only/VEHS7M-Validate/results_compare/validate_PlotMode-paper_MergeLR-True_TryWrist-False_AE.pkl")
+    # parser.add_argument("--file_AE_2", type=str, default=r"/Volumes/Z/RTMPose/37kpts_rtmw_v5/20fps/mesh_compare/SMPLEST/result_VEHSR3R4/results/validate_paper_AE.pkl")
+
     return parser.parse_args()
 
 
+
 def segment_indices_by_source(source_list):
-    segments = []
+    segments = {}
     start = 0
     for i in range(1, len(source_list)):
         if source_list[i] != source_list[i - 1]:
-            segments.append((start, i))
+            name = source_list[start]
+            if name not in segments:
+                segments[name] = []
+            segments[name].append((start, i))
             start = i
-    segments.append((start, len(source_list)))
+    name = source_list[start]
+    if name not in segments:
+        segments[name] = []
+    segments[name].append((start, len(source_list)))
     return segments
 
 
@@ -35,8 +44,9 @@ if __name__ == "__main__":
     with open(args.file_AE_2, "rb") as f:
         errors_2 = pickle.load(f)
 
-    source = errors_1["source"]
-    segments = segment_indices_by_source(source)
+    segments_1 = segment_indices_by_source(errors_1["source"])
+    segments_2 = segment_indices_by_source(errors_2["source"])
+    common_videos = sorted(set(segments_1.keys()) & set(segments_2.keys()))
 
     angles = [k for k in errors_1.keys() if k != "source"]
 
@@ -53,23 +63,23 @@ if __name__ == "__main__":
         video_mae_1 = []
         video_mae_2 = []
 
-        for start, end in segments:
+        for video_name in common_videos:
+            for (s1_start, s1_end), (s2_start, s2_end) in zip(segments_1[video_name], segments_2[video_name]):
+                seg1 = err1[s1_start:s1_end]
+                seg2 = err2[s2_start:s2_end]
 
-            seg1 = err1[start:end]
-            seg2 = err2[start:end]
+                L = min(len(seg1), len(seg2))
+                if L == 0:
+                    continue
 
-            L = min(len(seg1), len(seg2))
-            if L == 0:
-                continue
+                seg1 = seg1[:L]
+                seg2 = seg2[:L]
 
-            seg1 = seg1[:L]
-            seg2 = seg2[:L]
+                mae1 = np.nanmean(np.abs(seg1))
+                mae2 = np.nanmean(np.abs(seg2))
 
-            mae1 = np.nanmean(np.abs(seg1))
-            mae2 = np.nanmean(np.abs(seg2))
-
-            video_mae_1.append(mae1)
-            video_mae_2.append(mae2)
+                video_mae_1.append(mae1)
+                video_mae_2.append(mae2)
 
         video_mae_1 = np.array(video_mae_1)
         video_mae_2 = np.array(video_mae_2)
@@ -89,34 +99,35 @@ if __name__ == "__main__":
     global_video_mae_1 = []
     global_video_mae_2 = []
 
-    for start, end in segments:
+    for video_name in common_videos:
+        for (s1_start, s1_end), (s2_start, s2_end) in zip(segments_1[video_name], segments_2[video_name]):
 
-        joint_errors_1 = []
-        joint_errors_2 = []
+            joint_errors_1 = []
+            joint_errors_2 = []
 
-        for angle in angles:
+            for angle in angles:
 
-            err1 = np.array(errors_1[angle])[start:end]
-            err2 = np.array(errors_2[angle])[start:end]
+                err1 = np.array(errors_1[angle])[s1_start:s1_end]
+                err2 = np.array(errors_2[angle])[s2_start:s2_end]
 
-            L = min(len(err1), len(err2))
-            if L == 0:
+                L = min(len(err1), len(err2))
+                if L == 0:
+                    continue
+
+                joint_errors_1.append(np.abs(err1[:L]))
+                joint_errors_2.append(np.abs(err2[:L]))
+
+            if len(joint_errors_1) == 0:
                 continue
 
-            joint_errors_1.append(np.abs(err1[:L]))
-            joint_errors_2.append(np.abs(err2[:L]))
+            joint_errors_1 = np.concatenate(joint_errors_1)
+            joint_errors_2 = np.concatenate(joint_errors_2)
 
-        if len(joint_errors_1) == 0:
-            continue
+            mae1 = np.nanmean(joint_errors_1)
+            mae2 = np.nanmean(joint_errors_2)
 
-        joint_errors_1 = np.concatenate(joint_errors_1)
-        joint_errors_2 = np.concatenate(joint_errors_2)
-
-        mae1 = np.nanmean(joint_errors_1)
-        mae2 = np.nanmean(joint_errors_2)
-
-        global_video_mae_1.append(mae1)
-        global_video_mae_2.append(mae2)
+            global_video_mae_1.append(mae1)
+            global_video_mae_2.append(mae2)
 
     global_video_mae_1 = np.array(global_video_mae_1)
     global_video_mae_2 = np.array(global_video_mae_2)
