@@ -29,11 +29,14 @@ def parse_args():
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/exp/exp_mocap.yaml')
     # parser.add_argument('--output_excel', type=str, default=r'/Volumes/Y/intervention_eval_data/worker_motion/issac/Mocap_results.csv')
     # #
-    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/exp/exp_flat_v1.yaml')
-    parser.add_argument('--output_excel', type=str, default=r'/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/Generated_flat_results.csv')
+    # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/exp/exp_flat_v1.yaml')
+    # parser.add_argument('--output_excel', type=str, default=r'/Volumes/Y/intervention_eval_data/recommended_motion/exp_flat_v1/Generated_flat_results.csv')
 
     # parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/exp/exp_terrain_step_v1.yaml')
     # parser.add_argument('--output_excel', type=str, default=r'/Volumes/Y/intervention_eval_data/recommended_motion/exp_terrain_step_v1/Generated_step_results.csv')
+
+    parser.add_argument('--config_file', type=str, default=r'config/experiment_config/IssacGym/exp/exp_terrain_step_v2.yaml')
+    parser.add_argument('--output_excel', type=str, default=r'/Volumes/Y/intervention_eval_data/recommended_motion/exp_terrain_step_v2/Generated_step_results.csv')
 
     parser.add_argument('--skeleton_file', type=str, default=r'config/VEHS_ErgoSkeleton_info/IssacGym/15kpts-Skeleton.yaml')
     parser.add_argument('--output_frame_folder', type=str, default=None)
