@@ -372,22 +372,20 @@ def plot_video_ergo(video_results, video_label, fps, save_path=None):
 def parse_args():
     parser = argparse.ArgumentParser(description='Compute ergonomic scores from 3D pose')
     parser.add_argument('--config_file', type=str,
-                        default='config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry_3.yaml')
+                        default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry_3.yaml')
     parser.add_argument('--skeleton_file', type=str,
-                        default='config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
+                        default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
     parser.add_argument('--angle_limit_file', type=str,
-                        default='config/experiment_config/37kpts/joint_angle_limit_rick.json')
+                        default=r'config/experiment_config/37kpts/joint_angle_limit_rick.json')
     parser.add_argument('--angle_mode', type=str, default='paper')
-    parser.add_argument('--try_wrist', type=bool, default=False)
-    parser.add_argument('--clip_fill', type=bool, default=True)
+    parser.add_argument('--try_wrist', default=False, type=bool)
+    parser.add_argument('--clip_fill', default=True, type=bool)
     parser.add_argument('--MB_data_stride', type=int, default=243)
     parser.add_argument('--fps', type=int, default=20)
-    parser.add_argument('--dim_mode', type=str, default='3d',
-                        help='Which threshold dimension to use: 2d, 3d, or seated')
-    parser.add_argument('--video_chunks', type=str, default=None,
-                        help='Comma-separated list of chunk counts per video (in units of MB_data_stride). '
-                             'If not provided, treats entire sequence as one video.')
+    parser.add_argument('--dim_mode', type=str, default='3d')
+    parser.add_argument('--video_chunks', type=str, default=None)
     parser.add_argument('--output_dir', type=str, default=None)
+    parser.add_argument('--debug_mode', default=False, type=bool)
     args = parser.parse_args()
 
     with open(args.config_file, 'r') as f:
