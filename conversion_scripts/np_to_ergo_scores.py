@@ -7,6 +7,16 @@ Usage:
 Reads the estimated 3D pose, calculates joint angles via VEHSErgoSkeleton_angles,
 classifies each frame into posture risk levels using angle thresholds from the JSON config,
 then computes per-video per-joint scores.  Results are saved to CSV and visualized.
+
+
+Column	Range	Definition
+posture_score	0–3	Worst posture level observed in the video for that joint. 0=safe, 1=cautious (yellow), 2=dangerous (red), 3=impossible (black).
+duration_score	0–3	How much % of time was spent at level 2 or 3. Scored as: <10%→0, 10–19%→1, 20–29%→2, ≥30%→3.
+frequency_score	0 or 1	Binary flag: 1 if risk events happen more than 3×/min (or 30×/min for wrists), else 0. A "risk event" = transitioning into risk posture and staying there for ≥5 consecutive frames (≥3 for wrists).
+pct_high_risk	0–100%	The raw percentage of frames at posture level 2 or 3. This is the underlying value that duration_score discretizes.
+freq_per_min	≥0	The raw risk events per minute. This is the underlying value that frequency_score discretizes.
+n_frames	int	Total number of frames in this video segment.
+duration_sec	float	Video duration in seconds (n_frames / fps).
 """
 
 import argparse
@@ -51,17 +61,28 @@ ANGLE_COMPONENTS = ['flexion', 'abduction', 'rotation']
 
 
 # ---------------------------------------------------------------------------
-# 1. Load angle-limit config
+# 1. Load angle-limit config (3D only)
 # ---------------------------------------------------------------------------
+def _pick_3d_ranges(ranges_dict):
+    """Pick '3d' thresholds, fall back to '2d' if '3d' not present."""
+    if '3d' in ranges_dict:
+        return ranges_dict['3d']
+    if '2d' in ranges_dict:
+        return ranges_dict['2d']
+    # return first available
+    for k, v in ranges_dict.items():
+        return v
+    return {}
+
+
 def load_angle_limits(json_path):
     """
-    Parse joint_angle_limit_rick.json into a per-joint threshold dict.
+    Parse joint_angle_limit_rick.json into a per-joint threshold dict (3D only).
 
     Returns
     -------
     thresholds : dict
-        {json_joint_name: {dim_mode: {level: {component: [ranges]}}}}
-        dim_mode is '2d', '3d', or 'seated'.
+        {json_joint_name: {level: {component: [ranges]}}}
         level is 1 (cautious), 2 (dangerous), 3 (impossible).
     conditional_joints : dict
         joints with 'if' logic (e.g. elbow depends on shoulder angle)
@@ -89,12 +110,11 @@ def load_angle_limits(json_path):
         if 'ranges' not in segment_cfg:
             continue
 
+        levels_3d = _pick_3d_ranges(segment_cfg['ranges'])
         thresholds[joint_name] = {}
-        for dim_mode, levels in segment_cfg['ranges'].items():
-            thresholds[joint_name][dim_mode] = {}
-            for level_name, components in levels.items():
-                level = level_map[level_name]
-                thresholds[joint_name][dim_mode][level] = components
+        for level_name, components in levels_3d.items():
+            level = level_map[level_name]
+            thresholds[joint_name][level] = components
 
     return thresholds, conditional_joints
 
@@ -104,14 +124,14 @@ def load_angle_limits(json_path):
 # ---------------------------------------------------------------------------
 def parse_conditional_thresholds(conditional_joints):
     """
-    Parse conditional joint configs into a structured dict.
+    Parse conditional joint configs into a structured dict (3D only).
 
     Returns
     -------
     dict : {json_joint_name: {
         'condition_joint': str,       # e.g. 'rightShoulder'
         'condition_range': [lo, hi],  # shoulder flexion range that activates thresholds
-        'then': {dim_mode: {level: {component: [ranges]}}},
+        'then': {level: {component: [ranges]}},
         'else_default': [lo, hi] or None
     }}
     """
@@ -122,12 +142,11 @@ def parse_conditional_thresholds(conditional_joints):
         if_cfg = segment_cfg['if']
         else_cfg = segment_cfg.get('else', {})
 
+        levels_3d = _pick_3d_ranges(if_cfg['then'])
         then_thresholds = {}
-        for dim_mode, levels in if_cfg['then'].items():
-            then_thresholds[dim_mode] = {}
-            for level_name, components in levels.items():
-                level = level_map[level_name]
-                then_thresholds[dim_mode][level] = components
+        for level_name, components in levels_3d.items():
+            level = level_map[level_name]
+            then_thresholds[level] = components
 
         parsed[json_joint] = {
             'condition_joint': if_cfg['joint'],
@@ -142,6 +161,8 @@ def parse_conditional_thresholds(conditional_joints):
 # ---------------------------------------------------------------------------
 # 2. Classify frames into posture levels
 # ---------------------------------------------------------------------------
+NAN_LEVEL = -1  # sentinel for masked/NaN frames — excluded from scoring
+
 def _in_range(value_deg, range_list):
     """Check if value falls in any of the ranges defined by range_list.
 
@@ -160,31 +181,36 @@ def _in_range(value_deg, range_list):
     return False
 
 
-def classify_frame(angles_deg, joint_thresholds, dim_mode='3d'):
+def _to_deg_or_none(arr, t):
+    """Convert radians to degrees at index t, returning None if the array is None or value is NaN."""
+    if arr is None:
+        return None
+    val = float(np.degrees(arr[t]))
+    if np.isnan(val):
+        return None
+    return val
+
+
+def classify_frame(angles_deg, joint_thresholds):
     """
-    Classify a single frame for one joint into posture level 0-3.
+    Classify a single frame for one joint into posture level 0-3, or NAN_LEVEL if all angles are NaN.
 
     Parameters
     ----------
-    angles_deg : dict  {'flexion': float, 'abduction': float or None, 'rotation': float or None}
-    joint_thresholds : dict  {dim_mode: {level: {component: [ranges]}}}
-    dim_mode : str
+    angles_deg : dict  {'flexion': float or None, 'abduction': float or None, 'rotation': float or None}
+    joint_thresholds : dict  {level: {component: [ranges]}}
 
     Returns
     -------
-    int : posture level (0=safe, 1=cautious, 2=dangerous, 3=impossible)
+    int : posture level (0=safe, 1=cautious, 2=dangerous, 3=impossible, -1=NaN/masked)
     """
-    if dim_mode not in joint_thresholds:
-        available = list(joint_thresholds.keys())
-        if len(available) == 0:
-            return 0
-        dim_mode = available[0]
+    # If all angle components are None (NaN), mark as masked
+    if all(angles_deg.get(c) is None for c in ANGLE_COMPONENTS):
+        return NAN_LEVEL
 
-    mode_thresholds = joint_thresholds[dim_mode]
     worst_level = 0
-
-    for level in sorted(mode_thresholds.keys()):
-        level_ranges = mode_thresholds[level]
+    for level in sorted(joint_thresholds.keys()):
+        level_ranges = joint_thresholds[level]
         for component in ANGLE_COMPONENTS:
             val = angles_deg.get(component)
             if val is None:
@@ -196,19 +222,19 @@ def classify_frame(angles_deg, joint_thresholds, dim_mode='3d'):
     return worst_level
 
 
-def classify_all_frames(angle_obj, joint_thresholds, dim_mode='3d'):
+def classify_all_frames(angle_obj, joint_thresholds):
     """
-    Classify all frames for a joint.
+    Classify all frames for a joint (3D thresholds already selected).
 
     Parameters
     ----------
     angle_obj : JointAngles with .flexion, .abduction, .rotation (radians, shape (T,))
-    joint_thresholds : dict from load_angle_limits
-    dim_mode : str
+    joint_thresholds : dict  {level: {component: [ranges]}}
 
     Returns
     -------
     posture_levels : np.ndarray of int, shape (T,)
+        Values: 0-3 for valid frames, NAN_LEVEL (-1) for masked frames.
     """
     flex = angle_obj.flexion
     abd = angle_obj.abduction
@@ -220,16 +246,17 @@ def classify_all_frames(angle_obj, joint_thresholds, dim_mode='3d'):
 
     levels = np.zeros(T, dtype=int)
     for t in range(T):
-        angles_deg = {}
-        angles_deg['flexion'] = float(np.degrees(flex[t])) if flex is not None else None
-        angles_deg['abduction'] = float(np.degrees(abd[t])) if abd is not None else None
-        angles_deg['rotation'] = float(np.degrees(rot[t])) if rot is not None else None
-        levels[t] = classify_frame(angles_deg, joint_thresholds, dim_mode)
+        angles_deg = {
+            'flexion': _to_deg_or_none(flex, t),
+            'abduction': _to_deg_or_none(abd, t),
+            'rotation': _to_deg_or_none(rot, t),
+        }
+        levels[t] = classify_frame(angles_deg, joint_thresholds)
 
     return levels
 
 
-def classify_all_frames_conditional(elbow_angle_obj, shoulder_angle_obj, cond_cfg, dim_mode='3d'):
+def classify_all_frames_conditional(elbow_angle_obj, shoulder_angle_obj, cond_cfg):
     """
     Classify all frames for a conditional joint (e.g. elbow depends on shoulder flexion).
 
@@ -238,7 +265,6 @@ def classify_all_frames_conditional(elbow_angle_obj, shoulder_angle_obj, cond_cf
     elbow_angle_obj : JointAngles for the elbow
     shoulder_angle_obj : JointAngles for the conditioning shoulder
     cond_cfg : dict from parse_conditional_thresholds for this joint
-    dim_mode : str
 
     Returns
     -------
@@ -254,16 +280,21 @@ def classify_all_frames_conditional(elbow_angle_obj, shoulder_angle_obj, cond_cf
 
     levels = np.zeros(T, dtype=int)
     for t in range(T):
-        # check if shoulder flexion is in the condition range
-        shoulder_deg = float(np.degrees(shoulder_flex[t])) if shoulder_flex is not None else 0.0
+        shoulder_deg = _to_deg_or_none(shoulder_flex, t)
+        elbow_deg = _to_deg_or_none(flex, t)
+
+        # if either joint is NaN, mark as masked
+        if shoulder_deg is None or elbow_deg is None:
+            levels[t] = NAN_LEVEL
+            continue
+
         if cond_lo <= shoulder_deg <= cond_hi:
-            # use "then" thresholds
             angles_deg = {
-                'flexion': float(np.degrees(flex[t])) if flex is not None else None,
-                'abduction': float(np.degrees(elbow_angle_obj.abduction[t])) if elbow_angle_obj.abduction is not None else None,
-                'rotation': float(np.degrees(elbow_angle_obj.rotation[t])) if elbow_angle_obj.rotation is not None else None,
+                'flexion': elbow_deg,
+                'abduction': _to_deg_or_none(elbow_angle_obj.abduction, t),
+                'rotation': _to_deg_or_none(elbow_angle_obj.rotation, t),
             }
-            levels[t] = classify_frame(angles_deg, cond_cfg['then'], dim_mode)
+            levels[t] = classify_frame(angles_deg, cond_cfg['then'])
         else:
             # "else" branch: default range means safe (level 0)
             levels[t] = 0
@@ -311,24 +342,31 @@ def count_occurrences(levels, window=5):
 def compute_ergo_scores(posture_levels, fps=20, is_wrist=False):
     """
     Compute duration, frequency, and posture scores from per-frame posture levels.
+    Frames with NAN_LEVEL (-1) are excluded from all calculations.
 
     Returns
     -------
     dict with keys: posture_score, duration_score, frequency_score,
-                    pct_high_risk, freq_per_min, posture_levels
+                    pct_high_risk, freq_per_min, n_valid, n_masked, posture_levels
     """
     T = len(posture_levels)
-    if T == 0:
-        return {'posture_score': 0, 'duration_score': 0, 'frequency_score': 0,
-                'pct_high_risk': 0.0, 'freq_per_min': 0.0, 'posture_levels': posture_levels}
+    valid_mask = posture_levels != NAN_LEVEL
+    valid_levels = posture_levels[valid_mask]
+    n_valid = len(valid_levels)
+    n_masked = T - n_valid
 
-    # Posture score: worst level observed (excluding impossible=3 mapped to 4 in Veeru code, here we keep 3)
-    present_levels = [l for l in [1, 2, 3] if np.sum(posture_levels == l) > 0]
+    if n_valid == 0:
+        return {'posture_score': 0, 'duration_score': 0, 'frequency_score': 0,
+                'pct_high_risk': 0.0, 'freq_per_min': 0.0,
+                'n_valid': 0, 'n_masked': n_masked, 'posture_levels': posture_levels}
+
+    # Posture score: worst level observed among valid frames
+    present_levels = [l for l in [1, 2, 3] if np.sum(valid_levels == l) > 0]
     posture_score = max(present_levels) if present_levels else 0
 
-    # Duration: % of frames at level 2 or 3
-    high_risk_frames = np.sum((posture_levels == 2) | (posture_levels == 3))
-    pct_high_risk = high_risk_frames * 100.0 / T
+    # Duration: % of valid frames at level 2 or 3
+    high_risk_frames = int(np.sum((valid_levels == 2) | (valid_levels == 3)))
+    pct_high_risk = high_risk_frames * 100.0 / n_valid
 
     if posture_score > 0:
         if 10 <= pct_high_risk < 20:
@@ -342,10 +380,10 @@ def compute_ergo_scores(posture_levels, fps=20, is_wrist=False):
     else:
         duration_score = 0
 
-    # Frequency: occurrences per minute
+    # Frequency: occurrences per minute (NaN frames are skipped — treated as gaps)
     window = 3 if is_wrist else 5
-    occ = count_occurrences(posture_levels, window=window)
-    duration_sec = T / fps
+    occ = count_occurrences(valid_levels, window=window)
+    duration_sec = n_valid / fps
     freq_per_min = (occ * 60.0 / duration_sec) if duration_sec > 0 else 0.0
     freq_threshold = 30 if is_wrist else 3
     frequency_score = 1 if freq_per_min > freq_threshold else 0
@@ -356,6 +394,8 @@ def compute_ergo_scores(posture_levels, fps=20, is_wrist=False):
         'frequency_score': frequency_score,
         'pct_high_risk': pct_high_risk,
         'freq_per_min': freq_per_min,
+        'n_valid': n_valid,
+        'n_masked': n_masked,
         'posture_levels': posture_levels,
     }
 
@@ -399,7 +439,7 @@ def split_by_source(source_array):
 # ---------------------------------------------------------------------------
 # 5. Visualization
 # ---------------------------------------------------------------------------
-def plot_video_ergo(video_results, video_label, fps, save_path=None):
+def plot_video_ergo(video_results, video_label, fps, save_path=None, mb_stride=243):
     """
     Plot per-frame posture levels for all joints in one video.
     """
@@ -408,39 +448,65 @@ def plot_video_ergo(video_results, video_label, fps, save_path=None):
     if n_joints == 0:
         return
 
-    fig, axes = plt.subplots(n_joints, 1, figsize=(14, 2.5 * n_joints), sharex=True)
+    row_height = 0.8  # height per joint row in inches
+    fig, axes = plt.subplots(n_joints, 1, figsize=(14, row_height * n_joints + 1.5), sharex=True)
     if n_joints == 1:
         axes = [axes]
 
-    color_map = {0: 'green', 1: 'gold', 2: 'red', 3: 'black'}
+    color_map = {0: 'green', 1: 'gold', 2: 'red', 3: 'black', NAN_LEVEL: 'lightgray'}
+    label_map = {0: 'Safe', 1: 'Cautious', 2: 'Dangerous', 3: 'Impossible', NAN_LEVEL: 'Masked/NaN'}
+
+    # Build color array per joint so we can use pcolorfast (no gaps)
+    from matplotlib.colors import ListedColormap, BoundaryNorm
+    # levels: -1=masked, 0=safe, 1=cautious, 2=dangerous, 3=impossible
+    # map to indices 0-4 for colormap: masked→0, safe→1, cautious→2, dangerous→3, impossible→4
+    cmap = ListedColormap(['lightgray', 'green', 'gold', 'red', 'black'])
+    norm = BoundaryNorm([-1.5, -0.5, 0.5, 1.5, 2.5, 3.5], cmap.N)
 
     for ax, joint_name in zip(axes, joints):
         result = video_results[joint_name]
         levels = result['posture_levels']
         T = len(levels)
-        time_sec = np.arange(T) / fps
+        max_time = T / fps
 
-        for level_val, color in color_map.items():
-            mask = levels == level_val
-            if np.any(mask):
-                ax.fill_between(time_sec, 0, 1, where=mask, color=color, alpha=0.5, step='pre',
-                                label=f'Level {level_val}')
+        # Draw as a 1-pixel-high image — no gaps
+        level_row = levels.reshape(1, -1).astype(float)
+        ax.imshow(level_row, aspect='auto', cmap=cmap, norm=norm,
+                  extent=[0, max_time, 0, 1], interpolation='nearest')
 
+        # vertical lines at every 243-frame boundary (MB clip boundaries)
+        clip_interval_sec = mb_stride / fps
+        for t_line in np.arange(clip_interval_sec, max_time, clip_interval_sec):
+            ax.axvline(t_line, color='blue', linestyle='dotted', linewidth=0.6, alpha=0.4)
+
+        ax.set_xlim(0, max_time)
         ax.set_ylim(0, 1)
         ax.set_yticks([])
-        ax.set_ylabel(joint_name, fontsize=10, rotation=0, labelpad=80, ha='right')
+        ax.set_ylabel(joint_name, fontsize=9, rotation=0, labelpad=80, ha='right')
 
-        score_text = (f"P={result['posture_score']}  "
-                      f"D={result['duration_score']}  "
-                      f"F={result['frequency_score']}  "
-                      f"({result['pct_high_risk']:.1f}% high risk, "
-                      f"{result['freq_per_min']:.1f}/min)")
-        ax.set_title(score_text, fontsize=9, loc='left')
-        ax.grid(True, alpha=0.3, axis='x')
+        ps = result['posture_score']
+        ds = result['duration_score']
+        is_wrist = 'Wrist' in joint_name or 'wrist' in joint_name
+        freq_thresh = 30 if is_wrist else 3
+        score_text = (f"Posture score: {ps}  |  "
+                      f"Duration score: {ds} ({result['pct_high_risk']:.1f}% high risk)  |  "
+                      f"Frequency score: {result['frequency_score']} "
+                      f"({result['freq_per_min']:.1f}/min, threshold {freq_thresh})")
+        if result.get('n_masked', 0) > 0:
+            score_text += f"  |  Masked: {result['n_masked']} frames"
+        ax.set_title(score_text, fontsize=8, loc='left')
 
     axes[-1].set_xlabel('Time (s)')
+
+    # shared legend at bottom
+    import matplotlib.patches as mpatches
+    legend_handles = [mpatches.Patch(color=c, alpha=0.5, label=label_map[lv])
+                      for lv, c in color_map.items()]
+    fig.legend(handles=legend_handles, loc='lower center', ncol=len(legend_handles),
+               fontsize=9, frameon=False)
+
     fig.suptitle(f'Ergonomic Risk — {video_label}', fontsize=13, weight='bold')
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.tight_layout(rect=[0, 0.05, 1, 0.96])
 
     if save_path:
         fig.savefig(save_path, dpi=150, bbox_inches='tight')
@@ -465,7 +531,6 @@ def parse_args():
     parser.add_argument('--clip_fill', default=True, type=bool)
     parser.add_argument('--MB_data_stride', type=int, default=243)
     parser.add_argument('--fps', type=int, default=20)
-    parser.add_argument('--dim_mode', type=str, default='3d')
     parser.add_argument('--video_chunks', type=str, default=None)
     parser.add_argument('--output_dir', type=str, default=None)
     parser.add_argument('--debug_mode', default=False, type=bool)
@@ -618,7 +683,7 @@ def main():
             vid_angle.rotation = angle_obj.rotation[start:end] if angle_obj.rotation is not None else None
 
             # classify
-            posture_levels = classify_all_frames(vid_angle, thresholds[json_joint], dim_mode=args.dim_mode)
+            posture_levels = classify_all_frames(vid_angle, thresholds[json_joint])
 
             # compute scores
             is_wrist = 'Wrist' in json_joint or 'wrist' in json_joint
@@ -635,12 +700,14 @@ def main():
                 'pct_high_risk': scores['pct_high_risk'],
                 'freq_per_min': scores['freq_per_min'],
                 'n_frames': end - start,
+                'n_valid': scores['n_valid'],
+                'n_masked': scores['n_masked'],
                 'duration_sec': (end - start) / args.fps,
             }
             all_rows.append(row)
             print(f"  {json_joint:20s}  P={scores['posture_score']}  D={scores['duration_score']}  "
                   f"F={scores['frequency_score']}  ({scores['pct_high_risk']:.1f}% high risk, "
-                  f"{scores['freq_per_min']:.1f}/min)")
+                  f"{scores['freq_per_min']:.1f}/min, {scores['n_masked']} masked)")
 
         # conditional joints (e.g. elbows conditioned on shoulder flexion)
         for json_joint, skeleton_joint in active_conditional:
@@ -660,7 +727,7 @@ def main():
             vid_shoulder.flexion = shoulder_obj.flexion[start:end] if shoulder_obj.flexion is not None else None
 
             posture_levels = classify_all_frames_conditional(
-                vid_elbow, vid_shoulder, cond_cfg, dim_mode=args.dim_mode)
+                vid_elbow, vid_shoulder, cond_cfg)
 
             scores = compute_ergo_scores(posture_levels, fps=args.fps, is_wrist=False)
             video_results[json_joint] = scores
@@ -675,12 +742,15 @@ def main():
                 'pct_high_risk': scores['pct_high_risk'],
                 'freq_per_min': scores['freq_per_min'],
                 'n_frames': end - start,
+                'n_valid': scores['n_valid'],
+                'n_masked': scores['n_masked'],
                 'duration_sec': (end - start) / args.fps,
             }
             all_rows.append(row)
             print(f"  {json_joint:20s}  P={scores['posture_score']}  D={scores['duration_score']}  "
                   f"F={scores['frequency_score']}  ({scores['pct_high_risk']:.1f}% high risk, "
-                  f"{scores['freq_per_min']:.1f}/min)  [conditional on {cond_cfg['condition_joint']}]")
+                  f"{scores['freq_per_min']:.1f}/min, {scores['n_masked']} masked)  "
+                  f"[conditional on {cond_cfg['condition_joint']}]")
 
         # visualize
         plot_path = os.path.join(args.output_dir, f'ergo_video_{vid_idx}.png')
@@ -689,7 +759,7 @@ def main():
     # --- Save CSV ---
     csv_path = os.path.join(args.output_dir, 'ergo_scores.csv')
     header = ['video_idx', 'video_label', 'joint', 'posture_score', 'duration_score',
-              'frequency_score', 'pct_high_risk', 'freq_per_min', 'n_frames', 'duration_sec']
+              'frequency_score', 'pct_high_risk', 'freq_per_min', 'n_frames', 'n_valid', 'n_masked', 'duration_sec']
     with open(csv_path, 'w') as f:
         f.write(','.join(header) + '\n')
         for row in all_rows:
