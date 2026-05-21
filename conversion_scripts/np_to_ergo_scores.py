@@ -12,6 +12,7 @@ then computes per-video per-joint scores.  Results are saved to CSV and visualiz
 import argparse
 import json
 import os
+import pickle
 import sys
 
 import matplotlib
@@ -468,6 +469,10 @@ def parse_args():
     parser.add_argument('--video_chunks', type=str, default=None)
     parser.add_argument('--output_dir', type=str, default=None)
     parser.add_argument('--debug_mode', default=False, type=bool)
+    parser.add_argument('--filter_bad_support_kpts', default=True, type=bool,
+                        help='Mask out frames with bad support keypoint estimates (from MB_np_detect_bad_est.py)')
+    parser.add_argument('--filter_lowConf_legs', default=True, type=bool,
+                        help='Mask out frames with low-confidence leg keypoints')
     args = parser.parse_args()
 
     with open(args.config_file, 'r') as f:
@@ -499,6 +504,52 @@ def main():
     print("Calculating joint angles...")
     skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode, try_wrist=args.try_wrist)
     skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
+
+    # --- Filter bad keypoints (mask to NaN) ---
+    if args.filter_bad_support_kpts or args.filter_lowConf_legs:
+        bad_kpts_pkl_file = args.estimate_file.replace('.npy', '_support_kpt_score.pkl')
+        print(f"Loading bad-kpt mask from: {bad_kpts_pkl_file}")
+        with open(bad_kpts_pkl_file, "rb") as f:
+            bad_kpts_data = pickle.load(f)
+
+        if args.filter_bad_support_kpts:
+            # mask shape: (frame_num, 6) for ['LSHOULDER', 'RSHOULDER', 'LELBOW', 'RELBOW', 'LHAND', 'RHAND']
+            mask = bad_kpts_data['mask']
+            assert mask.shape[0] == estimate_pose.shape[0], \
+                f"mask frames ({mask.shape[0]}) != pose frames ({estimate_pose.shape[0]})"
+            skeleton.poses['LAP_b'][mask[:, 0]] = np.nan
+            skeleton.poses['LAP_f'][mask[:, 0]] = np.nan
+            skeleton.poses['RAP_b'][mask[:, 1]] = np.nan
+            skeleton.poses['RAP_f'][mask[:, 1]] = np.nan
+            skeleton.poses['LLE'][mask[:, 2]] = np.nan
+            skeleton.poses['LME'][mask[:, 2]] = np.nan
+            skeleton.poses['RLE'][mask[:, 3]] = np.nan
+            skeleton.poses['RME'][mask[:, 3]] = np.nan
+            skeleton.poses['LMCP2'][mask[:, 4]] = np.nan
+            skeleton.poses['LMCP5'][mask[:, 4]] = np.nan
+            skeleton.poses['RMCP2'][mask[:, 5]] = np.nan
+            skeleton.poses['RMCP5'][mask[:, 5]] = np.nan
+            n_masked = int(mask.any(axis=1).sum())
+            print(f"  Masked {n_masked}/{mask.shape[0]} frames for bad support kpts")
+
+        if args.filter_lowConf_legs:
+            kpt_names = bad_kpts_data['kpt_names']
+            conf_2d = bad_kpts_data['confidence_2d']
+            threshold = 5.8
+            left_knee_mask = conf_2d[:, kpt_names.index('LKNEE')] < threshold
+            right_knee_mask = conf_2d[:, kpt_names.index('RKNEE')] < threshold
+            left_ankle_mask = conf_2d[:, kpt_names.index('LANKLE')] < threshold
+            right_ankle_mask = conf_2d[:, kpt_names.index('RANKLE')] < threshold
+            left_foot_mask = conf_2d[:, kpt_names.index('LFOOT')] < threshold
+            right_foot_mask = conf_2d[:, kpt_names.index('RFOOT')] < threshold
+            both_knee_mask = (left_knee_mask & right_knee_mask).reshape(-1)
+            for kpt_name in ['LKNEE', 'RKNEE', 'LANKLE', 'RANKLE', 'LFOOT', 'RFOOT', 'LHIP', 'RHIP']:
+                skeleton.poses[kpt_name][both_knee_mask] = np.nan
+            both_foot_ankle_mask = (left_foot_mask & right_foot_mask & left_ankle_mask & right_ankle_mask).reshape(-1)
+            for kpt_name in ['LANKLE', 'RANKLE', 'LFOOT', 'RFOOT']:
+                skeleton.poses[kpt_name][both_foot_ankle_mask] = np.nan
+            print(f"  Masked {int(both_knee_mask.sum())} frames for low-conf knees, "
+                  f"{int(both_foot_ankle_mask.sum())} frames for low-conf ankles/feet")
 
     ergo_angles = {}
     for angle_name in skeleton.angle_names:
