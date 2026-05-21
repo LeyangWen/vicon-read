@@ -454,7 +454,13 @@ def plot_video_ergo(video_results, video_label, fps, save_path=None, mb_stride=2
         axes = [axes]
 
     color_map = {0: 'green', 1: 'gold', 2: 'red', 3: 'black', NAN_LEVEL: 'lightgray'}
-    label_map = {0: 'Safe', 1: 'Cautious', 2: 'Dangerous', 3: 'Impossible', NAN_LEVEL: 'Masked/NaN'}
+    label_map = {
+        0: 'Safe (0)',
+        1: 'Cautious (1)',
+        2: 'Dangerous (2)',
+        3: 'Impossible (3)',
+        NAN_LEVEL: 'Masked/NaN',
+    }
 
     # Build color array per joint so we can use pcolorfast (no gaps)
     from matplotlib.colors import ListedColormap, BoundaryNorm
@@ -482,14 +488,14 @@ def plot_video_ergo(video_results, video_label, fps, save_path=None, mb_stride=2
         ax.set_xlim(0, max_time)
         ax.set_ylim(0, 1)
         ax.set_yticks([])
-        ax.set_ylabel(joint_name, fontsize=9, rotation=0, labelpad=80, ha='right')
+        ax.set_ylabel(joint_name, fontsize=11, fontweight='bold', rotation=0, labelpad=10, ha='right', va='center')
 
         ps = result['posture_score']
         ds = result['duration_score']
         is_wrist = 'Wrist' in joint_name or 'wrist' in joint_name
         freq_thresh = 30 if is_wrist else 3
         score_text = (f"Posture score: {ps}  |  "
-                      f"Duration score: {ds} ({result['pct_high_risk']:.1f}% high risk)  |  "
+                      f"Duration score: {ds} ({result['pct_high_risk']:.1f}%)  |  "
                       f"Frequency score: {result['frequency_score']} "
                       f"({result['freq_per_min']:.1f}/min, threshold {freq_thresh})")
         if result.get('n_masked', 0) > 0:
@@ -565,35 +571,36 @@ def main():
     T_total = estimate_pose.shape[0]
     print(f"  Total frames: {T_total}, keypoints: {estimate_pose.shape[1]}")
 
-    # --- Calculate angles ---
-    print("Calculating joint angles...")
-    skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode, try_wrist=args.try_wrist)
-    skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
-
-    # --- Filter bad keypoints (mask to NaN) ---
+    # --- Filter bad keypoints (mask to NaN on the numpy array BEFORE skeleton loading) ---
+    # This must happen before load_name_list_and_np_points because the skeleton
+    # creates MarkerPoint objects from the data at load time; later mutations to
+    # skeleton.poses do NOT propagate to skeleton.point_poses which the angle
+    # methods actually use.
     if args.filter_bad_support_kpts or args.filter_lowConf_legs:
         bad_kpts_pkl_file = args.estimate_file.replace('.npy', '_support_kpt_score.pkl')
         print(f"Loading bad-kpt mask from: {bad_kpts_pkl_file}")
         with open(bad_kpts_pkl_file, "rb") as f:
             bad_kpts_data = pickle.load(f)
 
+        # build name→column-index map for the pose array
+        kpt_idx = {name: i for i, name in enumerate(args.name_list)}
+
         if args.filter_bad_support_kpts:
             # mask shape: (frame_num, 6) for ['LSHOULDER', 'RSHOULDER', 'LELBOW', 'RELBOW', 'LHAND', 'RHAND']
             mask = bad_kpts_data['mask']
             assert mask.shape[0] == estimate_pose.shape[0], \
                 f"mask frames ({mask.shape[0]}) != pose frames ({estimate_pose.shape[0]})"
-            skeleton.poses['LAP_b'][mask[:, 0]] = np.nan
-            skeleton.poses['LAP_f'][mask[:, 0]] = np.nan
-            skeleton.poses['RAP_b'][mask[:, 1]] = np.nan
-            skeleton.poses['RAP_f'][mask[:, 1]] = np.nan
-            skeleton.poses['LLE'][mask[:, 2]] = np.nan
-            skeleton.poses['LME'][mask[:, 2]] = np.nan
-            skeleton.poses['RLE'][mask[:, 3]] = np.nan
-            skeleton.poses['RME'][mask[:, 3]] = np.nan
-            skeleton.poses['LMCP2'][mask[:, 4]] = np.nan
-            skeleton.poses['LMCP5'][mask[:, 4]] = np.nan
-            skeleton.poses['RMCP2'][mask[:, 5]] = np.nan
-            skeleton.poses['RMCP5'][mask[:, 5]] = np.nan
+            kpt_mask_map = {
+                0: ['LAP_b', 'LAP_f'],       # LSHOULDER supports
+                1: ['RAP_b', 'RAP_f'],       # RSHOULDER supports
+                2: ['LLE', 'LME'],           # LELBOW supports
+                3: ['RLE', 'RME'],           # RELBOW supports
+                4: ['LMCP2', 'LMCP5'],       # LHAND supports
+                5: ['RMCP2', 'RMCP5'],       # RHAND supports
+            }
+            for col, kpt_names_list in kpt_mask_map.items():
+                for kpt_name in kpt_names_list:
+                    estimate_pose[mask[:, col], kpt_idx[kpt_name], :] = np.nan
             n_masked = int(mask.any(axis=1).sum())
             print(f"  Masked {n_masked}/{mask.shape[0]} frames for bad support kpts")
 
@@ -609,12 +616,17 @@ def main():
             right_foot_mask = conf_2d[:, kpt_names.index('RFOOT')] < threshold
             both_knee_mask = (left_knee_mask & right_knee_mask).reshape(-1)
             for kpt_name in ['LKNEE', 'RKNEE', 'LANKLE', 'RANKLE', 'LFOOT', 'RFOOT', 'LHIP', 'RHIP']:
-                skeleton.poses[kpt_name][both_knee_mask] = np.nan
+                estimate_pose[both_knee_mask, kpt_idx[kpt_name], :] = np.nan
             both_foot_ankle_mask = (left_foot_mask & right_foot_mask & left_ankle_mask & right_ankle_mask).reshape(-1)
             for kpt_name in ['LANKLE', 'RANKLE', 'LFOOT', 'RFOOT']:
-                skeleton.poses[kpt_name][both_foot_ankle_mask] = np.nan
+                estimate_pose[both_foot_ankle_mask, kpt_idx[kpt_name], :] = np.nan
             print(f"  Masked {int(both_knee_mask.sum())} frames for low-conf knees, "
                   f"{int(both_foot_ankle_mask.sum())} frames for low-conf ankles/feet")
+
+    # --- Calculate angles ---
+    print("Calculating joint angles...")
+    skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode, try_wrist=args.try_wrist)
+    skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
 
     ergo_angles = {}
     for angle_name in skeleton.angle_names:
