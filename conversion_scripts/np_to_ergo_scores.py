@@ -99,6 +99,46 @@ def load_angle_limits(json_path):
 
 
 # ---------------------------------------------------------------------------
+# 1b. Parse conditional joint config (e.g. elbows depend on shoulder angle)
+# ---------------------------------------------------------------------------
+def parse_conditional_thresholds(conditional_joints):
+    """
+    Parse conditional joint configs into a structured dict.
+
+    Returns
+    -------
+    dict : {json_joint_name: {
+        'condition_joint': str,       # e.g. 'rightShoulder'
+        'condition_range': [lo, hi],  # shoulder flexion range that activates thresholds
+        'then': {dim_mode: {level: {component: [ranges]}}},
+        'else_default': [lo, hi] or None
+    }}
+    """
+    level_map = {'cautious': 1, 'dangerous': 2, 'impossible': 3}
+    parsed = {}
+
+    for json_joint, segment_cfg in conditional_joints.items():
+        if_cfg = segment_cfg['if']
+        else_cfg = segment_cfg.get('else', {})
+
+        then_thresholds = {}
+        for dim_mode, levels in if_cfg['then'].items():
+            then_thresholds[dim_mode] = {}
+            for level_name, components in levels.items():
+                level = level_map[level_name]
+                then_thresholds[dim_mode][level] = components
+
+        parsed[json_joint] = {
+            'condition_joint': if_cfg['joint'],
+            'condition_range': if_cfg['range'],
+            'then': then_thresholds,
+            'else_default': else_cfg.get('default', None),
+        }
+
+    return parsed
+
+
+# ---------------------------------------------------------------------------
 # 2. Classify frames into posture levels
 # ---------------------------------------------------------------------------
 def _in_range(value_deg, range_list):
@@ -184,6 +224,48 @@ def classify_all_frames(angle_obj, joint_thresholds, dim_mode='3d'):
         angles_deg['abduction'] = float(np.degrees(abd[t])) if abd is not None else None
         angles_deg['rotation'] = float(np.degrees(rot[t])) if rot is not None else None
         levels[t] = classify_frame(angles_deg, joint_thresholds, dim_mode)
+
+    return levels
+
+
+def classify_all_frames_conditional(elbow_angle_obj, shoulder_angle_obj, cond_cfg, dim_mode='3d'):
+    """
+    Classify all frames for a conditional joint (e.g. elbow depends on shoulder flexion).
+
+    Parameters
+    ----------
+    elbow_angle_obj : JointAngles for the elbow
+    shoulder_angle_obj : JointAngles for the conditioning shoulder
+    cond_cfg : dict from parse_conditional_thresholds for this joint
+    dim_mode : str
+
+    Returns
+    -------
+    posture_levels : np.ndarray of int, shape (T,)
+    """
+    flex = elbow_angle_obj.flexion
+    T = len(flex) if flex is not None else 0
+    if T == 0:
+        return np.array([], dtype=int)
+
+    shoulder_flex = shoulder_angle_obj.flexion
+    cond_lo, cond_hi = cond_cfg['condition_range']
+
+    levels = np.zeros(T, dtype=int)
+    for t in range(T):
+        # check if shoulder flexion is in the condition range
+        shoulder_deg = float(np.degrees(shoulder_flex[t])) if shoulder_flex is not None else 0.0
+        if cond_lo <= shoulder_deg <= cond_hi:
+            # use "then" thresholds
+            angles_deg = {
+                'flexion': float(np.degrees(flex[t])) if flex is not None else None,
+                'abduction': float(np.degrees(elbow_angle_obj.abduction[t])) if elbow_angle_obj.abduction is not None else None,
+                'rotation': float(np.degrees(elbow_angle_obj.rotation[t])) if elbow_angle_obj.rotation is not None else None,
+            }
+            levels[t] = classify_frame(angles_deg, cond_cfg['then'], dim_mode)
+        else:
+            # "else" branch: default range means safe (level 0)
+            levels[t] = 0
 
     return levels
 
@@ -377,7 +459,7 @@ def parse_args():
                         default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
     parser.add_argument('--angle_limit_file', type=str,
                         default=r'config/experiment_config/37kpts/joint_angle_limit_rick.json')
-    parser.add_argument('--angle_mode', type=str, default='paper')
+    parser.add_argument('--angle_mode', type=str, default='VEHS')
     parser.add_argument('--try_wrist', default=False, type=bool)
     parser.add_argument('--clip_fill', default=True, type=bool)
     parser.add_argument('--MB_data_stride', type=int, default=243)
@@ -432,17 +514,24 @@ def main():
     thresholds, conditional_joints = load_angle_limits(args.angle_limit_file)
 
     # --- Determine which joints overlap ---
-    active_joints = []
+    active_joints = []          # (json_joint, skeleton_joint) — simple threshold joints
+    active_conditional = []     # (json_joint, skeleton_joint) — conditional joints (elbows)
+    parsed_conditional = parse_conditional_thresholds(conditional_joints)
+
     for json_joint, skeleton_joint in JOINT_MAP.items():
         if json_joint in thresholds and skeleton_joint in ergo_angles:
             active_joints.append((json_joint, skeleton_joint))
-    # conditional joints (elbows) — skip for now, can be added later
-    for json_joint in conditional_joints:
-        skeleton_joint = JOINT_MAP.get(json_joint)
-        if skeleton_joint and skeleton_joint in ergo_angles:
-            print(f"  Note: {json_joint} has conditional thresholds (skipped for now)")
+        elif json_joint in parsed_conditional and skeleton_joint in ergo_angles:
+            # check that the conditioning joint is also available
+            cond_json = parsed_conditional[json_joint]['condition_joint']
+            cond_skel = JOINT_MAP.get(cond_json)
+            if cond_skel and cond_skel in ergo_angles:
+                active_conditional.append((json_joint, skeleton_joint))
+            else:
+                print(f"  Warning: {json_joint} needs {cond_json} but it's not available, skipping")
 
     print(f"  Active joints: {[j[0] for j in active_joints]}")
+    print(f"  Active conditional joints: {[j[0] for j in active_conditional]}")
 
     # --- Split into videos ---
     if args.video_chunks is not None:
@@ -501,6 +590,46 @@ def main():
             print(f"  {json_joint:20s}  P={scores['posture_score']}  D={scores['duration_score']}  "
                   f"F={scores['frequency_score']}  ({scores['pct_high_risk']:.1f}% high risk, "
                   f"{scores['freq_per_min']:.1f}/min)")
+
+        # conditional joints (e.g. elbows conditioned on shoulder flexion)
+        for json_joint, skeleton_joint in active_conditional:
+            cond_cfg = parsed_conditional[json_joint]
+            cond_skel = JOINT_MAP[cond_cfg['condition_joint']]
+
+            elbow_obj = ergo_angles[skeleton_joint]
+            shoulder_obj = ergo_angles[cond_skel]
+
+            # slice this video's frames
+            vid_elbow = JointAngles()
+            vid_elbow.flexion = elbow_obj.flexion[start:end] if elbow_obj.flexion is not None else None
+            vid_elbow.abduction = elbow_obj.abduction[start:end] if elbow_obj.abduction is not None else None
+            vid_elbow.rotation = elbow_obj.rotation[start:end] if elbow_obj.rotation is not None else None
+
+            vid_shoulder = JointAngles()
+            vid_shoulder.flexion = shoulder_obj.flexion[start:end] if shoulder_obj.flexion is not None else None
+
+            posture_levels = classify_all_frames_conditional(
+                vid_elbow, vid_shoulder, cond_cfg, dim_mode=args.dim_mode)
+
+            scores = compute_ergo_scores(posture_levels, fps=args.fps, is_wrist=False)
+            video_results[json_joint] = scores
+
+            row = {
+                'video_idx': vid_idx,
+                'video_label': label,
+                'joint': json_joint,
+                'posture_score': scores['posture_score'],
+                'duration_score': scores['duration_score'],
+                'frequency_score': scores['frequency_score'],
+                'pct_high_risk': scores['pct_high_risk'],
+                'freq_per_min': scores['freq_per_min'],
+                'n_frames': end - start,
+                'duration_sec': (end - start) / args.fps,
+            }
+            all_rows.append(row)
+            print(f"  {json_joint:20s}  P={scores['posture_score']}  D={scores['duration_score']}  "
+                  f"F={scores['frequency_score']}  ({scores['pct_high_risk']:.1f}% high risk, "
+                  f"{scores['freq_per_min']:.1f}/min)  [conditional on {cond_cfg['condition_joint']}]")
 
         # visualize
         plot_path = os.path.join(args.output_dir, f'ergo_video_{vid_idx}.png')
