@@ -500,18 +500,18 @@ def plot_video_ergo(video_results, video_label, fps, save_path=None, mb_stride=2
                       f"({result['freq_per_min']:.1f}/min, threshold {freq_thresh})")
         if result.get('n_masked', 0) > 0:
             score_text += f"  |  Masked: {result['n_masked']} frames"
-        ax.set_title(score_text, fontsize=8, loc='left')
+        ax.set_title(score_text, fontsize=11, loc='left')
 
     axes[-1].set_xlabel('Time (s)')
 
-    # shared legend at bottom
+    # shared legend at bottom — no alpha, matches imshow colormap
     import matplotlib.patches as mpatches
-    legend_handles = [mpatches.Patch(color=c, alpha=0.5, label=label_map[lv])
+    legend_handles = [mpatches.Patch(color=c, label=label_map[lv])
                       for lv, c in color_map.items()]
     fig.legend(handles=legend_handles, loc='lower center', ncol=len(legend_handles),
                fontsize=9, frameon=False)
 
-    fig.suptitle(f'Ergonomic Risk — {video_label}', fontsize=13, weight='bold')
+    fig.suptitle(f'Video: {video_label}', fontsize=13, weight='bold')
     plt.tight_layout(rect=[0, 0.05, 1, 0.96])
 
     if save_path:
@@ -615,7 +615,8 @@ def main():
             left_foot_mask = conf_2d[:, kpt_names.index('LFOOT')] < threshold
             right_foot_mask = conf_2d[:, kpt_names.index('RFOOT')] < threshold
             both_knee_mask = (left_knee_mask & right_knee_mask).reshape(-1)
-            for kpt_name in ['LKNEE', 'RKNEE', 'LANKLE', 'RANKLE', 'LFOOT', 'RFOOT', 'LHIP', 'RHIP']:
+            # Note: do NOT mask LHIP/RHIP here — back_angles() depends on them
+            for kpt_name in ['LKNEE', 'RKNEE', 'LANKLE', 'RANKLE', 'LFOOT', 'RFOOT']:
                 estimate_pose[both_knee_mask, kpt_idx[kpt_name], :] = np.nan
             both_foot_ankle_mask = (left_foot_mask & right_foot_mask & left_ankle_mask & right_ankle_mask).reshape(-1)
             for kpt_name in ['LANKLE', 'RANKLE', 'LFOOT', 'RFOOT']:
