@@ -527,7 +527,7 @@ def plot_video_ergo(video_results, video_label, fps, save_path=None, mb_stride=2
 def parse_args():
     parser = argparse.ArgumentParser(description='Compute ergonomic scores from 3D pose')
     parser.add_argument('--config_file', type=str,
-                        default=r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-industry_3.yaml')
+                        default= r'config/experiment_config/37kpts/Inference-RTMPose-MB-20fps-VEHS7M.yaml')
     parser.add_argument('--skeleton_file', type=str,
                         default=r'config/VEHS_ErgoSkeleton_info/Ergo-Skeleton-37.yaml')
     parser.add_argument('--angle_limit_file', type=str,
@@ -539,6 +539,8 @@ def parse_args():
     parser.add_argument('--fps', type=int, default=20)
     parser.add_argument('--video_chunks', type=str, default=None)
     parser.add_argument('--output_dir', type=str, default=None)
+    parser.add_argument('--mode', type=str, default='test', choices=['infer', 'test'],
+                        help='infer: estimate only; test: also load GT and compute errors')
     parser.add_argument('--debug_mode', default=False, type=bool)
     parser.add_argument('--filter_bad_support_kpts', default=True, type=bool,
                         help='Mask out frames with bad support keypoint estimates (from MB_np_detect_bad_est.py)')
@@ -561,42 +563,228 @@ def parse_args():
     return args
 
 
+def compute_angles_from_pose(pose_np, args):
+    """
+    Compute joint angles from a 3D pose array.
+
+    Parameters
+    ----------
+    pose_np : np.ndarray, shape (T, N_kpts, 3)
+    args : argparse.Namespace with skeleton_file, angle_mode, try_wrist, name_list
+
+    Returns
+    -------
+    ergo_angles : dict {skeleton_angle_name: JointAngles}
+    """
+    skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode, try_wrist=args.try_wrist)
+    skeleton.load_name_list_and_np_points(args.name_list, pose_np)
+    ergo_angles = {}
+    for angle_name in skeleton.angle_names:
+        method = f'{angle_name}_angles'
+        try:
+            ergo_angles[angle_name] = getattr(skeleton, method)()
+        except Exception as e:
+            print(f"  Warning: could not compute {angle_name}: {e}")
+            ergo_angles[angle_name] = skeleton.empty_angles()
+    return ergo_angles
+
+
+def compute_video_scores(ergo_angles, active_joints, active_conditional, parsed_conditional,
+                         thresholds, start, end, fps):
+    """
+    Compute ergo scores for one video segment across all active joints.
+
+    Returns
+    -------
+    video_scores : dict {json_joint_name: scores_dict}
+    """
+    video_scores = {}
+
+    for json_joint, skeleton_joint in active_joints:
+        angle_obj = ergo_angles[skeleton_joint]
+        vid_angle = JointAngles()
+        vid_angle.flexion = angle_obj.flexion[start:end] if angle_obj.flexion is not None else None
+        vid_angle.abduction = angle_obj.abduction[start:end] if angle_obj.abduction is not None else None
+        vid_angle.rotation = angle_obj.rotation[start:end] if angle_obj.rotation is not None else None
+
+        posture_levels = classify_all_frames(vid_angle, thresholds[json_joint])
+        is_wrist = 'Wrist' in json_joint or 'wrist' in json_joint
+        video_scores[json_joint] = compute_ergo_scores(posture_levels, fps=fps, is_wrist=is_wrist)
+
+    for json_joint, skeleton_joint in active_conditional:
+        cond_cfg = parsed_conditional[json_joint]
+        cond_skel = JOINT_MAP[cond_cfg['condition_joint']]
+
+        elbow_obj = ergo_angles[skeleton_joint]
+        shoulder_obj = ergo_angles[cond_skel]
+
+        vid_elbow = JointAngles()
+        vid_elbow.flexion = elbow_obj.flexion[start:end] if elbow_obj.flexion is not None else None
+        vid_elbow.abduction = elbow_obj.abduction[start:end] if elbow_obj.abduction is not None else None
+        vid_elbow.rotation = elbow_obj.rotation[start:end] if elbow_obj.rotation is not None else None
+
+        vid_shoulder = JointAngles()
+        vid_shoulder.flexion = shoulder_obj.flexion[start:end] if shoulder_obj.flexion is not None else None
+
+        posture_levels = classify_all_frames_conditional(vid_elbow, vid_shoulder, cond_cfg)
+        video_scores[json_joint] = compute_ergo_scores(posture_levels, fps=fps, is_wrist=False)
+
+    return video_scores
+
+
+# ---------------------------------------------------------------------------
+# 7. GT comparison and error histogram
+# ---------------------------------------------------------------------------
+def plot_error_histograms(error_rows, output_dir):
+    """
+    Plot absolute error histograms for posture, duration, and frequency scores.
+
+    For each metric, creates one figure with:
+      - one subplot per joint (absolute error distribution across videos)
+      - one summary subplot (average absolute error across joints per video)
+
+    Parameters
+    ----------
+    error_rows : list of dicts with keys: video_idx, video_label, joint,
+                 posture_err, duration_err, frequency_err
+    output_dir : str
+    """
+    available_joints = set(r['joint'] for r in error_rows)
+    video_idxs = sorted(set(r['video_idx'] for r in error_rows))
+    n_videos = len(video_idxs)
+
+    # Fixed layout: 3 rows x 4 cols
+    # Row 0: Average, back, neck, (empty)
+    # Row 1: leftShoulder, leftElbow, leftWrist, leftKnee
+    # Row 2: rightShoulder, rightElbow, rightWrist, rightKnee
+    layout = [
+        ['_average', 'back', 'neck', None],
+        ['leftShoulder', 'leftElbow', 'leftWrist', 'leftKnee'],
+        ['rightShoulder', 'rightElbow', 'rightWrist', 'rightKnee'],
+    ]
+
+    metrics = [
+        ('posture_err', 'Posture Score'),
+        ('duration_err', 'Duration Score'),
+        ('frequency_err', 'Frequency Score'),
+    ]
+
+    for key, metric_title in metrics:
+        fig, axes = plt.subplots(3, 4, figsize=(18, 10.5))
+
+        # Pre-compute average absolute errors per video (for summary subplot)
+        avg_abs_errors = []
+        for vid_idx in video_idxs:
+            vid_rows = [r for r in error_rows if r['video_idx'] == vid_idx]
+            if vid_rows:
+                avg_abs_errors.append(np.mean([abs(r[key]) for r in vid_rows]))
+
+        for row_idx, row_slots in enumerate(layout):
+            for col_idx, slot in enumerate(row_slots):
+                ax = axes[row_idx, col_idx]
+
+                if slot is None:
+                    ax.set_visible(False)
+                    continue
+
+                if slot == '_average':
+                    # Summary: average |error| across joints per video
+                    abs_errors = avg_abs_errors
+                    title_name = 'Average (all joints)'
+                    color = 'steelblue'
+                elif slot in available_joints:
+                    abs_errors = [abs(r[key]) for r in error_rows if r['joint'] == slot]
+                    title_name = slot
+                    color = None  # default
+                else:
+                    ax.set_visible(False)
+                    continue
+
+                mae = np.mean(abs_errors) if abs_errors else 0
+                n_items = len(abs_errors)
+                bins = np.arange(-0.5, 4.5, 1)
+                weights = np.ones(n_items) * 100.0 / n_items if n_items > 0 else None
+                ax.hist(abs_errors, bins=bins, weights=weights, edgecolor='black', alpha=0.7,
+                        **(dict(color=color) if color else {}))
+                ax.set_title(f'{title_name}\nMAE = {mae:.2f}', fontsize=10)
+                ax.set_xlabel('Absolute Error')
+                ax.set_ylabel('% of Videos')
+                ax.set_xticks(range(4))
+                ax.set_xlim(-0.5, 3.5)
+                ax.grid(True, alpha=0.3)
+
+        fig.suptitle(f'{metric_title} — Absolute Error Distribution', fontsize=13, weight='bold')
+        plt.tight_layout(rect=[0, 0, 1, 0.94])
+        save_path = os.path.join(output_dir, f'ergo_error_{key}.png')
+        fig.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.close(fig)
+        print(f"  {metric_title} error histogram saved to: {save_path}")
+
+
+def save_test_csv(error_rows, output_dir):
+    """
+    Save MAE summary CSV for test mode: one row per joint + one ALL row.
+
+    Columns: joint, posture_mae, duration_mae, frequency_mae, n_videos
+    """
+    joints = sorted(set(r['joint'] for r in error_rows))
+    metrics = ['posture_err', 'duration_err', 'frequency_err']
+
+    csv_path = os.path.join(output_dir, 'ergo_mae_summary.csv')
+    with open(csv_path, 'w') as f:
+        f.write('joint,posture_mae,duration_mae,frequency_mae,n_videos\n')
+
+        all_abs = {m: [] for m in metrics}
+        for joint in joints:
+            joint_rows = [r for r in error_rows if r['joint'] == joint]
+            n = len(joint_rows)
+            maes = []
+            for m in metrics:
+                abs_errs = [abs(r[m]) for r in joint_rows]
+                mae = np.mean(abs_errs) if abs_errs else 0.0
+                maes.append(mae)
+                all_abs[m].extend(abs_errs)
+            f.write(f'{joint},{maes[0]:.4f},{maes[1]:.4f},{maes[2]:.4f},{n}\n')
+
+        # ALL row
+        n_total = len(error_rows)
+        overall = [np.mean(all_abs[m]) if all_abs[m] else 0.0 for m in metrics]
+        f.write(f'ALL,{overall[0]:.4f},{overall[1]:.4f},{overall[2]:.4f},{n_total}\n')
+
+    print(f"  MAE summary CSV saved to: {csv_path}")
+    return csv_path
+
+
 def main():
     args = parse_args()
     os.makedirs(args.output_dir, exist_ok=True)
 
-    # --- Load 3D pose ---
+    # --- Load estimated 3D pose ---
     print(f"Loading estimated pose from: {args.estimate_file}")
     estimate_pose = MB_output_pose_file_loader(args)
     T_total = estimate_pose.shape[0]
     print(f"  Total frames: {T_total}, keypoints: {estimate_pose.shape[1]}")
 
     # --- Filter bad keypoints (mask to NaN on the numpy array BEFORE skeleton loading) ---
-    # This must happen before load_name_list_and_np_points because the skeleton
-    # creates MarkerPoint objects from the data at load time; later mutations to
-    # skeleton.poses do NOT propagate to skeleton.point_poses which the angle
-    # methods actually use.
     if args.filter_bad_support_kpts or args.filter_lowConf_legs:
         bad_kpts_pkl_file = args.estimate_file.replace('.npy', '_support_kpt_score.pkl')
         print(f"Loading bad-kpt mask from: {bad_kpts_pkl_file}")
         with open(bad_kpts_pkl_file, "rb") as f:
             bad_kpts_data = pickle.load(f)
 
-        # build name→column-index map for the pose array
         kpt_idx = {name: i for i, name in enumerate(args.name_list)}
 
         if args.filter_bad_support_kpts:
-            # mask shape: (frame_num, 6) for ['LSHOULDER', 'RSHOULDER', 'LELBOW', 'RELBOW', 'LHAND', 'RHAND']
             mask = bad_kpts_data['mask']
             assert mask.shape[0] == estimate_pose.shape[0], \
                 f"mask frames ({mask.shape[0]}) != pose frames ({estimate_pose.shape[0]})"
             kpt_mask_map = {
-                0: ['LAP_b', 'LAP_f'],       # LSHOULDER supports
-                1: ['RAP_b', 'RAP_f'],       # RSHOULDER supports
-                2: ['LLE', 'LME'],           # LELBOW supports
-                3: ['RLE', 'RME'],           # RELBOW supports
-                4: ['LMCP2', 'LMCP5'],       # LHAND supports
-                5: ['RMCP2', 'RMCP5'],       # RHAND supports
+                0: ['LAP_b', 'LAP_f'],
+                1: ['RAP_b', 'RAP_f'],
+                2: ['LLE', 'LME'],
+                3: ['RLE', 'RME'],
+                4: ['LMCP2', 'LMCP5'],
+                5: ['RMCP2', 'RMCP5'],
             }
             for col, kpt_names_list in kpt_mask_map.items():
                 for kpt_name in kpt_names_list:
@@ -624,37 +812,38 @@ def main():
             print(f"  Masked {int(both_knee_mask.sum())} frames for low-conf knees, "
                   f"{int(both_foot_ankle_mask.sum())} frames for low-conf ankles/feet")
 
-    # --- Calculate angles ---
-    print("Calculating joint angles...")
-    skeleton = VEHSErgoSkeleton_angles(args.skeleton_file, mode=args.angle_mode, try_wrist=args.try_wrist)
-    skeleton.load_name_list_and_np_points(args.name_list, estimate_pose)
+    # --- Calculate estimated angles ---
+    print("Calculating estimated joint angles...")
+    est_ergo_angles = compute_angles_from_pose(estimate_pose, args)
 
-    ergo_angles = {}
-    for angle_name in skeleton.angle_names:
-        method = f'{angle_name}_angles'
-        try:
-            ergo_angles[angle_name] = getattr(skeleton, method)()
-        except Exception as e:
-            print(f"  Warning: could not compute {angle_name}: {e}")
-            ergo_angles[angle_name] = skeleton.empty_angles()
+    # --- Load GT 3D pose and calculate GT angles ---
+    has_gt = (args.mode == 'test') and (args.GT_file is not None) and (args.GT_file != 'None')
+    gt_ergo_angles = None
+    if has_gt:
+        print(f"Loading GT pose from: {args.GT_file}")
+        GT_pose, _, _, source = MB_input_pose_file_loader(args, get_clip_id=True)
+        assert GT_pose.shape[0] == estimate_pose.shape[0], \
+            f"GT frames ({GT_pose.shape[0]}) != estimated frames ({estimate_pose.shape[0]})"
+        print(f"  GT frames: {GT_pose.shape[0]}, keypoints: {GT_pose.shape[1]}")
+        print("Calculating GT joint angles...")
+        gt_ergo_angles = compute_angles_from_pose(GT_pose, args)
 
     # --- Load angle limits ---
     print(f"Loading angle limits from: {args.angle_limit_file}")
     thresholds, conditional_joints = load_angle_limits(args.angle_limit_file)
 
     # --- Determine which joints overlap ---
-    active_joints = []          # (json_joint, skeleton_joint) — simple threshold joints
-    active_conditional = []     # (json_joint, skeleton_joint) — conditional joints (elbows)
+    active_joints = []
+    active_conditional = []
     parsed_conditional = parse_conditional_thresholds(conditional_joints)
 
     for json_joint, skeleton_joint in JOINT_MAP.items():
-        if json_joint in thresholds and skeleton_joint in ergo_angles:
+        if json_joint in thresholds and skeleton_joint in est_ergo_angles:
             active_joints.append((json_joint, skeleton_joint))
-        elif json_joint in parsed_conditional and skeleton_joint in ergo_angles:
-            # check that the conditioning joint is also available
+        elif json_joint in parsed_conditional and skeleton_joint in est_ergo_angles:
             cond_json = parsed_conditional[json_joint]['condition_joint']
             cond_skel = JOINT_MAP.get(cond_json)
-            if cond_skel and cond_skel in ergo_angles:
+            if cond_skel and cond_skel in est_ergo_angles:
                 active_conditional.append((json_joint, skeleton_joint))
             else:
                 print(f"  Warning: {json_joint} needs {cond_json} but it's not available, skipping")
@@ -668,41 +857,45 @@ def main():
         video_segments = split_by_video(T_total, chunks, stride=args.MB_data_stride)
         video_labels = [f"video_{i}" for i in range(len(video_segments))]
     else:
-        # try to get source from GT file
-        try:
-            _, _, _, source = MB_input_pose_file_loader(args, get_clip_id=True)
+        if has_gt:
             src_segments = split_by_source(source)
             video_segments = [(s, e) for s, e, _ in src_segments]
             video_labels = [str(label) for _, _, label in src_segments]
             print(f"  Found {len(video_segments)} videos from GT source labels")
-        except Exception:
-            print("  No source info available, treating entire sequence as one video")
-            video_segments = [(0, T_total)]
-            video_labels = ['full_sequence']
+        else:
+            try:
+                _, _, _, source = MB_input_pose_file_loader(args, get_clip_id=True)
+                src_segments = split_by_source(source)
+                video_segments = [(s, e) for s, e, _ in src_segments]
+                video_labels = [str(label) for _, _, label in src_segments]
+                print(f"  Found {len(video_segments)} videos from GT source labels")
+            except Exception:
+                print("  No source info available, treating entire sequence as one video")
+                video_segments = [(0, T_total)]
+                video_labels = ['full_sequence']
 
     # --- Compute scores per video per joint ---
     all_rows = []
+    error_rows = []  # for GT comparison
+
     for vid_idx, ((start, end), label) in enumerate(zip(video_segments, video_labels)):
         print(f"\nVideo {vid_idx}: {label}  frames [{start}, {end})  ({(end-start)/args.fps:.1f}s)")
 
-        video_results = {}
-        for json_joint, skeleton_joint in active_joints:
-            angle_obj = ergo_angles[skeleton_joint]
+        # estimated scores
+        est_scores = compute_video_scores(
+            est_ergo_angles, active_joints, active_conditional, parsed_conditional,
+            thresholds, start, end, args.fps)
 
-            # slice this video's frames
-            vid_angle = JointAngles()
-            vid_angle.flexion = angle_obj.flexion[start:end] if angle_obj.flexion is not None else None
-            vid_angle.abduction = angle_obj.abduction[start:end] if angle_obj.abduction is not None else None
-            vid_angle.rotation = angle_obj.rotation[start:end] if angle_obj.rotation is not None else None
+        # GT scores (if available)
+        gt_scores = None
+        if gt_ergo_angles is not None:
+            gt_scores = compute_video_scores(
+                gt_ergo_angles, active_joints, active_conditional, parsed_conditional,
+                thresholds, start, end, args.fps)
 
-            # classify
-            posture_levels = classify_all_frames(vid_angle, thresholds[json_joint])
-
-            # compute scores
-            is_wrist = 'Wrist' in json_joint or 'wrist' in json_joint
-            scores = compute_ergo_scores(posture_levels, fps=args.fps, is_wrist=is_wrist)
-            video_results[json_joint] = scores
-
+        all_joint_names = [j[0] for j in active_joints] + [j[0] for j in active_conditional]
+        for json_joint in all_joint_names:
+            scores = est_scores[json_joint]
             row = {
                 'video_idx': vid_idx,
                 'video_label': label,
@@ -717,69 +910,79 @@ def main():
                 'n_masked': scores['n_masked'],
                 'duration_sec': (end - start) / args.fps,
             }
+
+            if gt_scores is not None and json_joint in gt_scores:
+                gs = gt_scores[json_joint]
+                row['gt_posture_score'] = gs['posture_score']
+                row['gt_duration_score'] = gs['duration_score']
+                row['gt_frequency_score'] = gs['frequency_score']
+                row['gt_pct_high_risk'] = gs['pct_high_risk']
+                row['gt_freq_per_min'] = gs['freq_per_min']
+                row['posture_err'] = scores['posture_score'] - gs['posture_score']
+                row['duration_err'] = scores['duration_score'] - gs['duration_score']
+                row['frequency_err'] = scores['frequency_score'] - gs['frequency_score']
+                error_rows.append({
+                    'video_idx': vid_idx,
+                    'video_label': label,
+                    'joint': json_joint,
+                    'posture_err': row['posture_err'],
+                    'duration_err': row['duration_err'],
+                    'frequency_err': row['frequency_err'],
+                })
+
             all_rows.append(row)
+
+            gt_str = ""
+            if gt_scores is not None and json_joint in gt_scores:
+                gs = gt_scores[json_joint]
+                gt_str = (f"  GT: P={gs['posture_score']} D={gs['duration_score']} F={gs['frequency_score']}"
+                          f"  err: P={row['posture_err']:+d} D={row['duration_err']:+d} F={row['frequency_err']:+d}")
             print(f"  {json_joint:20s}  P={scores['posture_score']}  D={scores['duration_score']}  "
                   f"F={scores['frequency_score']}  ({scores['pct_high_risk']:.1f}% high risk, "
-                  f"{scores['freq_per_min']:.1f}/min, {scores['n_masked']} masked)")
+                  f"{scores['freq_per_min']:.1f}/min, {scores['n_masked']} masked){gt_str}")
 
-        # conditional joints (e.g. elbows conditioned on shoulder flexion)
-        for json_joint, skeleton_joint in active_conditional:
-            cond_cfg = parsed_conditional[json_joint]
-            cond_skel = JOINT_MAP[cond_cfg['condition_joint']]
+        # visualize estimated scores (infer mode only)
+        if args.mode == 'infer':
+            plot_path = os.path.join(args.output_dir, f'ergo_video_{vid_idx}.png')
+            plot_video_ergo(est_scores, label, args.fps, save_path=plot_path)
 
-            elbow_obj = ergo_angles[skeleton_joint]
-            shoulder_obj = ergo_angles[cond_skel]
+    # --- Output ---
+    if args.mode == 'infer':
+        # Save per-video per-joint CSV
+        csv_path = os.path.join(args.output_dir, 'ergo_scores.csv')
+        header = ['video_idx', 'video_label', 'joint', 'posture_score', 'duration_score',
+                  'frequency_score', 'pct_high_risk', 'freq_per_min', 'n_frames', 'n_valid',
+                  'n_masked', 'duration_sec']
+        with open(csv_path, 'w') as f:
+            f.write(','.join(header) + '\n')
+            for row in all_rows:
+                f.write(','.join(str(row.get(h, '')) for h in header) + '\n')
+        print(f"\nResults saved to: {csv_path}")
+        print(f"Plots saved to: {args.output_dir}")
 
-            # slice this video's frames
-            vid_elbow = JointAngles()
-            vid_elbow.flexion = elbow_obj.flexion[start:end] if elbow_obj.flexion is not None else None
-            vid_elbow.abduction = elbow_obj.abduction[start:end] if elbow_obj.abduction is not None else None
-            vid_elbow.rotation = elbow_obj.rotation[start:end] if elbow_obj.rotation is not None else None
+    elif args.mode == 'test':
+        assert error_rows, "Test mode but no GT errors computed — check GT_file in config"
 
-            vid_shoulder = JointAngles()
-            vid_shoulder.flexion = shoulder_obj.flexion[start:end] if shoulder_obj.flexion is not None else None
+        # Print MAE summary
+        print("\n" + "=" * 60)
+        print("GT vs Estimated — MAE Summary")
+        print("=" * 60)
+        joints = sorted(set(r['joint'] for r in error_rows))
+        for joint in joints:
+            jr = [r for r in error_rows if r['joint'] == joint]
+            p_mae = np.mean([abs(r['posture_err']) for r in jr])
+            d_mae = np.mean([abs(r['duration_err']) for r in jr])
+            f_mae = np.mean([abs(r['frequency_err']) for r in jr])
+            print(f"  {joint:20s}  Posture MAE: {p_mae:.3f}  Duration MAE: {d_mae:.3f}  Frequency MAE: {f_mae:.3f}")
+        p_all = np.mean([abs(r['posture_err']) for r in error_rows])
+        d_all = np.mean([abs(r['duration_err']) for r in error_rows])
+        f_all = np.mean([abs(r['frequency_err']) for r in error_rows])
+        print(f"  {'ALL':20s}  Posture MAE: {p_all:.3f}  Duration MAE: {d_all:.3f}  Frequency MAE: {f_all:.3f}")
 
-            posture_levels = classify_all_frames_conditional(
-                vid_elbow, vid_shoulder, cond_cfg)
-
-            scores = compute_ergo_scores(posture_levels, fps=args.fps, is_wrist=False)
-            video_results[json_joint] = scores
-
-            row = {
-                'video_idx': vid_idx,
-                'video_label': label,
-                'joint': json_joint,
-                'posture_score': scores['posture_score'],
-                'duration_score': scores['duration_score'],
-                'frequency_score': scores['frequency_score'],
-                'pct_high_risk': scores['pct_high_risk'],
-                'freq_per_min': scores['freq_per_min'],
-                'n_frames': end - start,
-                'n_valid': scores['n_valid'],
-                'n_masked': scores['n_masked'],
-                'duration_sec': (end - start) / args.fps,
-            }
-            all_rows.append(row)
-            print(f"  {json_joint:20s}  P={scores['posture_score']}  D={scores['duration_score']}  "
-                  f"F={scores['frequency_score']}  ({scores['pct_high_risk']:.1f}% high risk, "
-                  f"{scores['freq_per_min']:.1f}/min, {scores['n_masked']} masked)  "
-                  f"[conditional on {cond_cfg['condition_joint']}]")
-
-        # visualize
-        plot_path = os.path.join(args.output_dir, f'ergo_video_{vid_idx}.png')
-        plot_video_ergo(video_results, label, args.fps, save_path=plot_path)
-
-    # --- Save CSV ---
-    csv_path = os.path.join(args.output_dir, 'ergo_scores.csv')
-    header = ['video_idx', 'video_label', 'joint', 'posture_score', 'duration_score',
-              'frequency_score', 'pct_high_risk', 'freq_per_min', 'n_frames', 'n_valid', 'n_masked', 'duration_sec']
-    with open(csv_path, 'w') as f:
-        f.write(','.join(header) + '\n')
-        for row in all_rows:
-            f.write(','.join(str(row[h]) for h in header) + '\n')
-
-    print(f"\nResults saved to: {csv_path}")
-    print(f"Plots saved to: {args.output_dir}")
+        # Save MAE summary CSV and error histograms
+        save_test_csv(error_rows, args.output_dir)
+        plot_error_histograms(error_rows, args.output_dir)
+        print(f"Plots saved to: {args.output_dir}")
 
 
 if __name__ == '__main__':
